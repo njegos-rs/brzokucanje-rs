@@ -31,7 +31,15 @@ export const metadata: Metadata = {
     'vežba kucanja',
     'rang lista kucanja',
   ],
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://brzokucanje.rs'),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL
+      ? process.env.NEXT_PUBLIC_APP_URL.startsWith('http')
+        ? process.env.NEXT_PUBLIC_APP_URL
+        : `https://${process.env.NEXT_PUBLIC_APP_URL}`
+      : process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : 'https://brzokucanje.rs',
+  ),
   openGraph: {
     type: 'website',
     locale: 'sr_RS',
