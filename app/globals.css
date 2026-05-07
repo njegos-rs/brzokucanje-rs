@@ -1,26 +1,93 @@
 @import "tailwindcss";
 
+/* ============================================
+   BRZOKUCANJE.RS — Design tokens
+   Master Brief v3.0, sekcija 10.2
+   ============================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Light mode */
+  --background: #FAFAF7;
+  --foreground: #1A1A1A;
+  --card: #FFFFFF;
+  --card-foreground: #1A1A1A;
+  --border: #E5E5E0;
+  --muted: #F0F0EB;
+  --muted-foreground: #737370;
+  --accent: #C27F00;
+  --accent-foreground: #FFFFFF;
+
+  /* Typing engine colors */
+  --correct: #2D9A63;
+  --incorrect: #E55353;
+  --cursor: #C27F00;
+  --upcoming: #737370;
+
+  /* Fonts */
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
+}
+
+.dark {
+  --background: #0d0d0f;
+  --foreground: #E8E8E2;
+  --card: #141417;
+  --card-foreground: #E8E8E2;
+  --border: #2A2A2F;
+  --muted: #1A1A1F;
+  --muted-foreground: #737378;
+  --accent: #E8B84B;
+  --accent-foreground: #0d0d0f;
+
+  /* Typing engine colors — dark */
+  --correct: #3DB874;
+  --incorrect: #FF6B6B;
+  --cursor: #E8B84B;
+  --upcoming: #4A4A50;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typing area — onemogućava selekciju teksta */
+.typing-area {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
 }
