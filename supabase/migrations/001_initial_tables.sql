@@ -67,7 +67,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS scores_daily_limit_idx
     user_id,
     category,
     script,
-    (created_at AT TIME ZONE 'Europe/Belgrade')::date
+    CAST(created_at AT TIME ZONE 'Europe/Belgrade' AS date)
   )
   WHERE mode = 'rank';
 
