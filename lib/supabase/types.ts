@@ -1,5 +1,5 @@
 // Auto-generated tip: npx supabase gen types typescript --project-id izdfrplpkrxjqlkwrbgd > lib/supabase/types.ts
-// Trenutno placeholder — popunjava se posle migracija (Nedelja 1, korak 4)
+// Ručno prošireno da odražava sve kolone iz migracija 001-007
 
 export type Json =
   | string
@@ -16,11 +16,21 @@ export type Database = {
         Row: {
           id: string
           username: string
+          email: string | null
+          avatar_url: string | null
           created_at: string
           updated_at: string
           is_admin: boolean
           is_banned: boolean
+          ban_reason: string | null
+          banned_at: string | null
+          banned_by: string | null
           daily_limit_override: number | null
+          streak_current: number
+          streak_longest: number
+          last_test_date: string | null
+          newsletter_subscribed: boolean
+          settings: Json | null
         }
         Insert: Omit<Database['public']['Tables']['profiles']['Row'], 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>
@@ -44,6 +54,11 @@ export type Database = {
           keystroke_log: Json | null
           is_flagged: boolean
           flag_reason: string | null
+          flag_reviewed: boolean
+          review_decision: string | null
+          reviewed_by: string | null
+          ip_address: string | null
+          user_agent: string | null
           created_at: string
           text_id: string | null
         }
@@ -96,13 +111,14 @@ export type Database = {
         Row: {
           id: string
           word: string
+          category: string | null
           added_by: string | null
           created_at: string
         }
         Insert: Omit<Database['public']['Tables']['profanity_words']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['profanity_words']['Insert']>
       }
-      audit_log: {
+      admin_actions: {
         Row: {
           id: string
           admin_id: string
@@ -112,7 +128,7 @@ export type Database = {
           details: Json | null
           created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['audit_log']['Row'], 'id' | 'created_at'>
+        Insert: Omit<Database['public']['Tables']['admin_actions']['Row'], 'id' | 'created_at'>
         Update: never
       }
     }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react'
-import { calcAll, type ScoringResult } from './scoring'
+import { calcAll, calcWpm, calcRawWpm, type ScoringResult } from './scoring'
 import { cyrToLat } from '@/lib/transliteration'
 
 export type CharState = 'upcoming' | 'correct' | 'incorrect' | 'extra'
@@ -145,10 +145,17 @@ function engineReducer(state: EngineState, action: EngineAction): EngineState {
   }
 }
 
+export interface WpmSnapshot {
+  second: number
+  wpm: number
+  rawWpm: number
+  errors: number
+}
+
 export interface UseTypingEngineOptions {
   text: string
   lazyMode?: boolean
-  onFinish?: (result: ScoringResult, keystrokes: KeystrokeEntry[]) => void
+  onFinish?: (result: ScoringResult, keystrokes: KeystrokeEntry[], wpmHistory: WpmSnapshot[]) => void
 }
 
 export function useTypingEngine({ text, lazyMode = false, onFinish }: UseTypingEngineOptions) {
@@ -184,7 +191,20 @@ export function useTypingEngine({ text, lazyMode = false, onFinish }: UseTypingE
       intervals: state.intervals,
     })
 
-    onFinishRef.current?.(result, state.keystrokes)
+    // Gradi WPM istoriju po sekundi iz keystroke log-a
+    const wpmHistory: WpmSnapshot[] = []
+    const durationSec = Math.ceil(duration / 1000)
+    for (let sec = 1; sec <= durationSec; sec++) {
+      const windowMs = sec * 1000
+      const ks = state.keystrokes.filter((k) => k.ts <= windowMs && k.action !== 'backspace')
+      const correctInWindow = ks.filter((k) => k.action === 'correct').length
+      const errorsInWindow = ks.filter((k) => k.action === 'incorrect').length
+      const wpmAtSec = calcWpm(correctInWindow, windowMs)
+      const rawAtSec = calcRawWpm(ks.length, windowMs)
+      wpmHistory.push({ second: sec, wpm: Math.round(wpmAtSec), rawWpm: Math.round(rawAtSec), errors: errorsInWindow })
+    }
+
+    onFinishRef.current?.(result, state.keystrokes, wpmHistory)
   }, [state.status])
 
   const handleKeyDown = useCallback(

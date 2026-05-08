@@ -1,16 +1,17 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useTypingEngine } from '@/lib/typing/engine'
+import { useTypingEngine, type WpmSnapshot } from '@/lib/typing/engine'
 import { TypingArea } from '@/components/typing/TypingArea'
 import { LiveStats } from '@/components/typing/LiveStats'
+import { ResultScreen } from '@/components/result/ResultScreen'
 import { buildWordTest } from '@/lib/words/loader'
 import { cn } from '@/lib/utils'
 import { RotateCcw } from 'lucide-react'
+import type { ScoringResult } from '@/lib/typing/scoring'
 
 type Script = 'latinica' | 'cirilica' | 'easy'
 type Difficulty = 'lake' | 'srednje' | 'teske'
-type Category = 'reci' | 'recenice'
 
 interface Props {
   pismo: Script
@@ -29,18 +30,21 @@ const SCRIPT_LABELS: Record<Script, string> = {
   easy: 'Easy',
 }
 
+interface FinishedState {
+  result: ScoringResult
+  wpmHistory: WpmSnapshot[]
+}
+
 export function VezbaClient({ pismo, initialWords }: Props) {
   const [difficulty, setDifficulty] = useState<Difficulty>('lake')
   const [wordCount, setWordCount] = useState(30)
   const [text, setText] = useState(() => buildWordTest(initialWords, 30))
   const [words, setWords] = useState(initialWords)
   const [lazyMode, setLazyMode] = useState(false)
-  const [finished, setFinished] = useState(false)
-  const [finalResult, setFinalResult] = useState<{ wpm: number; accuracy: number; errors: number } | null>(null)
+  const [finished, setFinished] = useState<FinishedState | null>(null)
 
-  const handleFinish = useCallback((result: { wpm: number; accuracy: number; consistency: number; score: number; rawWpm: number }, _keystrokes: unknown[]) => {
-    setFinalResult({ wpm: result.wpm, accuracy: result.accuracy, errors: 0 })
-    setFinished(true)
+  const handleFinish = useCallback((result: ScoringResult, _keystrokes: unknown[], wpmHistory: WpmSnapshot[]) => {
+    setFinished({ result, wpmHistory })
   }, [])
 
   const { chars, cursor, status, errors, handleKeyDown, reset, liveStats } = useTypingEngine({
@@ -54,15 +58,26 @@ export function VezbaClient({ pismo, initialWords }: Props) {
   const handleNewTest = useCallback(() => {
     const newText = buildWordTest(words, wordCount)
     setText(newText)
-    setFinished(false)
-    setFinalResult(null)
+    setFinished(null)
+    // engine se resetuje automatski kad se text promeni — ne treba eksplicitni reset
   }, [words, wordCount])
 
   const handleReset = useCallback(() => {
     reset()
-    setFinished(false)
-    setFinalResult(null)
+    setFinished(null)
   }, [reset])
+
+  // Tab shortcut za reset
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        e.preventDefault()
+        handleReset()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [handleReset])
 
   // Učitaj nove reči kada se promeni težina
   useEffect(() => {
@@ -72,11 +87,22 @@ export function VezbaClient({ pismo, initialWords }: Props) {
         setWords(loaded)
         const newText = buildWordTest(loaded, wordCount)
         setText(newText)
-        setFinished(false)
-        setFinalResult(null)
+        setFinished(null)
       })
       .catch(console.error)
   }, [difficulty, pismo, wordCount])
+
+  if (finished) {
+    return (
+      <ResultScreen
+        result={finished.result}
+        wpmHistory={finished.wpmHistory}
+        onRetry={handleReset}
+        onNext={handleNewTest}
+        testMeta={{ script: SCRIPT_LABELS[pismo], difficulty: DIFFICULTY_LABELS[difficulty] }}
+      />
+    )
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -151,52 +177,18 @@ export function VezbaClient({ pismo, initialWords }: Props) {
         </div>
       )}
 
-      {/* Rezultat */}
-      {finished && finalResult && (
-        <div className="mb-6 rounded-lg border border-[var(--border)] bg-[var(--card)] p-6 text-center">
-          <h2 className="mb-4 text-lg font-medium text-[var(--foreground)]">Rezultat</h2>
-          <div className="flex justify-center gap-10 font-mono">
-            <div>
-              <p className="text-4xl font-bold text-[var(--accent)]">{Math.round(finalResult.wpm)}</p>
-              <p className="mt-1 text-xs text-[var(--muted-foreground)] uppercase tracking-wider">wpm</p>
-            </div>
-            <div>
-              <p className="text-4xl font-bold text-[var(--foreground)]">{Math.round(finalResult.accuracy)}%</p>
-              <p className="mt-1 text-xs text-[var(--muted-foreground)] uppercase tracking-wider">tačnost</p>
-            </div>
-          </div>
-          <div className="mt-4 flex justify-center gap-3">
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-2 rounded-md border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--muted)] transition-colors"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Ponovi
-            </button>
-            <button
-              onClick={handleNewTest}
-              className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] hover:opacity-90 transition-opacity"
-            >
-              Novi test
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Typing area */}
-      {!finished && (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--card)]">
-          <TypingArea
-            chars={chars}
-            cursor={cursor}
-            status={status}
-            onKeyDown={handleKeyDown}
-          />
-        </div>
-      )}
+      <div className="rounded-lg border border-[var(--border)] bg-[var(--card)]">
+        <TypingArea
+          chars={chars}
+          cursor={cursor}
+          status={status}
+          onKeyDown={handleKeyDown}
+        />
+      </div>
 
       {/* Reset dugme */}
-      {!finished && status !== 'idle' && (
+      {status !== 'idle' && (
         <div className="mt-3 flex justify-center">
           <button
             onClick={handleReset}
