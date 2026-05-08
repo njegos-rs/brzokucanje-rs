@@ -9,7 +9,7 @@ type ScoreInsert = Database['public']['Tables']['scores']['Insert']
 
 interface ScorePayload {
   category: 'reci' | 'recenice' | 'citati' | 'price' | 'vesti'
-  script: 'cirilica' | 'latinica' | 'easy'
+  script: 'cirilica' | 'latinica' | 'latinica-bez-kvacica'
   mode: 'vezba' | 'rank'
   wpm: number
   raw_wpm: number

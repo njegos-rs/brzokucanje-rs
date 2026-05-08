@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-const scripts = ['cirilica', 'latinica', 'easy'] as const
+const scripts = ['cirilica', 'latinica', 'latinica-bez-kvacica'] as const
 const categories = ['reci', 'recenice', 'citati', 'price', 'vesti'] as const
 
 type Script = (typeof scripts)[number]
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
 
   const content = script === 'cirilica'
     ? pool.content_cyr
-    : script === 'easy'
+    : script === 'latinica-bez-kvacica'
       ? pool.content_easy
       : pool.content_lat
 
