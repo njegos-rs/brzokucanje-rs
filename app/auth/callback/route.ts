@@ -10,6 +10,21 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      // Proveri da li OAuth korisnik već ima username u profiles tabeli
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', user.id)
+          .single()
+
+        // Ako nema username → nova OAuth registracija, traži unos username-a
+        if (!profile?.username) {
+          return NextResponse.redirect(`${origin}/postavi-username`)
+        }
+      }
+
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
