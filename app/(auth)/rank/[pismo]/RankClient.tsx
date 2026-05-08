@@ -286,7 +286,7 @@ export function RankClient({ pismo, userId, usedCategories }: Props) {
       {/* Typing area */}
       {!isDailyUsed && dailyText && !loadingText && (
         <>
-          <LiveStats live={live} status={status} />
+          <LiveStats wpm={live.wpm ?? 0} accuracy={live.accuracy ?? 0} errors={errors} />
           <TypingArea
             chars={chars}
             cursor={cursor}
