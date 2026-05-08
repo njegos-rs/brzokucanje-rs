@@ -513,7 +513,7 @@ Ovaj plan koristi sledeće oznake. Pratimo ih dosledno kroz ceo dokument.
 **Cilj demo-a:** MVP spreman za launch. Sve E2E testove prolazi. Domen povezan (ako je klijent kupio). Politika privatnosti, cookie consent, analytics aktivni.
 
 #### Ponedeljak-utorak: E2E testovi i bug fixing
-- 🟢 **[PROG]** Playwright E2E testovi:
+- ✅ 🟢 **[PROG]** Playwright E2E testovi:
   - `registration.spec.ts` — pun flow registracije + email verifikacije
   - `login.spec.ts` — login + forgot password
   - `rank-submit.spec.ts` — submit rezultata, daily limit enforcement
@@ -524,22 +524,22 @@ Ovaj plan koristi sledeće oznake. Pratimo ih dosledno kroz ceo dokument.
   - Chrome, Firefox, Safari, Edge na Windows/macOS
   - iOS Safari, Chrome Android
 - 🟢 **[PROG]** Bug fixing iz testova
-- 🟢 **[PROG]** **Pen test osnovni** (iz briefa sekcija 13.4):
+- ✅ 🟢 **[PROG]** **Pen test osnovni** (iz briefa sekcija 13.4):
   - XSS u username, profanity, content forme
   - SQL injection — Supabase RLS i prepared statements bi trebalo da pokrivaju, ali verifikujemo
   - CSRF — Next.js Server Actions automatski zaštićeni
   - Direct admin access bez sesije
 
 #### Sreda: Launch priprema — pravna dokumenta i compliance
-- 🟢 **[PROG]** Stranica `/politika-privatnosti` — GDPR-compliant template, prilagođen za Srbiju
+- ✅ 🟢 **[PROG]** Stranica `/politika-privatnosti` — GDPR-compliant template, prilagođen za Srbiju
   - Šta se prikuplja (email, username, IP, keystroke log za RANK)
   - Pravo na brisanje, pravo na izvoz podataka
   - Cookies politika
-- 🟢 **[PROG]** Stranica `/uslovi-koriscenja` — fer use, anti-cheat pravila, ban-ovi, intelektualna svojina (Vikiizvor citati public domain)
-- 🟢 **[PROG]** **Cookie consent banner** (GDPR) — accept all / only necessary / customize
+- ✅ 🟢 **[PROG]** Stranica `/uslovi-koriscenja` — fer use, anti-cheat pravila, ban-ovi, intelektualna svojina (Vikiizvor citati public domain)
+- ✅ 🟢 **[PROG]** **Cookie consent banner** (GDPR) — accept all / only necessary / customize
 - 🟢 **[PROG]** **Plausible analytics setup** (privacy-friendly za main sajt) — registracija + script tag
   - 🔵 **[KLIJ]** Kreira Plausible nalog (besplatno za 30 dana, ~$9/mesec posle) — daje programeru pristup
-- 🟢 **[PROG]** Brand assets:
+- ✅ 🟢 **[PROG]** Brand assets:
   - Logo `brzokucanje.rs` (Canva ili Figma — placeholder ako klijent nema preferencije)
   - Favicon (16x16, 32x32, 64x64) — generisan iz logoa
   - OG image (1200x630) za društvene mreže
@@ -571,7 +571,7 @@ Ovaj plan koristi sledeće oznake. Pratimo ih dosledno kroz ceo dokument.
   - [ ] Mobile flow (iPhone/Android)
   - [ ] Lighthouse production 90+
   - [ ] SSL aktivan, redirect HTTP→HTTPS
-- 🟢 **[PROG]** Final dokumentacija:
+- ✅ 🟢 **[PROG]** Final dokumentacija:
   - README.md sa setup uputstvom
   - CONTRIBUTING.md sa pravilima
   - `docs/database-schema.md` — ER dijagram + opis tabela
