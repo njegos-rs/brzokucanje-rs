@@ -8,7 +8,7 @@ import type { Database } from '@/lib/supabase/types'
 type ScoreInsert = Database['public']['Tables']['scores']['Insert']
 
 interface ScorePayload {
-  category: 'reci' | 'recenice' | 'tekst'
+  category: 'reci' | 'recenice' | 'citati' | 'price' | 'vesti'
   script: 'cirilica' | 'latinica' | 'easy'
   mode: 'vezba' | 'rank'
   wpm: number

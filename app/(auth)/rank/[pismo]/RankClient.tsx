@@ -12,12 +12,12 @@ import type { ScoringResult } from '@/lib/typing/scoring'
 import type { KeystrokeEntry } from '@/lib/typing/engine'
 
 type Script = 'latinica' | 'cirilica' | 'easy'
-type Category = 'reci' | 'recenice' | 'tekst'
+type Category = 'reci' | 'recenice' | 'price'
 
 const CATEGORY_LABELS: Record<Category, string> = {
   reci: 'Reči',
   recenice: 'Rečenice',
-  tekst: 'Tekst',
+  price: 'Priče',
 }
 
 interface FinishedState {

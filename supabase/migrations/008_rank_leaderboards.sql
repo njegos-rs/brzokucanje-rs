@@ -17,7 +17,7 @@ DECLARE
   v_category TEXT;
   v_text_id UUID;
   v_scripts TEXT[] := ARRAY['cirilica', 'latinica', 'easy'];
-  v_categories TEXT[] := ARRAY['reci', 'recenice', 'tekst'];
+  v_categories TEXT[] := ARRAY['reci', 'recenice', 'price'];
 BEGIN
   FOREACH v_script IN ARRAY v_scripts LOOP
     FOREACH v_category IN ARRAY v_categories LOOP

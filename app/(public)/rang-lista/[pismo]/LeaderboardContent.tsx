@@ -7,13 +7,13 @@ import { cn } from '@/lib/utils'
 import { Crown, Medal } from 'lucide-react'
 
 type Script = 'latinica' | 'cirilica' | 'easy'
-type Category = 'reci' | 'recenice' | 'tekst'
+type Category = 'reci' | 'recenice' | 'price'
 type Period = 'daily' | 'weekly' | 'monthly'
 
 const CATEGORY_LABELS: Record<Category, string> = {
   reci: 'Reči',
   recenice: 'Rečenice',
-  tekst: 'Tekst',
+  price: 'Priče',
 }
 
 const PERIOD_LABELS: Record<Period, string> = {
@@ -51,7 +51,7 @@ export function LeaderboardContent({ script }: Props) {
     const p = searchParams.get('period') as Period | null
     const c = searchParams.get('category') as Category | null
     if (p && ['daily', 'weekly', 'monthly'].includes(p)) setPeriod(p)
-    if (c && ['reci', 'recenice', 'tekst'].includes(c)) setCategory(c)
+    if (c && ['reci', 'recenice', 'price'].includes(c)) setCategory(c)
   }, [searchParams])
 
   useEffect(() => {
