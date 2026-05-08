@@ -29,8 +29,7 @@ export function ReviewActions({ scoreId, userId, username, isReviewed, decision 
 
       const { error: err } = await supabase
         .from('scores')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .update({ flag_reviewed: true, review_decision: reviewDecision, reviewed_by: user.id } as any)
+        .update({ flag_reviewed: true, review_decision: reviewDecision, reviewed_by: user.id })
         .eq('id', scoreId)
 
       if (err) throw err
@@ -71,8 +70,7 @@ export function ReviewActions({ scoreId, userId, username, isReviewed, decision 
       if (err) throw err
 
       // Automatski reject score
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await supabase.from('scores').update({ flag_reviewed: true, review_decision: 'rejected', reviewed_by: user.id } as any).eq('id', scoreId)
+      await supabase.from('scores').update({ flag_reviewed: true, review_decision: 'rejected', reviewed_by: user.id }).eq('id', scoreId)
 
       router.push('/admin/anti-cheat')
     } catch (e) {

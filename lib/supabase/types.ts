@@ -63,7 +63,18 @@ export type Database = {
           text_id: string | null
         }
         Insert: Omit<Database['public']['Tables']['scores']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['scores']['Insert']>
+        Update: {
+          flag_reviewed?: boolean
+          review_decision?: string | null
+          reviewed_by?: string | null
+          is_flagged?: boolean
+          flag_reason?: string | null
+          wpm?: number
+          raw_wpm?: number
+          accuracy?: number
+          consistency?: number
+          score?: number
+        }
       }
       personal_bests: {
         Row: {
