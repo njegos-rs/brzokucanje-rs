@@ -74,7 +74,8 @@ export default function PostaviUsernamePage() {
 
     const { error } = await supabase
       .from('profiles')
-      .upsert({ id: user.id, username: data.username }, { onConflict: 'id' })
+      .update({ username: data.username })
+      .eq('id', user.id)
 
     if (error) {
       if (error.message.includes('duplicate') || error.message.includes('unique')) {
