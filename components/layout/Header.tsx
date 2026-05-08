@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { Keyboard, Menu, X, LogOut, User, Settings, Shield } from 'lucide-react'
+import { Menu, X, LogOut, User, Settings, Shield } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -65,7 +66,7 @@ export function Header() {
           href="/"
           className="flex items-center gap-2 font-mono text-base font-semibold text-[var(--accent)] hover:opacity-80 transition-opacity"
         >
-          <Keyboard className="h-5 w-5" aria-hidden="true" />
+          <Image src="/logo.svg" alt="brzokucanje.rs logo" width={28} height={28} aria-hidden="true" />
           <span>brzokucanje.rs</span>
         </Link>
 

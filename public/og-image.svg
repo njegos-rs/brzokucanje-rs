@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#0d0d0f"/>
+  <!-- logo mark -->
+  <rect x="60" y="60" width="70" height="70" rx="14" fill="#1e1e24" stroke="#E8B84B" stroke-width="3"/>
+  <text x="95" y="107" font-family="monospace" font-size="32" font-weight="bold" fill="#E8B84B" text-anchor="middle">bk</text>
+  <!-- main title -->
+  <text x="600" y="280" font-family="monospace" font-size="80" font-weight="bold" fill="#E8B84B" text-anchor="middle">brzokucanje.rs</text>
+  <!-- subtitle -->
+  <text x="600" y="360" font-family="sans-serif" font-size="32" fill="#6b7280" text-anchor="middle">Srpski typing test — testiraj brzinu kucanja</text>
+  <!-- decorative line -->
+  <rect x="400" y="400" width="400" height="2" fill="#E8B84B" opacity="0.3"/>
+</svg>

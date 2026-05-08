@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
+import Script from 'next/script'
 import { Toaster } from 'react-hot-toast'
 import { CookieConsent } from '@/components/CookieConsent'
 import './globals.css'
@@ -48,16 +49,24 @@ export const metadata: Metadata = {
       'sr-Cyrl': `${appUrl}/vezbaj/cirilica`,
     },
   },
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+  },
   openGraph: {
     type: 'website',
     locale: 'sr_RS',
     siteName: 'Brzokucanje.rs',
     url: appUrl,
+    images: [
+      { url: '/og-image.svg', width: 1200, height: 630, alt: 'brzokucanje.rs' },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Brzokucanje.rs — Test brzine kucanja na srpskom',
     description: 'Besplatni online test brzine kucanja na srpskom jeziku.',
+    images: ['/og-image.svg'],
   },
 }
 
@@ -88,6 +97,14 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         {children}
+        {/* Plausible Analytics — tracks only on brzokucanje.rs (no-op on localhost) */}
+        <Script
+          defer
+          data-domain="brzokucanje.rs"
+          src="https://plausible.io/js/script.js"
+          strategy="afterInteractive"
+        />
+        {/* TODO: Add GA4 gtag once a Measurement ID is obtained from the client */}
         <Toaster
           position="bottom-right"
           toastOptions={{
