@@ -95,6 +95,11 @@ export function RankClient({ pismo, userId, usedCategories }: Props) {
       setSubmitError(null)
 
       try {
+        const durationSeconds = wpmHistory.length > 0 ? wpmHistory[wpmHistory.length - 1].second : 0
+        const correctChars = keystrokes.filter((k) => k.action === 'correct').length
+        const totalChars = keystrokes.filter((k) => k.action !== 'backspace').length
+        const errorsCount = keystrokes.filter((k) => k.action === 'incorrect').length
+
         const res = await fetch('/api/score', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -107,10 +112,10 @@ export function RankClient({ pismo, userId, usedCategories }: Props) {
             accuracy: result.accuracy,
             consistency: result.consistency,
             score: result.score,
-            duration_seconds: result.duration,
-            correct_chars: result.correctChars,
-            total_chars: result.totalChars,
-            errors: result.errors,
+            duration_seconds: durationSeconds,
+            correct_chars: correctChars,
+            total_chars: totalChars,
+            errors: errorsCount,
             keystroke_log: keystrokes,
             text_id: dailyText?.text_id,
           }),
