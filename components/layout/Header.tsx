@@ -23,6 +23,7 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [username, setUsername] = useState<string | undefined>(undefined)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -33,18 +34,20 @@ export function Header() {
       if (data.user) {
         supabase
           .from('profiles')
-          .select('is_admin')
+          .select('username, is_admin')
           .eq('id', data.user.id)
           .single()
           .then(({ data: profile }) => {
-            setIsAdmin((profile as { is_admin: boolean } | null)?.is_admin ?? false)
+            const p = profile as { username: string; is_admin: boolean } | null
+            setIsAdmin(p?.is_admin ?? false)
+            setUsername(p?.username ?? data.user!.email?.split('@')[0])
           })
       }
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
-      if (!session?.user) setIsAdmin(false)
+      if (!session?.user) { setIsAdmin(false); setUsername(undefined) }
     })
 
     return () => subscription.unsubscribe()
@@ -57,8 +60,6 @@ export function Header() {
     router.push('/')
     router.refresh()
   }
-
-  const username = user?.user_metadata?.username as string | undefined
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-[var(--border)] bg-[var(--background)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)]/60">
