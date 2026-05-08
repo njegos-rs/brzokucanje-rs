@@ -39,7 +39,7 @@ export function KeystrokeHistogram({ keystrokes }: Props) {
           <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
           <Tooltip
             contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', fontSize: 12 }}
-            formatter={(v: number) => [v, 'keystroke-ovi']}
+            formatter={(v) => [v as number, 'keystroke-ovi']}
             labelFormatter={(l) => `${l}ms`}
           />
           <Bar dataKey="count" fill="var(--accent)" radius={[2, 2, 0, 0]} />
