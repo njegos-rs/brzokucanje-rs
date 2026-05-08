@@ -294,7 +294,6 @@ export function RankClient({ pismo, userId, usedCategories }: Props) {
             cursor={cursor}
             status={status}
             onKeyDown={handleKeyDown}
-            userSelectNone
           />
           <div className="mt-4 flex items-center justify-between">
             <p className="text-xs text-[var(--muted-foreground)]">
