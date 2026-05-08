@@ -37,12 +37,17 @@ function groupIntoWords(chars: CharEntry[]): WordGroup[] {
   return groups
 }
 
+// Visina jednog reda u px — mora da odgovara line-height u CSS-u
+const LINE_HEIGHT_PX = 52
+
 export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, spaceBlocked }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const cursorSpanRef = useRef<HTMLSpanElement>(null)
+  const innerRef = useRef<HTMLDivElement>(null)
   const [focused, setFocused] = useState(false)
   const [shaking, setShaking] = useState(false)
   const [currentWord, setCurrentWord] = useState('')
+  const [offsetY, setOffsetY] = useState(0)
   const onKeyDownRef = useRef(onKeyDown)
   onKeyDownRef.current = onKeyDown
   const spaceBlockedRef = useRef(spaceBlocked)
@@ -51,6 +56,7 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
   useEffect(() => {
     inputRef.current?.focus()
     setCurrentWord('')
+    setOffsetY(0)
   }, [status, chars])
 
   useEffect(() => {
@@ -77,8 +83,16 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
     return () => el.removeEventListener('keydown', handler)
   }, [])
 
+  // Pomeri unutrašnji div tako da aktivan red uvek bude drugi od vrha
   useEffect(() => {
-    cursorSpanRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    const cursorEl = cursorSpanRef.current
+    const innerEl = innerRef.current
+    if (!cursorEl || !innerEl) return
+
+    const cursorTop = cursorEl.offsetTop
+    // Ciljana pozicija: kursor treba biti na drugom redu (1 * LINE_HEIGHT_PX od vrha)
+    const targetOffset = cursorTop - LINE_HEIGHT_PX
+    setOffsetY(Math.max(0, targetOffset))
   }, [cursor])
 
   const handleDisplayClick = useCallback(() => {
@@ -104,22 +118,29 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
         </div>
       )}
 
-      {/* Typing display — monkeytype stil, bez box-a */}
+      {/* Typing display — tačno 3 reda, srednji je aktivan */}
       <div
         onClick={handleDisplayClick}
         className={cn(
           'relative cursor-text overflow-hidden',
-          'max-h-[7.5rem]',
           status === 'finished' && 'opacity-30 pointer-events-none',
         )}
+        style={{ height: `${LINE_HEIGHT_PX * 3}px` }}
         aria-hidden="true"
       >
         {chars.length === 0 ? (
-          <div className="flex items-center justify-center h-12 text-sm text-[var(--muted-foreground)]/40">
+          <div className="flex items-center justify-center h-full text-sm text-[var(--muted-foreground)]/40">
             Učitavam...
           </div>
         ) : (
-          <div className="font-mono text-2xl md:text-3xl leading-loose tracking-wide flex flex-wrap justify-center">
+          <div
+            ref={innerRef}
+            className="font-mono text-2xl md:text-3xl tracking-wide flex flex-wrap justify-center transition-transform duration-150"
+            style={{
+              lineHeight: `${LINE_HEIGHT_PX}px`,
+              transform: `translateY(-${offsetY}px)`,
+            }}
+          >
             {wordGroups.map((group, gi) => {
               if (group.isSpace) {
                 const { entry, globalIndex } = group.chars[0]
@@ -133,8 +154,8 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
                       entry.state === 'correct' && 'text-[var(--correct)]',
                       entry.state === 'incorrect' && 'text-[var(--incorrect)]',
                       entry.state === 'upcoming' && 'text-[var(--upcoming)]',
-                      isCursor && focused && 'after:absolute after:left-0 after:top-[3px] after:bottom-[3px] after:w-[2px] after:bg-[var(--accent)] after:animate-pulse after:rounded-full',
-                      isCursor && !focused && 'after:absolute after:left-0 after:top-[3px] after:bottom-[3px] after:w-[2px] after:bg-[var(--muted-foreground)]/30 after:rounded-full',
+                      isCursor && focused && 'after:absolute after:left-0 after:top-[4px] after:bottom-[4px] after:w-[2px] after:bg-[var(--accent)] after:animate-pulse after:rounded-full',
+                      isCursor && !focused && 'after:absolute after:left-0 after:top-[4px] after:bottom-[4px] after:w-[2px] after:bg-[var(--muted-foreground)]/30 after:rounded-full',
                     )}
                   >{' '}</span>
                 )
@@ -152,8 +173,8 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
                           entry.state === 'correct' && 'text-[var(--correct)]',
                           entry.state === 'incorrect' && 'text-[var(--incorrect)]',
                           entry.state === 'upcoming' && 'text-[var(--upcoming)]',
-                          isCursor && focused && 'after:absolute after:left-0 after:top-[3px] after:bottom-[3px] after:w-[2px] after:bg-[var(--accent)] after:animate-pulse after:rounded-full',
-                          isCursor && !focused && 'after:absolute after:left-0 after:top-[3px] after:bottom-[3px] after:w-[2px] after:bg-[var(--muted-foreground)]/30 after:rounded-full',
+                          isCursor && focused && 'after:absolute after:left-0 after:top-[4px] after:bottom-[4px] after:w-[2px] after:bg-[var(--accent)] after:animate-pulse after:rounded-full',
+                          isCursor && !focused && 'after:absolute after:left-0 after:top-[4px] after:bottom-[4px] after:w-[2px] after:bg-[var(--muted-foreground)]/30 after:rounded-full',
                         )}
                       >{entry.char}</span>
                     )
@@ -178,7 +199,7 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
         </div>
       )}
 
-      {/* Nevidljivi input — samo za hvatanje tastature, potpuno skriven */}
+      {/* Nevidljivi input — samo za hvatanje tastature */}
       <input
         ref={inputRef}
         type="text"
