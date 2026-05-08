@@ -1,10 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+const scripts = ['cirilica', 'latinica', 'easy'] as const
+const categories = ['reci', 'recenice', 'citati', 'price', 'vesti'] as const
+
+type Script = (typeof scripts)[number]
+type Category = (typeof categories)[number]
+
+function isScript(value: string): value is Script {
+  return scripts.includes(value as Script)
+}
+
+function isCategory(value: string): value is Category {
+  return categories.includes(value as Category)
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const script = searchParams.get('script') ?? 'latinica'
-  const category = searchParams.get('category') ?? 'reci'
+  const scriptParam = searchParams.get('script') ?? 'latinica'
+  const categoryParam = searchParams.get('category') ?? 'reci'
+
+  if (!isScript(scriptParam) || !isCategory(categoryParam)) {
+    return NextResponse.json({ error: 'Neispravni parametri' }, { status: 400 })
+  }
+
+  const script = scriptParam
+  const category = categoryParam
 
   const supabase = await createClient()
   const today = new Date().toISOString().slice(0, 10)

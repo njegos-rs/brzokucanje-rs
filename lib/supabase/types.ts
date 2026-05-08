@@ -34,6 +34,7 @@ export type Database = {
         }
         Insert: Omit<Database['public']['Tables']['profiles']['Row'], 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>
+        Relationships: []
       }
       scores: {
         Row: {
@@ -75,6 +76,15 @@ export type Database = {
           consistency?: number
           score?: number
         }
+        Relationships: [
+          {
+            foreignKeyName: 'scores_text_id_fkey'
+            columns: ['text_id']
+            isOneToOne: false
+            referencedRelation: 'text_pool'
+            referencedColumns: ['id']
+          },
+        ]
       }
       personal_bests: {
         Row: {
@@ -90,6 +100,15 @@ export type Database = {
         }
         Insert: Omit<Database['public']['Tables']['personal_bests']['Row'], 'id'>
         Update: Partial<Database['public']['Tables']['personal_bests']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: 'personal_bests_score_id_fkey'
+            columns: ['score_id']
+            isOneToOne: false
+            referencedRelation: 'scores'
+            referencedColumns: ['id']
+          },
+        ]
       }
       text_pool: {
         Row: {
@@ -105,6 +124,7 @@ export type Database = {
         }
         Insert: Omit<Database['public']['Tables']['text_pool']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['text_pool']['Insert']>
+        Relationships: []
       }
       daily_texts: {
         Row: {
@@ -117,6 +137,15 @@ export type Database = {
         }
         Insert: Omit<Database['public']['Tables']['daily_texts']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['daily_texts']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: 'daily_texts_text_id_fkey'
+            columns: ['text_id']
+            isOneToOne: false
+            referencedRelation: 'text_pool'
+            referencedColumns: ['id']
+          },
+        ]
       }
       profanity_words: {
         Row: {
@@ -128,6 +157,7 @@ export type Database = {
         }
         Insert: Omit<Database['public']['Tables']['profanity_words']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['profanity_words']['Insert']>
+        Relationships: []
       }
       admin_actions: {
         Row: {
@@ -141,6 +171,7 @@ export type Database = {
         }
         Insert: Omit<Database['public']['Tables']['admin_actions']['Row'], 'id' | 'created_at'>
         Update: never
+        Relationships: []
       }
     }
     Views: {
@@ -158,6 +189,7 @@ export type Database = {
           created_at: string
           daily_rank: number
         }
+        Relationships: []
       }
       v_weekly_leaderboard: {
         Row: {
@@ -171,6 +203,7 @@ export type Database = {
           test_count: number
           weekly_rank: number
         }
+        Relationships: []
       }
       v_monthly_leaderboard: {
         Row: {
@@ -184,6 +217,7 @@ export type Database = {
           test_count: number
           monthly_rank: number
         }
+        Relationships: []
       }
     }
     Functions: {

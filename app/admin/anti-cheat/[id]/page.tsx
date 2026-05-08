@@ -21,14 +21,22 @@ export default async function AntiCheatDetailPage({ params }: Props) {
 
   const { data } = await supabase
     .from('scores')
-    .select('*, profiles(username, email)')
+    .select('*')
     .eq('id', id)
     .single()
 
   if (!data) notFound()
 
-  type ScoreWithProfile = ScoreRow & { profiles: { username: string; email: string } | null }
-  const score = data as ScoreWithProfile
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username, email')
+    .eq('id', data.user_id)
+    .maybeSingle()
+
+  const score: ScoreRow & { profiles: { username: string; email: string | null } | null } = {
+    ...data,
+    profiles: profile,
+  }
 
   const keystrokes = Array.isArray(score.keystroke_log)
     ? (score.keystroke_log as unknown as KeystrokeEntry[])

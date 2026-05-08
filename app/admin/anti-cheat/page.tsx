@@ -18,13 +18,22 @@ export default async function AdminAntiCheatPage() {
 
   const { data } = await supabase
     .from('scores')
-    .select('id, user_id, wpm, accuracy, script, category, mode, flag_reason, flag_reviewed, review_decision, created_at, profiles(username)')
+    .select('id, user_id, wpm, accuracy, script, category, mode, flag_reason, flag_reviewed, review_decision, created_at')
     .eq('is_flagged', true)
     .order('created_at', { ascending: false })
     .limit(100)
 
   type Row = FlaggedScore & { profiles: { username: string } | null }
-  const scores = (data ?? []) as Row[]
+  const scoreRows = data ?? []
+  const userIds = Array.from(new Set(scoreRows.map((score) => score.user_id)))
+  const { data: profiles } = userIds.length
+    ? await supabase.from('profiles').select('id, username').in('id', userIds)
+    : { data: [] }
+  const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile]))
+  const scores: Row[] = scoreRows.map((score) => ({
+    ...score,
+    profiles: profileById.get(score.user_id) ?? null,
+  }))
 
   const pending = scores.filter((s) => !s.flag_reviewed)
   const reviewed = scores.filter((s) => s.flag_reviewed)
