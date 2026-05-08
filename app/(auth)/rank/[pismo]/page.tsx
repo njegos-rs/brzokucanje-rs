@@ -3,13 +3,13 @@ import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import { RankClient } from './RankClient'
 
-type Script = 'latinica' | 'cirilica' | 'easy'
-const VALID_SCRIPTS: Script[] = ['latinica', 'cirilica', 'easy']
+type Script = 'latinica' | 'cirilica' | 'latinica-bez-kvacica'
+const VALID_SCRIPTS: Script[] = ['latinica', 'cirilica', 'latinica-bez-kvacica']
 
 const SCRIPT_LABELS: Record<Script, string> = {
   latinica: 'Latinica',
   cirilica: 'Ćirilica',
-  easy: 'Easy',
+  'latinica-bez-kvacica': 'Latinica bez kvačica',
 }
 
 interface Props {
@@ -34,7 +34,6 @@ export default async function RankPismoPage({ params }: Props) {
   const script = pismo as Script
   const today = new Date().toISOString().slice(0, 10)
 
-  // Proveri da li je korisnik već odigrao danas za ovo pismo (jedan pokušaj ukupno)
   const { data: usedScore } = await supabase
     .from('scores')
     .select('id')

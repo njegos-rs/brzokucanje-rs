@@ -41,7 +41,7 @@ export type Database = {
           id: string
           user_id: string
           category: 'reci' | 'recenice' | 'citati' | 'price' | 'vesti'
-          script: 'cirilica' | 'latinica' | 'easy'
+          script: 'cirilica' | 'latinica' | 'latinica-bez-kvacica'
           mode: 'vezba' | 'rank'
           wpm: number
           raw_wpm: number
@@ -130,7 +130,7 @@ export type Database = {
         Row: {
           id: string
           date: string
-          script: 'cirilica' | 'latinica' | 'easy'
+          script: 'cirilica' | 'latinica' | 'latinica-bez-kvacica'
           category: string
           text_id: string
           created_at: string
@@ -180,7 +180,7 @@ export type Database = {
           id: string
           user_id: string
           username: string
-          script: 'cirilica' | 'latinica' | 'easy'
+          script: 'cirilica' | 'latinica' | 'latinica-bez-kvacica'
           category: string
           wpm: number
           raw_wpm: number
@@ -195,7 +195,7 @@ export type Database = {
         Row: {
           user_id: string
           username: string
-          script: 'cirilica' | 'latinica' | 'easy'
+          script: 'cirilica' | 'latinica' | 'latinica-bez-kvacica'
           category: string
           wpm: number
           score: number
@@ -209,7 +209,7 @@ export type Database = {
         Row: {
           user_id: string
           username: string
-          script: 'cirilica' | 'latinica' | 'easy'
+          script: 'cirilica' | 'latinica' | 'latinica-bez-kvacica'
           category: string
           wpm: number
           score: number

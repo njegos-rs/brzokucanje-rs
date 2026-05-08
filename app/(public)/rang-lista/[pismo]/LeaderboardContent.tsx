@@ -1,19 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Crown, Medal } from 'lucide-react'
 
-type Script = 'latinica' | 'cirilica' | 'easy'
-type Category = 'reci' | 'recenice' | 'price'
+type Script = 'latinica' | 'cirilica' | 'latinica-bez-kvacica'
 type Period = 'daily' | 'weekly' | 'monthly'
 
-const CATEGORY_LABELS: Record<Category, string> = {
-  reci: 'Reči',
-  recenice: 'Rečenice',
-  price: 'Priče',
+const SCRIPT_LABELS: Record<Script, string> = {
+  latinica: 'Latinica',
+  cirilica: 'Ćirilica',
+  'latinica-bez-kvacica': 'Latinica bez kvačica',
 }
 
 const PERIOD_LABELS: Record<Period, string> = {
@@ -29,10 +28,6 @@ interface LeaderboardEntry {
   raw_wpm?: number
   accuracy: number
   score: number
-  daily_rank?: number
-  weekly_rank?: number
-  monthly_rank?: number
-  test_count?: number
 }
 
 interface Props {
@@ -40,24 +35,16 @@ interface Props {
 }
 
 export function LeaderboardContent({ script }: Props) {
-  const searchParams = useSearchParams()
+  const router = useRouter()
   const [period, setPeriod] = useState<Period>('daily')
-  const [category, setCategory] = useState<Category>('reci')
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const p = searchParams.get('period') as Period | null
-    const c = searchParams.get('category') as Category | null
-    if (p && ['daily', 'weekly', 'monthly'].includes(p)) setPeriod(p)
-    if (c && ['reci', 'recenice', 'price'].includes(c)) setCategory(c)
-  }, [searchParams])
-
-  useEffect(() => {
     setLoading(true)
     setError(null)
-    fetch(`/api/leaderboard?script=${script}&category=${category}&period=${period}&limit=25`)
+    fetch(`/api/leaderboard?script=${script}&period=${period}&limit=25`)
       .then((r) => r.json())
       .then((j) => {
         setEntries((j.data ?? []) as LeaderboardEntry[])
@@ -67,12 +54,32 @@ export function LeaderboardContent({ script }: Props) {
         setError('Greška pri učitavanju rang liste.')
         setLoading(false)
       })
-  }, [script, category, period])
+  }, [script, period])
+
+  const pismoTabovi: Script[] = ['latinica', 'cirilica', 'latinica-bez-kvacica']
 
   return (
     <div>
+      {/* Pismo tabovi */}
+      <div className="mb-4 flex gap-2 flex-wrap">
+        {pismoTabovi.map((p) => (
+          <button
+            key={p}
+            onClick={() => router.push(`/rang-lista/${p}`)}
+            className={cn(
+              'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
+              p === script
+                ? 'bg-[var(--accent)] text-[var(--accent-foreground)]'
+                : 'border border-[var(--border)] text-[var(--muted-foreground)] hover:border-[var(--accent)]',
+            )}
+          >
+            {SCRIPT_LABELS[p]}
+          </button>
+        ))}
+      </div>
+
       {/* Period tabs */}
-      <div className="mb-4 flex gap-2">
+      <div className="mb-6 flex gap-2">
         {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
           <button
             key={p}
@@ -80,7 +87,7 @@ export function LeaderboardContent({ script }: Props) {
             className={cn(
               'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
               p === period
-                ? 'bg-[var(--accent)] text-[var(--accent-foreground)]'
+                ? 'bg-[var(--foreground)] text-[var(--background)]'
                 : 'border border-[var(--border)] text-[var(--muted-foreground)] hover:border-[var(--accent)]',
             )}
           >
@@ -89,25 +96,6 @@ export function LeaderboardContent({ script }: Props) {
         ))}
       </div>
 
-      {/* Category filter */}
-      <div className="mb-6 flex gap-2">
-        {(Object.keys(CATEGORY_LABELS) as Category[]).map((c) => (
-          <button
-            key={c}
-            onClick={() => setCategory(c)}
-            className={cn(
-              'rounded-md px-3 py-1 text-xs font-medium transition-colors',
-              c === category
-                ? 'bg-[var(--foreground)] text-[var(--background)]'
-                : 'border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
-            )}
-          >
-            {CATEGORY_LABELS[c]}
-          </button>
-        ))}
-      </div>
-
-      {/* Table */}
       {loading && (
         <div className="py-16 text-center text-sm text-[var(--muted-foreground)]">Učitavam…</div>
       )}

@@ -3,13 +3,13 @@ import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { LeaderboardContent } from './LeaderboardContent'
 
-type Script = 'latinica' | 'cirilica' | 'easy'
-const VALID_SCRIPTS: Script[] = ['latinica', 'cirilica', 'easy']
+type Script = 'latinica' | 'cirilica' | 'latinica-bez-kvacica'
+const VALID_SCRIPTS: Script[] = ['latinica', 'cirilica', 'latinica-bez-kvacica']
 
 const SCRIPT_LABELS: Record<Script, string> = {
   latinica: 'Latinica',
   cirilica: 'Ćirilica',
-  easy: 'Easy',
+  'latinica-bez-kvacica': 'Latinica bez kvačica',
 }
 
 interface Props {
@@ -46,12 +46,8 @@ export default async function RangListaPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="mb-2 text-2xl font-bold text-[var(--foreground)]">
-        Rang lista — {SCRIPT_LABELS[pismo as Script]}
-      </h1>
-      <p className="mb-8 text-sm text-[var(--muted-foreground)]">
-        Top rezultati u RANK modu.
-      </p>
+      <h1 className="mb-2 text-2xl font-bold text-[var(--foreground)]">Rang lista</h1>
+      <p className="mb-8 text-sm text-[var(--muted-foreground)]">Top rezultati u RANK modu.</p>
       <Suspense fallback={<div className="py-16 text-center text-sm text-[var(--muted-foreground)]">Učitavam…</div>}>
         <LeaderboardContent script={pismo as Script} />
       </Suspense>
