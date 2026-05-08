@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import { BanActions } from './BanActions'
 import { Shield, Ban, Flame, Target } from 'lucide-react'
@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: 'Admin — Korisnik detalji' }
 
 export default async function KorisnikDetailPage({ params }: Props) {
   const { id } = await params
-  const supabase = await createClient()
+  const supabase = await createServiceClient()
 
   const [profileRes, scoresRes, adminActionsRes] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', id).single(),

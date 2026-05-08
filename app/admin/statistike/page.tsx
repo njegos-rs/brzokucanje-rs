@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { StatsCharts } from './StatsCharts'
 
 export const metadata: Metadata = { title: 'Admin — Statistike' }
 
 export default async function AdminStatistikePage() {
-  const supabase = await createClient()
+  const supabase = await createServiceClient()
 
   const now = new Date()
   const days30ago = new Date(now)

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
 import { ProfanityTable } from './ProfanityTable'
 
@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Admin — Profanity' }
 type WordRow = Database['public']['Tables']['profanity_words']['Row']
 
 export default async function AdminProfanityPage() {
-  const supabase = await createClient()
+  const supabase = await createServiceClient()
 
   const { data } = await supabase
     .from('profanity_words')

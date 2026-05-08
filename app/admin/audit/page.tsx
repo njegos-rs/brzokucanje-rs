@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
 
 export const metadata: Metadata = { title: 'Admin — Audit log' }
@@ -14,7 +14,7 @@ const ACTION_LABELS: Record<string, string> = {
 }
 
 export default async function AdminAuditPage() {
-  const supabase = await createClient()
+  const supabase = await createServiceClient()
 
   const { data } = await supabase
     .from('admin_actions')

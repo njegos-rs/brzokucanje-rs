@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { ShieldAlert, ShieldCheck, ShieldX } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
@@ -14,7 +14,7 @@ type FlaggedScore = Pick<ScoreRow,
 >
 
 export default async function AdminAntiCheatPage() {
-  const supabase = await createClient()
+  const supabase = await createServiceClient()
 
   const { data } = await supabase
     .from('scores')

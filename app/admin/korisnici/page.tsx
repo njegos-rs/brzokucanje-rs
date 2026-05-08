@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { KorisniciTable } from '@/components/admin/KorisniciTable'
 import type { Database } from '@/lib/supabase/types'
 
@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Admin — Korisnici' }
 type ProfileRow = Database['public']['Tables']['profiles']['Row']
 
 export default async function AdminKorisniciPage() {
-  const supabase = await createClient()
+  const supabase = await createServiceClient()
 
   const { data } = await supabase
     .from('profiles')

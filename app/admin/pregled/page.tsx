@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import { Users, Target, TrendingUp, ShieldAlert } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
@@ -22,7 +22,7 @@ function KpiCard({ label, value, sub, icon: Icon }: { label: string; value: stri
 }
 
 export default async function AdminPregledPage() {
-  const supabase = await createClient()
+  const supabase = await createServiceClient()
 
   const today = new Date().toISOString().slice(0, 10)
 

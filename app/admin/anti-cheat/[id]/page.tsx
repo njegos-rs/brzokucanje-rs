@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import { ReviewActions } from './ReviewActions'
 import { KeystrokeHistogram } from './KeystrokeHistogram'
@@ -17,7 +17,7 @@ interface Props {
 
 export default async function AntiCheatDetailPage({ params }: Props) {
   const { id } = await params
-  const supabase = await createClient()
+  const supabase = await createServiceClient()
 
   const { data } = await supabase
     .from('scores')

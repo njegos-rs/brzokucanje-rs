@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
 import { SadrzajTable } from './SadrzajTable'
 
@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Admin — Sadržaj' }
 type TextRow = Database['public']['Tables']['text_pool']['Row']
 
 export default async function AdminSadrzajPage() {
-  const supabase = await createClient()
+  const supabase = await createServiceClient()
 
   const { data } = await supabase
     .from('text_pool')
