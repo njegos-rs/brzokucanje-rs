@@ -84,17 +84,6 @@ export function Footer() {
           <p className="text-xs text-[var(--muted-foreground)]">
             © {year} Brzokucanje.rs — Sva prava zadržana
           </p>
-          <p className="text-xs text-[var(--muted-foreground)]">
-            Inspirisano{' '}
-            <a
-              href="https://monkeytype.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-[var(--accent)] transition-colors"
-            >
-              Monkeytype
-            </a>
-          </p>
         </div>
       </div>
     </footer>
