@@ -3,6 +3,10 @@
 -- ============================================================
 -- 1. generate_daily_texts() PL/pgSQL funkcija
 -- ============================================================
+-- Drop stare verzije da se eliminiše overload konflikt (42725)
+DROP FUNCTION IF EXISTS public.generate_daily_texts();
+DROP FUNCTION IF EXISTS public.generate_daily_texts(DATE);
+
 CREATE OR REPLACE FUNCTION generate_daily_texts(p_date DATE DEFAULT CURRENT_DATE + 1)
 RETURNS void
 LANGUAGE plpgsql
