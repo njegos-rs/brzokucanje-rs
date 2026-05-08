@@ -29,21 +29,22 @@
 }
 
 .dark {
-  --background: #0d0d0f;
-  --foreground: #E8E8E2;
-  --card: #141417;
-  --card-foreground: #E8E8E2;
-  --border: #2A2A2F;
-  --muted: #1A1A1F;
-  --muted-foreground: #737378;
+  /* Warm dark gray — lakši za oči od čistog crnog */
+  --background: #1c1c1e;
+  --foreground: #f0f0ef;
+  --card: #242426;
+  --card-foreground: #f0f0ef;
+  --border: #3a3a3c;
+  --muted: #2c2c2e;
+  --muted-foreground: #8e8e93;
   --accent: #E8B84B;
-  --accent-foreground: #0d0d0f;
+  --accent-foreground: #1c1c1e;
 
   /* Typing engine colors — dark */
-  --correct: #3DB874;
-  --incorrect: #FF6B6B;
+  --correct: #4cd964;
+  --incorrect: #ff6b6b;
   --cursor: #E8B84B;
-  --upcoming: #4A4A50;
+  --upcoming: #636366;
 }
 
 @theme inline {
@@ -74,6 +75,18 @@ body {
 .typing-area {
   user-select: none;
   -webkit-user-select: none;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+.shake {
+  animation: shake 0.25s ease-in-out;
 }
 
 /* Scrollbar styling */

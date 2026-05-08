@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useReducer, useRef } from 'react'
+'use client'
+
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { calcAll, calcWpm, calcRawWpm, type ScoringResult } from './scoring'
 import { cyrToLat } from '@/lib/transliteration'
 
@@ -17,6 +19,10 @@ export interface KeystrokeEntry {
   action: 'correct' | 'incorrect' | 'backspace'
 }
 
+export type TestMode = 'reci' | 'vreme' | 'tekst'
+export type TestLevel = 'easy' | 'medium' | 'hard' | 'expert'
+export type TimerDuration = 15 | 30 | 60
+
 interface EngineState {
   status: EngineStatus
   chars: CharEntry[]
@@ -28,13 +34,15 @@ interface EngineState {
   keystrokes: KeystrokeEntry[]
   errors: number
   lazyMode: boolean
+  strictMode: boolean
 }
 
 type EngineAction =
   | { type: 'KEY_PRESS'; key: string; now: number }
   | { type: 'BACKSPACE'; now: number }
-  | { type: 'RESET'; text: string; lazyMode: boolean }
+  | { type: 'RESET'; text: string; lazyMode: boolean; strictMode: boolean }
   | { type: 'FINISH' }
+  | { type: 'APPEND_TEXT'; text: string }
 
 const LAZY_MAP: Record<string, string[]> = {
   c: ['č', 'ć'],
@@ -45,7 +53,6 @@ const LAZY_MAP: Record<string, string[]> = {
 function isLazyMatch(typed: string, expected: string, lazy: boolean): boolean {
   if (typed === expected) return true
   if (!lazy) return false
-  // đ → dj je poseban slučaj (dva karaktera)
   const accepted = LAZY_MAP[typed.toLowerCase()]
   return accepted?.includes(expected.toLowerCase()) ?? false
 }
@@ -68,12 +75,24 @@ function engineReducer(state: EngineState, action: EngineAction): EngineState {
         keystrokes: [],
         errors: 0,
         lazyMode: action.lazyMode,
+        strictMode: action.strictMode,
       }
+    }
+
+    case 'APPEND_TEXT': {
+      const newChars = [...state.chars, ...buildChars(action.text)]
+      return { ...state, chars: newChars }
     }
 
     case 'KEY_PRESS': {
       if (state.status === 'finished') return state
       if (state.cursor >= state.chars.length) return state
+
+      // U strict modu: ako ima bilo kakva greška iza kursora, blokira sve osim backspace
+      if (state.strictMode) {
+        const hasAnyError = state.chars.slice(0, state.cursor).some(c => c.state === 'incorrect')
+        if (hasAnyError) return state
+      }
 
       const isStart = state.status === 'idle'
       const startTime = isStart ? action.now : state.startTime!
@@ -81,7 +100,6 @@ function engineReducer(state: EngineState, action: EngineAction): EngineState {
         state.lastKeystrokeTime !== null ? action.now - state.lastKeystrokeTime : null
 
       const expected = state.chars[state.cursor].char
-      // Korisnici koji kucaju ćirilicu na latiničnom testu
       const typedKey = cyrToLat(action.key)
       const correct = isLazyMatch(typedKey, expected, state.lazyMode)
 
@@ -155,10 +173,22 @@ export interface WpmSnapshot {
 export interface UseTypingEngineOptions {
   text: string
   lazyMode?: boolean
+  strictMode?: boolean
+  mode?: TestMode
+  timerDuration?: TimerDuration
   onFinish?: (result: ScoringResult, keystrokes: KeystrokeEntry[], wpmHistory: WpmSnapshot[]) => void
+  onNeedMoreText?: () => string | null
 }
 
-export function useTypingEngine({ text, lazyMode = false, onFinish }: UseTypingEngineOptions) {
+export function useTypingEngine({
+  text,
+  lazyMode = false,
+  strictMode = false,
+  mode = 'reci',
+  timerDuration = 30,
+  onFinish,
+  onNeedMoreText,
+}: UseTypingEngineOptions) {
   const [state, dispatch] = useReducer(engineReducer, {
     status: 'idle',
     chars: buildChars(text),
@@ -170,16 +200,73 @@ export function useTypingEngine({ text, lazyMode = false, onFinish }: UseTypingE
     keystrokes: [],
     errors: 0,
     lazyMode,
+    strictMode,
   })
 
+  const [timeLeft, setTimeLeft] = useState<number>(timerDuration)
+
+  // Kad se promeni text (novi test), resetuj engine
+  useEffect(() => {
+    if (!text) return
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
+    setTimeLeft(timerDuration)
+    dispatch({ type: 'RESET', text, lazyMode: false, strictMode })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text])
+
+  // Kad se promeni timerDuration (korisnik klikne 15s/30s/60s), resetuj brojač
+  useEffect(() => {
+    setTimeLeft(timerDuration)
+  }, [timerDuration])
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const onFinishRef = useRef(onFinish)
   onFinishRef.current = onFinish
+  const onNeedMoreTextRef = useRef(onNeedMoreText)
+  onNeedMoreTextRef.current = onNeedMoreText
 
-  // Pokretanje onFinish kada test završi
+  // Timer za vreme mod
+  useEffect(() => {
+    if (mode !== 'vreme') return
+    if (state.status === 'running' && !timerRef.current) {
+      timerRef.current = setInterval(() => {
+        setTimeLeft((t) => {
+          if (t <= 1) {
+            clearInterval(timerRef.current!)
+            timerRef.current = null
+            dispatch({ type: 'FINISH' })
+            return 0
+          }
+          return t - 1
+        })
+      }, 1000)
+    }
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+        timerRef.current = null
+      }
+    }
+  }, [state.status, mode])
+
+  // Dopuni tekst kada se kursor približi kraju (za vreme mod)
+  useEffect(() => {
+    if (mode !== 'vreme') return
+    if (state.status !== 'running') return
+    const remaining = state.chars.length - state.cursor
+    if (remaining < 50) {
+      const more = onNeedMoreTextRef.current?.()
+      if (more) dispatch({ type: 'APPEND_TEXT', text: ' ' + more })
+    }
+  }, [state.cursor, mode, state.status, state.chars.length])
+
+  // Pokretanje onFinish
   useEffect(() => {
     if (state.status !== 'finished') return
 
-    const duration = state.endTime! - state.startTime!
+    const duration = (state.endTime ?? Date.now()) - (state.startTime ?? Date.now())
     const correctChars = state.chars.filter((c) => c.state === 'correct').length
     const allChars = state.chars.filter((c) => c.state !== 'upcoming').length
 
@@ -191,7 +278,6 @@ export function useTypingEngine({ text, lazyMode = false, onFinish }: UseTypingE
       intervals: state.intervals,
     })
 
-    // Gradi WPM istoriju po sekundi iz keystroke log-a
     const wpmHistory: WpmSnapshot[] = []
     const durationSec = Math.ceil(duration / 1000)
     for (let sec = 1; sec <= durationSec; sec++) {
@@ -209,7 +295,6 @@ export function useTypingEngine({ text, lazyMode = false, onFinish }: UseTypingE
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      // Zabranjujemo paste
       if (e.key === 'Paste' || (e.ctrlKey && e.key === 'v')) {
         e.preventDefault()
         return
@@ -221,7 +306,6 @@ export function useTypingEngine({ text, lazyMode = false, onFinish }: UseTypingE
         return
       }
 
-      // Ignorišemo modifier tastere
       if (e.key.length !== 1 || e.ctrlKey || e.altKey || e.metaKey) return
 
       dispatch({ type: 'KEY_PRESS', key: e.key, now: Date.now() })
@@ -230,10 +314,14 @@ export function useTypingEngine({ text, lazyMode = false, onFinish }: UseTypingE
   )
 
   const reset = useCallback(() => {
-    dispatch({ type: 'RESET', text, lazyMode })
-  }, [text, lazyMode])
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
+    setTimeLeft(timerDuration)
+    dispatch({ type: 'RESET', text, lazyMode, strictMode })
+  }, [text, lazyMode, strictMode, timerDuration])
 
-  // Statistike za live prikaz tokom testa
   const liveStats = useCallback((): Partial<ScoringResult> => {
     if (!state.startTime || state.cursor === 0) return {}
     const now = state.endTime ?? Date.now()
@@ -249,11 +337,16 @@ export function useTypingEngine({ text, lazyMode = false, onFinish }: UseTypingE
     })
   }, [state])
 
+  // Blokiran unos u strict modu — ima greška bilo gdje iza kursora
+  const spaceBlocked = state.strictMode && state.chars.slice(0, state.cursor).some(c => c.state === 'incorrect')
+
   return {
     chars: state.chars,
     cursor: state.cursor,
     status: state.status,
     errors: state.errors,
+    timeLeft,
+    spaceBlocked,
     handleKeyDown,
     reset,
     liveStats,

@@ -3,21 +3,23 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { Menu, X, LogOut, User, Settings, Shield } from 'lucide-react'
+import { Menu, X, LogOut, User, Settings, Shield, Sun, Moon } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
+import { useTheme } from '@/components/ThemeProvider'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 const NAV_LINKS = [
   { href: '/vezbaj/latinica', label: 'Vežbaj' },
-  { href: '/rank/latinica', label: 'RANK' },
+  { href: '/rank/latinica', label: 'Rang test' },
   { href: '/rang-lista/latinica', label: 'Rang lista' },
 ]
 
 export function Header() {
   const pathname = usePathname()
   const router = useRouter()
+  const { theme, toggle: toggleTheme } = useTheme()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -90,6 +92,13 @@ export function Header() {
 
         {/* Desktop auth */}
         <div className="hidden md:flex items-center gap-3">
+          <button
+            onClick={toggleTheme}
+            className="p-1.5 rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
+            aria-label={theme === 'light' ? 'Prebaci na tamnu temu' : 'Prebaci na svetlu temu'}
+          >
+            {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+          </button>
           {user ? (
             <div className="relative">
               <button
