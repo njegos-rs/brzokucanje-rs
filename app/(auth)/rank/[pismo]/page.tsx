@@ -34,24 +34,24 @@ export default async function RankPismoPage({ params }: Props) {
   const script = pismo as Script
   const today = new Date().toISOString().slice(0, 10)
 
-  // Proveri daily limit — koje kategorije su već iskorišćene danas
-  const { data: usedScores } = await supabase
+  // Proveri da li je korisnik već odigrao danas za ovo pismo (jedan pokušaj ukupno)
+  const { data: usedScore } = await supabase
     .from('scores')
-    .select('category')
+    .select('id')
     .eq('user_id', user.id)
     .eq('script', script)
     .eq('mode', 'rank')
     .gte('created_at', `${today}T00:00:00`)
+    .limit(1)
+    .single()
 
-  const usedCategories = new Set(
-    ((usedScores ?? []) as { category: string }[]).map((s) => s.category)
-  )
+  const alreadyPlayed = !!usedScore
 
   return (
     <RankClient
       pismo={script}
       userId={user.id}
-      usedCategories={Array.from(usedCategories)}
+      alreadyPlayed={alreadyPlayed}
     />
   )
 }

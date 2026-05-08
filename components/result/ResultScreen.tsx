@@ -13,7 +13,7 @@ interface Props {
   result: ScoringResult
   wpmHistory: WpmSnapshot[]
   isNewPb?: boolean
-  onRetry: () => void
+  onRetry?: () => void
   onNext: () => void
   testMeta?: {
     script: string
@@ -106,14 +106,16 @@ export function ResultScreen({ result, wpmHistory, isNewPb, onRetry, onNext, tes
 
       {/* Action dugmad */}
       <div className="flex justify-center gap-3">
-        <button
-          onClick={onRetry}
-          className="flex items-center gap-2 rounded-md border border-[var(--border)] px-4 py-2.5 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
-          title="Tab"
-        >
-          <RotateCcw className="h-4 w-4" />
-          Ponovi
-        </button>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="flex items-center gap-2 rounded-md border border-[var(--border)] px-4 py-2.5 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
+            title="Tab"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Ponovi
+          </button>
+        )}
         <button
           onClick={onNext}
           className="flex items-center gap-2 rounded-md bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-[var(--accent-foreground)] hover:opacity-90 transition-opacity"
