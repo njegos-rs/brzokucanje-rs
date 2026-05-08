@@ -132,8 +132,63 @@ export type Database = {
         Update: never
       }
     }
-    Views: Record<string, never>
-    Functions: Record<string, never>
+    Views: {
+      v_daily_leaderboard: {
+        Row: {
+          id: string
+          user_id: string
+          username: string
+          script: 'cirilica' | 'latinica' | 'easy'
+          category: string
+          wpm: number
+          raw_wpm: number
+          accuracy: number
+          score: number
+          created_at: string
+          daily_rank: number
+        }
+      }
+      v_weekly_leaderboard: {
+        Row: {
+          user_id: string
+          username: string
+          script: 'cirilica' | 'latinica' | 'easy'
+          category: string
+          wpm: number
+          score: number
+          accuracy: number
+          test_count: number
+          weekly_rank: number
+        }
+      }
+      v_monthly_leaderboard: {
+        Row: {
+          user_id: string
+          username: string
+          script: 'cirilica' | 'latinica' | 'easy'
+          category: string
+          wpm: number
+          score: number
+          accuracy: number
+          test_count: number
+          monthly_rank: number
+        }
+      }
+    }
+    Functions: {
+      ban_user: {
+        Args: { p_admin_id: string; p_user_id: string; p_reason: string }
+        Returns: void
+      }
+      unban_user: {
+        Args: { p_admin_id: string; p_user_id: string }
+        Returns: void
+      }
+      generate_daily_texts: {
+        Args: { p_date?: string }
+        Returns: void
+      }
+    }
     Enums: Record<string, never>
   }
 }

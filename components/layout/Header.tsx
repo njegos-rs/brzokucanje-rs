@@ -10,6 +10,7 @@ import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 const NAV_LINKS = [
   { href: '/vezbaj/latinica', label: 'Vežbaj' },
+  { href: '/rank/latinica', label: 'RANK' },
   { href: '/rang-lista/latinica', label: 'Rang lista' },
 ]
 

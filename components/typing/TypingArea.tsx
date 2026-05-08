@@ -9,9 +9,10 @@ interface Props {
   cursor: number
   status: 'idle' | 'running' | 'finished'
   onKeyDown: (e: KeyboardEvent) => void
+  userSelectNone?: boolean
 }
 
-export function TypingArea({ chars, cursor, status, onKeyDown }: Props) {
+export function TypingArea({ chars, cursor, status, onKeyDown, userSelectNone }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Fokus na container kad se klikne bilo gde na stranici
@@ -44,6 +45,7 @@ export function TypingArea({ chars, cursor, status, onKeyDown }: Props) {
         'font-mono text-xl leading-relaxed tracking-wide',
         'focus:ring-2 focus:ring-[var(--accent)]/30',
         status === 'finished' && 'opacity-60 pointer-events-none',
+        userSelectNone && 'select-none',
       )}
       aria-label="Oblast za kucanje"
       aria-live="off"

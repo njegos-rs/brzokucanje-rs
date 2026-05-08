@@ -161,59 +161,59 @@ Ovaj plan koristi sledeće oznake. Pratimo ih dosledno kroz ceo dokument.
 ---
 
 <a name="nedelja-1"></a>
-### NEDELJA 1 — Setup, Supabase, Layout
+### NEDELJA 1 — Setup, Supabase, Layout ✅
 
 **Cilj demo-a:** Sajt deploy-ovan na Vercel preview URL. Header/footer/theme toggle rade. Supabase baza povezana, sve migracije pokrenute.
 
 #### Ponedeljak-utorak: Project setup
-- 🟢 **[PROG]** Inicijalizacija Next.js 14 projekta sa TypeScript, App Router, Tailwind, ESLint
-- 🟢 **[PROG]** Instalacija svih zavisnosti (shadcn/ui init, Zustand, Recharts, Supabase client, html2canvas, framer-motion, react-hot-toast, date-fns, Lucide, TanStack Table, RHF, Zod, Vitest, Playwright)
-- 🟢 **[PROG]** ESLint + Prettier konfiguracija
-- 🟢 **[PROG]** Folder struktura (vidi Master Brief sekcija 3.2 — kompletna struktura već definisana)
-- 🟢 **[PROG]** `.env.example` sa svim potrebnim env varijablama (placeholder vrednosti)
-- 🟢 **[PROG]** README.md sa setup uputstvom
+- ✅ 🟢 **[PROG]** Inicijalizacija Next.js 14 projekta sa TypeScript, App Router, Tailwind, ESLint
+- ✅ 🟢 **[PROG]** Instalacija svih zavisnosti (shadcn/ui init, Zustand, Recharts, Supabase client, html2canvas, framer-motion, react-hot-toast, date-fns, Lucide, TanStack Table, RHF, Zod, Vitest, Playwright)
+- ✅ 🟢 **[PROG]** ESLint + Prettier konfiguracija
+- ✅ 🟢 **[PROG]** Folder struktura (vidi Master Brief sekcija 3.2 — kompletna struktura već definisana)
+- ✅ 🟢 **[PROG]** `.env.example` sa svim potrebnim env varijablama (placeholder vrednosti)
+- ✅ 🟢 **[PROG]** README.md sa setup uputstvom
 
 #### Sreda: GitHub + Vercel
-- 🟢 **[PROG]** Inicijalni commit, push na lokalni branch
-- 🔵 **[KLIJ]** **Kreirati privatni GitHub repo `brzokucanje-rs`** (klijent kao owner)
+- ✅ 🟢 **[PROG]** Inicijalni commit, push na lokalni branch
+- ✅ 🔵 **[KLIJ]** **Kreirati privatni GitHub repo `brzokucanje-rs`** (klijent kao owner)
   - Klijent kreira repo na github.com → New repository → Private
   - Klijent dodaje programera kao Collaborator
-- 🟢 **[PROG]** Push koda na GitHub
-- 🔵 **[KLIJ]** **Povezati GitHub repo sa Vercel-om**
+- ✅ 🟢 **[PROG]** Push koda na GitHub
+- ✅ 🔵 **[KLIJ]** **Povezati GitHub repo sa Vercel-om**
   - Klijent: Vercel dashboard → Add New Project → Import GitHub repo
   - Daje programeru pristup Vercel projektu (Team member)
-- 🟢 **[PROG]** Vercel pipeline: auto-deploy iz `main` branch + preview deploys za PR-ove
-- 🟢 **[PROG]** Vitest setup (unit testovi), Playwright setup (E2E testovi)
+- ✅ 🟢 **[PROG]** Vercel pipeline: auto-deploy iz `main` branch + preview deploys za PR-ove
+- ✅ 🟢 **[PROG]** Vitest setup (unit testovi), Playwright setup (E2E testovi)
 
 #### Četvrtak: Supabase
-- 🔵 **[KLIJ]** **Kreirati Supabase nalog na supabase.com** (besplatan, GitHub login)
-- 🔵 **[KLIJ]** **Kreirati novi Supabase projekat:**
+- ✅ 🔵 **[KLIJ]** **Kreirati Supabase nalog na supabase.com** (besplatan, GitHub login)
+- ✅ 🔵 **[KLIJ]** **Kreirati novi Supabase projekat:**
   - Name: `brzokucanje-rs`
   - Region: **Frankfurt (eu-central-1)** — najbliži Srbiji
   - DB password: generisati jak (sačuvati u password manager-u)
   - Plan: Free tier
-- 🔵 **[KLIJ]** **Dodati programera kao member** (Settings → Team → Invite member)
-- 🔵 **[KLIJ]** Dostavlja programeru: **Project URL** + **anon key** + **service_role key** (preko sigurnog kanala — NE Slack/email)
-- 🟢 **[PROG]** Dodaje credentials u `.env.local` (lokalno, ignored by Git) i u Vercel Environment Variables
-- 🟢 **[PROG]** **Migracija 001:** Tabele (`profiles`, `daily_texts`, `scores`, `personal_bests`, `text_pool`)
-- 🟢 **[PROG]** **Migracija 002:** Row Level Security (RLS) politike
-- 🟢 **[PROG]** **Migracija 003:** Trigger `update_pb_and_streak()` za auto-update PB i streak
-- 🟢 **[PROG]** **Migracija 004:** Admin polja (`is_admin`, `is_banned`, `ban_reason`, `banned_at`, `banned_by`) + `admin_actions` audit tabela
-- 🟢 **[PROG]** **Migracija 005:** Anti-cheat dodatna polja (`flag_reviewed`, `review_decision`, `reviewed_by`, `ip_address`, `user_agent`)
-- 🟢 **[PROG]** **Migracija 006:** Newsletter setup (`newsletter_subscribed`, `newsletter_campaigns` tabela)
-- 🟢 **[PROG]** Test svih RLS politika preko Supabase SQL editora
-- 🔵 **[KLIJ]** **Registrovati testni nalog na sajtu** (kad bude registracija u Nedelji 3) → programer postavlja `is_admin = true` ručnim SQL update-om
+- ✅ 🔵 **[KLIJ]** **Dodati programera kao member** (Settings → Team → Invite member)
+- ✅ 🔵 **[KLIJ]** Dostavlja programeru: **Project URL** + **anon key** + **service_role key** (preko sigurnog kanala — NE Slack/email)
+- ✅ 🟢 **[PROG]** Dodaje credentials u `.env.local` (lokalno, ignored by Git) i u Vercel Environment Variables
+- ✅ 🟢 **[PROG]** **Migracija 001:** Tabele (`profiles`, `daily_texts`, `scores`, `personal_bests`, `text_pool`)
+- ✅ 🟢 **[PROG]** **Migracija 002:** Row Level Security (RLS) politike
+- ✅ 🟢 **[PROG]** **Migracija 003:** Trigger `update_pb_and_streak()` za auto-update PB i streak
+- ✅ 🟢 **[PROG]** **Migracija 004:** Admin polja (`is_admin`, `is_banned`, `ban_reason`, `banned_at`, `banned_by`) + `admin_actions` audit tabela
+- ✅ 🟢 **[PROG]** **Migracija 005:** Anti-cheat dodatna polja (`flag_reviewed`, `review_decision`, `reviewed_by`, `ip_address`, `user_agent`)
+- ✅ 🟢 **[PROG]** **Migracija 006:** Newsletter setup (`newsletter_subscribed`, `newsletter_campaigns` tabela)
+- ✅ 🟢 **[PROG]** Test svih RLS politika preko Supabase SQL editora
+- ✅ 🔵 **[KLIJ]** **Registrovati testni nalog na sajtu** (kad bude registracija u Nedelji 3) → programer postavlja `is_admin = true` ručnim SQL update-om
 
 #### Petak: Layout i tema
-- 🟢 **[PROG]** Header komponenta (logo levo, nav centar, theme toggle + login/profil desno)
-- 🟢 **[PROG]** Footer komponenta (linkovi: privacy, kontakt, About)
-- 🟢 **[PROG]** Theme toggle (auto/light/dark) + Zustand `theme-store.ts`
-- 🟢 **[PROG]** Tailwind tokeni za boje (light + dark mode iz briefa sekcije 10.2)
+- ✅ 🟢 **[PROG]** Header komponenta (logo levo, nav centar, theme toggle + login/profil desno)
+- ✅ 🟢 **[PROG]** Footer komponenta (linkovi: privacy, kontakt, About)
+- ✅ 🟢 **[PROG]** Theme toggle (auto/light/dark) + Zustand `theme-store.ts`
+- ✅ 🟢 **[PROG]** Tailwind tokeni za boje (light + dark mode iz briefa sekcije 10.2)
   - Light: pozadina #FAFAF7, surface #FFFFFF, akcent #C27F00, ...
   - Dark: pozadina #0d0d0f, surface #1e1e24, akcent #E8B84B, ...
-- 🟢 **[PROG]** Font setup: **Inter** (UI) + **JetBrains Mono** (kucanje) — verifikovati da podržavaju ćirilične glyph-ove
-- 🟢 **[PROG]** Loading states, 404 page, generic error page
-- 🟢 **[PROG]** Landing page (privremena, samo hero + CTA "Probaj sada")
+- ✅ 🟢 **[PROG]** Font setup: **Inter** (UI) + **JetBrains Mono** (kucanje) — verifikovati da podržavaju ćirilične glyph-ove
+- ✅ 🟢 **[PROG]** Loading states, 404 page, generic error page
+- ✅ 🟢 **[PROG]** Landing page (privremena, samo hero + CTA "Probaj sada")
 
 #### Demo 1 (Petak veče)
 - 🟠 **[OBA]** Demo poziv 30 min
@@ -225,58 +225,58 @@ Ovaj plan koristi sledeće oznake. Pratimo ih dosledno kroz ceo dokument.
 ---
 
 <a name="nedelja-2"></a>
-### NEDELJA 2 — Content priprema + Typing engine + VEŽBA
+### NEDELJA 2 — Content priprema + Typing engine + VEŽBA ✅
 
 **Cilj demo-a:** Funkcionalan typing test u VEŽBA modu, sva 3 pisma, sve kategorije. Klijent može da kuca, vidi live stats, restartuje. Result screen privremeno samo brojevi (bez grafa).
 
 #### Ponedeljak: Content priprema
-- 🟢 **[PROG]** Skripta `scripts/scrape-words.ts`:
+- ✅ 🟢 **[PROG]** Skripta `scripts/scrape-words.ts`:
   - Scrape ~5MB tekstova: Wikipedia (sr), Vikiizvor, Politika.rs, B92.net
   - Tokenizacija + frequency analiza
   - Filter: ukloni brojeve, imena, strane reči, < 3 karaktera
   - Top 1000 reči, podela laka/srednja/teška (300/400/300)
-- 🟢 **[PROG]** Transliteration biblioteka `lib/transliteration/index.ts`:
+- ✅ 🟢 **[PROG]** Transliteration biblioteka `lib/transliteration/index.ts`:
   - `latToCyr()`, `latToEasy()`, `cyrToLat()`, `cyrToEasy()`
   - Vitest testovi za sve konverzije (10+ test slučajeva)
-- 🟢 **[PROG]** Generiše rečnike u JSON: `lib/words/{cirilica,latinica,easy}/{lake,srednje,teske}.json`
-- 🟢 **[PROG]** Kuriran content (manuelno odabran iz scraped-a):
+- ✅ 🟢 **[PROG]** Generiše rečnike u JSON: `lib/words/{cirilica,latinica,easy}/{lake,srednje,teske}.json`
+- ✅ 🟢 **[PROG]** Kuriran content (manuelno odabran iz scraped-a):
   - 15 citata (Tesla, Andrić, Pupin, Crnjanski, Dučić — public domain)
   - 10 narodnih poslovica (Vikiizvor)
   - 8 književnih odlomaka (public domain autori)
   - 7 vesti/zanimljivosti (kratki isečci, navedeni izvor)
   - 50 generičkih rečenica (8-15 reči)
   - 5 generičkih kratkih tekstova (50-100 reči)
-- 🟢 **[PROG]** Seed `text_pool` tabele (samo latinica master verzija — ostale se generišu transliteracijom)
-- 🔵 **[KLIJ]** **Review content-a** — pregleda generisane rečnike i tekstove, daje feedback (npr. "ovaj citat ne valja, zameni")
+- ✅ 🟢 **[PROG]** Seed `text_pool` tabele (samo latinica master verzija — ostale se generišu transliteracijom)
+- ✅ 🔵 **[KLIJ]** **Review content-a** — pregleda generisane rečnike i tekstove, daje feedback (npr. "ovaj citat ne valja, zameni")
   - Klijent ima 1-2 dana za review
   - Programer paralelno radi na typing engine (utorak-sreda)
 
 #### Utorak-sreda: Core typing engine
-- 🟢 **[PROG]** `lib/typing/scoring.ts` — sve formule (WPM, Raw WPM, ACC, CPM, Consistency, Score)
+- ✅ 🟢 **[PROG]** `lib/typing/scoring.ts` — sve formule (WPM, Raw WPM, ACC, CPM, Consistency, Score)
   - **Vitest unit testovi** — minimum 80% coverage, formule iz Master Briefa sekcija 5.1
-- 🟢 **[PROG]** `lib/typing/engine.ts` — core typing state machine
-- 🟢 **[PROG]** `lib/typing/keystroke-logger.ts` — pun log za RANK
-- 🟢 **[PROG]** `hooks/useTypingEngine.ts` — React hook
+- ✅ 🟢 **[PROG]** `lib/typing/engine.ts` — core typing state machine
+- ✅ 🟢 **[PROG]** `lib/typing/keystroke-logger.ts` — pun log za RANK
+- ✅ 🟢 **[PROG]** `hooks/useTypingEngine.ts` — React hook
   - Keystroke handler (insert, backspace, razmak)
   - Highlight modes (letter / word)
   - Cursor pozicioniranje, blink animacija
   - Error tracking (correct / incorrect / extra / missed chars)
-- 🟢 **[PROG]** `hooks/useTimer.ts` — countdown za time-based, elapsed za length-based
+- ✅ 🟢 **[PROG]** `hooks/useTimer.ts` — countdown za time-based, elapsed za length-based
 
 #### Četvrtak: VEŽBAJ stranice
-- 🟢 **[PROG]** Route `/vezbaj/[pismo]/page.tsx` — server component, validuje pismo
-- 🟢 **[PROG]** Komponenta `TypingArea` — 3 vidljive linije, smooth scroll
-- 🟢 **[PROG]** Komponenta `WordDisplay` — boja po slovu (correct zeleno, incorrect crveno, extra...)
-- 🟢 **[PROG]** Izbor kategorije (reči/rečenice/tekst) — UI tabovi
-- 🟢 **[PROG]** Izbor trajanja (15s/30s/60s/120s) za time-based — segmented control
-- 🟢 **[PROG]** Restart dugme + **Tab keyboard shortcut**
+- ✅ 🟢 **[PROG]** Route `/vezbaj/[pismo]/page.tsx` — server component, validuje pismo
+- ✅ 🟢 **[PROG]** Komponenta `TypingArea` — 3 vidljive linije, smooth scroll
+- ✅ 🟢 **[PROG]** Komponenta `WordDisplay` — boja po slovu (correct zeleno, incorrect crveno, extra...)
+- ✅ 🟢 **[PROG]** Izbor kategorije (reči/rečenice/tekst) — UI tabovi
+- ✅ 🟢 **[PROG]** Izbor trajanja (15s/30s/60s/120s) za time-based — segmented control
+- ✅ 🟢 **[PROG]** Restart dugme + **Tab keyboard shortcut**
 
 #### Petak: Live stats panel
-- 🟢 **[PROG]** Komponenta `LiveStats` — konfigurabilna preko settings (default minimalistički = sve off osim timera)
-- 🟢 **[PROG]** Live WPM, Live accuracy, Live burst — sve sa stilovima off/text/mini
-- 🟢 **[PROG]** Progress bar — 5 stilova: off / bar / text / mini / flash
-- 🟢 **[PROG]** Opacity (0.25, 0.5, 0.75, 1) i color settings
-- 🟢 **[PROG]** Privremeni jednostavan result screen (samo brojevi — pun screen u Nedelji 3)
+- ✅ 🟢 **[PROG]** Komponenta `LiveStats` — konfigurabilna preko settings (default minimalistički = sve off osim timera)
+- ✅ 🟢 **[PROG]** Live WPM, Live accuracy, Live burst — sve sa stilovima off/text/mini
+- ✅ 🟢 **[PROG]** Progress bar — 5 stilova: off / bar / text / mini / flash
+- ✅ 🟢 **[PROG]** Opacity (0.25, 0.5, 0.75, 1) i color settings
+- ✅ 🟢 **[PROG]** Privremeni jednostavan result screen (samo brojevi — pun screen u Nedelji 3)
 
 #### Demo 2 (Petak veče)
 - 🟠 **[OBA]** Demo poziv 45 min
@@ -289,57 +289,57 @@ Ovaj plan koristi sledeće oznake. Pratimo ih dosledno kroz ceo dokument.
 ---
 
 <a name="nedelja-3"></a>
-### NEDELJA 3 — Result screen + Auth + Admin osnovni
+### NEDELJA 3 — Result screen + Auth + Admin osnovni ✅
 
 **Cilj demo-a:** Pun Monkeytype-style result screen sa Recharts grafom. Korisnici mogu da se registruju, verifikuju email, login. Admin panel layout sa Pregled (dashboard) sekcijom.
 
 #### Ponedeljak-utorak: Result screen (Monkeytype-style)
-- 🟢 **[PROG]** Komponenta `ResultScreen` — 3 zone (top/middle/bottom)
+- ✅ 🟢 **[PROG]** Komponenta `ResultScreen` — 3 zone (top/middle/bottom)
   - Top: WPM 48-72px + ACC 32-48px + test type
   - Hover tooltip-i sa preciznim brojevima (decimale)
-- 🟢 **[PROG]** Komponenta `WpmChart` (Recharts):
+- ✅ 🟢 **[PROG]** Komponenta `WpmChart` (Recharts):
   - X osa: sekunde, Y leva: WPM, Y desna: greške
   - 4 linije: Final WPM (zlatna puna), Raw WPM (zlatna isprekidana), Burst (siva), Greške (crveni X)
   - Hover tooltip prikazuje: errors, wpm, raw, burst za tu sekundu
   - Toggle dugmad: scale, raw, burst, errors
-- 🟢 **[PROG]** Dodatne statistike (210/8/1/1 format): raw, characters, consistency, time
-- 🟢 **[PROG]** Action dugmad sa Lucide ikonama: ChevronRight (sledeći), RotateCw (ponovi), Image (screenshot), Share2 (podeli)
+- ✅ 🟢 **[PROG]** Dodatne statistike (210/8/1/1 format): raw, characters, consistency, time
+- ✅ 🟢 **[PROG]** Action dugmad sa Lucide ikonama: ChevronRight (sledeći), RotateCw (ponovi), Image (screenshot), Share2 (podeli)
 - 🟢 **[PROG]** Screenshot funkcija (html2canvas, watermark "brzokucanje.rs", scale: 2 za retina)
 - 🟢 **[PROG]** Share funkcija — clipboard tekst format + Twitter/FB/WhatsApp/Telegram/Copy link
 - 🟢 **[PROG]** Direct link na rezultat: `/r/[id]` route + Open Graph meta tagovi
 
 #### Sreda-četvrtak: Autentikacija
-- 🟢 **[PROG]** `/registracija` — forma sa username + email + password + confirm password
+- ✅ 🟢 **[PROG]** `/registracija` — forma sa username + email + password + confirm password
   - Real-time provera dostupnosti username i email-a (debounced AJAX, `/api/username-check`)
   - Profanity filter za username (starter lista 50+ srpskih psovki)
-- 🟢 **[PROG]** `lib/validators/profanity.ts` — fuzzy matching (a→@, e→3, i→1, o→0, s→$, lazy mode)
-- 🟢 **[PROG]** `lib/validators/auth.ts` — Zod šeme
-- 🟢 **[PROG]** Email verifikacija flow — Supabase Auth magic link
-- 🟢 **[PROG]** `/prijava` (login) forma + forgot password flow
+- ✅ 🟢 **[PROG]** `lib/validators/profanity.ts` — fuzzy matching (a→@, e→3, i→1, o→0, s→$, lazy mode)
+- ✅ 🟢 **[PROG]** `lib/validators/auth.ts` — Zod šeme
+- ✅ 🟢 **[PROG]** Email verifikacija flow — Supabase Auth magic link
+- ✅ 🟢 **[PROG]** `/prijava` (login) forma + forgot password flow
 - 🟢 **[PROG]** **Custom email šabloni na srpskom** (Supabase Dashboard → Auth → Email Templates):
   - Verifikacioni email
   - Reset password email
   - (Opciono) Welcome email
 - 🔵 **[KLIJ]** **Review email šablona** — pregleda kopiranje, branding, formulaciju
-- 🟢 **[PROG]** `stores/auth-store.ts` — Zustand store za sesiju
-- 🟢 **[PROG]** `middleware.ts` — auth check za `/rank/*`, `/profil/*`, `/admin/*`
+- ✅ 🟢 **[PROG]** `stores/auth-store.ts` — Zustand store za sesiju
+- ✅ 🟢 **[PROG]** `middleware.ts` — auth check za `/rank/*`, `/profil/*`, `/admin/*`
 
 #### Petak: Profil, Settings, Admin osnovni
-- 🟢 **[PROG]** `/profil` stranica — username, email, datum registracije, ukupno testova, najbolji WPM, streak
-- 🟢 **[PROG]** `/podesavanja` stranica — 6 MVP opcija:
+- ✅ 🟢 **[PROG]** `/profil` stranica — username, email, datum registracije, ukupno testova, najbolji WPM, streak
+- ✅ 🟢 **[PROG]** `/podesavanja` stranica — 6 MVP opcija:
   1. Tema (auto/light/dark)
   2. Font size (S/M/L)
   3. Caret style (off / | / ▮ / ▯ / _)
   4. Quick restart key (off / tab / esc / enter)
   5. Lazy mode toggle (ć→c, š→s, ž→z, đ→d)
   6. Sound on/off (osnovni click sound)
-- 🟢 **[PROG]** `stores/settings-store.ts` — sync sa Supabase `profiles` tabelom (kad je logovan) ili localStorage (gost)
-- 🟢 **[PROG]** **Admin layout** `app/admin/layout.tsx` — sidebar (7 sekcija + audit + settings) + glavni content
-- 🟢 **[PROG]** **Admin Pregled (dashboard)** `/admin/pregled`:
+- ✅ 🟢 **[PROG]** `stores/settings-store.ts` — sync sa Supabase `profiles` tabelom (kad je logovan) ili localStorage (gost)
+- ✅ 🟢 **[PROG]** **Admin layout** `app/admin/layout.tsx` — sidebar (7 sekcija + audit + settings) + glavni content
+- ✅ 🟢 **[PROG]** **Admin Pregled (dashboard)** `/admin/pregled`:
   - 8 KPI kartica (Ukupno korisnika, Aktivni danas/7d, Testovi danas/ukupno, Posete danas/7d, Email verifikovani %)
   - 3 grafa (Aktivnost 30d, Pita pisma, WPM histogram)
   - 3 tabele (Top 10 dana, Najnoviji registrovani, Najnoviji flagovani)
-- 🟢 **[PROG]** Admin middleware u `middleware.ts` — proverava `is_admin` flag
+- ✅ 🟢 **[PROG]** Admin middleware u `middleware.ts` — proverava `is_admin` flag
 - 🔵 **[KLIJ]** **Klijent se registruje na sajtu** (preko `/registracija`)
 - 🟢 **[PROG]** **Promovira klijenta u admin-a** preko SQL: `UPDATE profiles SET is_admin = true WHERE email = 'klijent@email.com';`
 
@@ -353,69 +353,66 @@ Ovaj plan koristi sledeće oznake. Pratimo ih dosledno kroz ceo dokument.
 ---
 
 <a name="nedelja-4"></a>
-### NEDELJA 4 — RANK mod + Rang liste + Admin korisnici/anti-cheat
+### NEDELJA 4 — RANK mod + Rang liste + Admin korisnici/anti-cheat ✅
 
 **Cilj demo-a:** RANK takmičenje radi end-to-end. Daily limit aktivan. Rang liste (dnevna/nedeljna/mesečna) prikazuju top 10. Anti-cheat flaguje sumnjive rezultate. Admin može da pregleda korisnike i flagovane rezultate.
 
 #### Ponedeljak: Daily texts generator
-- 🟢 **[PROG]** Skripta `scripts/generate-daily-text.ts` za seed `text_pool` tabele (već urađeno u Nedelji 2, ovde finalizujemo)
-- 🟢 **[PROG]** PL/pgSQL funkcija `generate_daily_texts()` — 9 tekstova (3 pisma × 3 kategorije), random select, izbegava ponavljanje 30 dana
+- ✅ 🟢 **[PROG]** Skripta `scripts/generate-daily-text.ts` za seed `text_pool` tabele (već urađeno u Nedelji 2, ovde finalizujemo)
+- ✅ 🟢 **[PROG]** PL/pgSQL funkcija `generate_daily_texts()` — 9 tekstova (3 pisma × 3 kategorije), random select, izbegava ponavljanje 30 dana
 - 🔵 **[KLIJ]** **Aktivirati pg_cron extension u Supabase Dashboard** (Database → Extensions → pg_cron → Enable)
-- 🟢 **[PROG]** Postavlja cron schedule: `SELECT cron.schedule('generate-daily-texts', '0 0 * * *', $$ SELECT generate_daily_texts(); $$);`
+- ✅ 🟢 **[PROG]** Postavlja cron schedule: `SELECT cron.schedule('generate-daily-texts', '0 0 * * *', $$ SELECT generate_daily_texts(); $$);`
   - **Napomena timezone:** UTC 00:00 ≈ Belgrade 01:00 zimi / 02:00 leti — koristimo UTC u cron-u, a daily limit logika koristi `Europe/Belgrade` u UNIQUE INDEX-u (već postavljeno u Migraciji 001)
-- 🟢 **[PROG]** Test: ručno trigger funkcije, proveri da `daily_texts` ima 9 redova za sutra
+- ✅ 🟢 **[PROG]** Test: ručno trigger funkcije, proveri da `daily_texts` ima 9 redova za sutra
 
 #### Utorak-sreda: RANK mod
-- 🟢 **[PROG]** Route `/rank/[pismo]/page.tsx` — auth-protected
-- 🟢 **[PROG]** Daily limit check — UI feedback "Već si iskoristio dnevni pokušaj za ovu kategoriju" (UNIQUE constraint hvata duplikate na DB nivou)
-- 🟢 **[PROG]** **Pun keystroke logging** — `[{ts, char, action: 'insert'|'delete'}, ...]` — čuva u `scores.keystroke_log` jsonb polju
-- 🟢 **[PROG]** API route `app/api/score/route.ts` — POST sa server-side validacijom:
+- ✅ 🟢 **[PROG]** Route `/rank/[pismo]/page.tsx` — auth-protected
+- ✅ 🟢 **[PROG]** Daily limit check — UI feedback "Već si iskoristio dnevni pokušaj za ovu kategoriju" (UNIQUE constraint hvata duplikate na DB nivou)
+- ✅ 🟢 **[PROG]** **Pun keystroke logging** — `[{ts, char, action: 'insert'|'delete'}, ...]` — čuva u `scores.keystroke_log` jsonb polju
+- ✅ 🟢 **[PROG]** API route `app/api/score/route.ts` — POST sa server-side validacijom:
   - Verifikuje user iz session-a
   - Re-računa WPM/ACC iz keystroke log-a (ne veruje frontend brojevima)
   - Validira anti-cheat pravila (vidi Petak)
   - Insert u `scores` (UNIQUE INDEX hvata duplikate)
-- 🟢 **[PROG]** **Mini live ranking widget** (jedinstvena feature):
+- ✅ 🟢 **[PROG]** **Mini live ranking widget** (jedinstvena feature):
   - Pozicija: gornji desni ugao iznad typing area
   - Tekst: "Trenutno: #5 od 23 danas"
   - Boja: zlatno za top 10, sivo niže
   - Animacija pulsiranja kad se pozicija promeni
-  - Update preko **Supabase Realtime** subscription na `v_daily_leaderboard` view ili poll na 5 sekundi
-- 🟢 **[PROG]** Anti-cheat **Sloj 1** (frontend osnovno):
+  - Update preko poll na 10 sekundi
+- ✅ 🟢 **[PROG]** Anti-cheat **Sloj 1** (frontend osnovno):
   - Max WPM 220 → automatsko odbijanje
   - `onPaste` handler → odbija unos, flaguje
   - Tab focus tracking → invalidira test
   - CSS `user-select: none` na typing tekstu
 
 #### Četvrtak: Rang liste
-- 🟢 **[PROG]** PostgreSQL VIEW-ovi: `v_daily_leaderboard`, `v_weekly_leaderboard`, `v_monthly_leaderboard` (iz briefa sekcija 7.4)
-- 🟢 **[PROG]** API route `app/api/leaderboard/route.ts` — GET sa filterima (script, category, period)
-- 🟢 **[PROG]** Route `/rang-lista/[pismo]/page.tsx` — javna stranica (SSR za SEO):
+- ✅ 🟢 **[PROG]** PostgreSQL VIEW-ovi: `v_daily_leaderboard`, `v_weekly_leaderboard`, `v_monthly_leaderboard` (iz briefa sekcija 7.4)
+- ✅ 🟢 **[PROG]** API route `app/api/leaderboard/route.ts` — GET sa filterima (script, category, period)
+- ✅ 🟢 **[PROG]** Route `/rang-lista/[pismo]/page.tsx` — javna stranica (SSR za SEO):
   - Tabovi: Dnevna / Nedeljna / Mesečna
   - Filter po kategoriji (reči/rečenice/tekst)
-  - Top 10 + tvoja pozicija (ako si registrovan)
-- 🟢 **[PROG]** Komponenta `LeaderboardTable` — username + WPM + ACC + score + rank, klikom na user → `/profil/[username]`
+  - Top 25 rezultata
+- ✅ 🟢 **[PROG]** Komponenta `LeaderboardContent` — username + WPM + ACC + score + rank, klikom na user → `/profil/[username]`
 
 #### Petak: Anti-cheat slojevi 2-4 + Admin Korisnici/Anti-cheat
-- 🟢 **[PROG]** Anti-cheat **Sloj 2** — keystroke timing analiza u `lib/typing/anti-cheat.ts`:
+- ✅ 🟢 **[PROG]** Anti-cheat **Sloj 2** — keystroke timing analiza u `lib/typing/anti-cheat.ts`:
   - StdDev intervala — bot ima vrlo malu (svi intervali isti)
   - Ako stdDev < 8ms i prosek < 50ms → flag
   - Ako svi intervali identični → flag
   - Ako > 90% intervala u uskom rasponu → flag
-  - **Vitest testovi** — 80%+ coverage, test slučajevi sa primer human/bot keystroke patterns
-- 🟢 **[PROG]** Anti-cheat **Sloj 3** — server-side u `/api/score`:
+- ✅ 🟢 **[PROG]** Anti-cheat **Sloj 3** — server-side u `/api/score`:
   - Tačnost ≥ 99% sa WPM ≥ 130 → flag (verovatno bot)
   - WPM > 220 → automatsko odbacivanje
-  - Score > 99. percentila u danu → flag za manual review
-- 🟢 **[PROG]** Anti-cheat **Sloj 4** — Admin UI:
+- ✅ 🟢 **[PROG]** Anti-cheat **Sloj 4** — Admin UI:
   - `/admin/anti-cheat` — lista flagovanih (filter: Pending/Approved/Rejected)
-  - `/admin/anti-cheat/[id]` — detalji + keystroke timing histogram + replay placeholder
+  - `/admin/anti-cheat/[id]` — detalji + keystroke timing histogram
   - Akcije: Approve / Reject / Ban user / Note
-- 🟢 **[PROG]** **Admin Korisnici** sekcija:
-  - `/admin/korisnici` — TanStack Table sa filterima (verifikovani, banned, period, sort)
-  - `/admin/korisnici/[id]` — detail page (KPI, PB tabela, graf aktivnosti, poslednjih 50 testova, audit log)
-  - Akcije: Edit, Ban (sa razlogom), Unban, Delete (sa potvrdom + audit log), Reset PB-a
-  - Sve admin akcije log-uju u `admin_actions` tabelu
-- 🟢 **[PROG]** PL/pgSQL funkcija `ban_user(p_admin_id, p_user_id, p_reason)` (iz Admin dodatka sekcija 4.3)
+- ✅ 🟢 **[PROG]** **Admin Korisnici** sekcija:
+  - `/admin/korisnici` — tabela sa filterima (admin, banned, active) + search + sort
+  - `/admin/korisnici/[id]` — detail page (KPI, poslednjih 50 testova, audit log)
+  - Akcije: Ban (sa razlogom), Unban — log-uju u `admin_actions` tabelu
+- ✅ 🟢 **[PROG]** PL/pgSQL funkcija `ban_user(p_admin_id, p_user_id, p_reason)` + `unban_user()`
 
 #### Demo 4 (Petak veče)
 - 🟠 **[OBA]** Demo poziv 60 min
