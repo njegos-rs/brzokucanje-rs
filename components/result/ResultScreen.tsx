@@ -47,10 +47,10 @@ export function ResultScreen({ result, wpmHistory, isNewPb, onRetry, onNext, tes
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 animate-in fade-in duration-300">
       {/* Top — WPM + ACC */}
-      <div className="mb-8 flex items-end gap-8">
+      <div className="mb-8 flex items-end gap-4 md:gap-8">
         <div>
           <div className="flex items-center gap-3">
-            <p className="font-mono text-7xl font-bold text-[var(--accent)] leading-none">
+            <p className="font-mono text-5xl md:text-7xl font-bold text-[var(--accent)] leading-none">
               {Math.round(result.wpm)}
             </p>
             <AnimatePresence>
@@ -68,7 +68,7 @@ export function ResultScreen({ result, wpmHistory, isNewPb, onRetry, onNext, tes
           <p className="mt-1 text-xs uppercase tracking-widest text-[var(--muted-foreground)]">wpm</p>
         </div>
         <div className="mb-1">
-          <p className="font-mono text-5xl font-bold text-[var(--foreground)] leading-none">
+          <p className="font-mono text-3xl md:text-5xl font-bold text-[var(--foreground)] leading-none">
             {Math.round(result.accuracy)}%
           </p>
           <p className="mt-1 text-xs uppercase tracking-widest text-[var(--muted-foreground)]">tačnost</p>

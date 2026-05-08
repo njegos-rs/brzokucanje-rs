@@ -2,16 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState } from 'react'
 import {
-  LayoutDashboard,
-  Users,
-  FileText,
-  ShieldAlert,
-  BarChart3,
-  MessageSquareWarning,
-  Mail,
-  ClipboardList,
-  Keyboard,
+  LayoutDashboard, Users, FileText, ShieldAlert, BarChart3,
+  MessageSquareWarning, Mail, ClipboardList, Keyboard, Menu, X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -28,38 +22,81 @@ const LINKS = [
 
 export function AdminSidebar() {
   const pathname = usePathname()
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  const NavLinks = () => (
+    <>
+      {LINKS.map(({ href, label, icon: Icon }) => (
+        <Link
+          key={href}
+          href={href}
+          onClick={() => setMobileOpen(false)}
+          className={cn(
+            'flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors',
+            pathname === href || pathname.startsWith(href + '/')
+              ? 'bg-[var(--accent)]/10 text-[var(--accent)] font-medium'
+              : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]',
+          )}
+        >
+          <Icon className="h-4 w-4 shrink-0" />
+          {label}
+        </Link>
+      ))}
+    </>
+  )
 
   return (
-    <aside className="hidden w-56 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:flex flex-col">
-      <div className="flex h-14 items-center gap-2 border-b border-[var(--border)] px-4">
-        <Keyboard className="h-4 w-4 text-[var(--accent)]" />
-        <span className="font-mono text-sm font-semibold text-[var(--accent)]">Admin</span>
-      </div>
-      <nav className="flex-1 py-4">
-        {LINKS.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              'flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors',
-              pathname === href || pathname.startsWith(href + '/')
-                ? 'bg-[var(--accent)]/10 text-[var(--accent)] font-medium'
-                : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]',
-            )}
-          >
-            <Icon className="h-4 w-4 shrink-0" />
-            {label}
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden w-56 shrink-0 border-r border-[var(--border)] bg-[var(--card)] md:flex flex-col">
+        <div className="flex h-14 items-center gap-2 border-b border-[var(--border)] px-4">
+          <Keyboard className="h-4 w-4 text-[var(--accent)]" />
+          <span className="font-mono text-sm font-semibold text-[var(--accent)]">Admin</span>
+        </div>
+        <nav className="flex-1 py-4">
+          <NavLinks />
+        </nav>
+        <div className="border-t border-[var(--border)] p-4">
+          <Link href="/" className="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
+            ← Nazad na sajt
           </Link>
-        ))}
-      </nav>
-      <div className="border-t border-[var(--border)] p-4">
-        <Link
-          href="/"
-          className="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+        </div>
+      </aside>
+
+      {/* Mobile topbar */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex h-12 items-center justify-between border-b border-[var(--border)] bg-[var(--card)] px-4">
+        <div className="flex items-center gap-2">
+          <Keyboard className="h-4 w-4 text-[var(--accent)]" />
+          <span className="font-mono text-sm font-semibold text-[var(--accent)]">Admin</span>
+        </div>
+        <button
+          onClick={() => setMobileOpen((v) => !v)}
+          className="p-1.5 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+          aria-label="Toggle meni"
         >
-          ← Nazad na sajt
-        </Link>
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </div>
-    </aside>
+
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <>
+          <div
+            className="md:hidden fixed inset-0 z-40 bg-black/50"
+            onClick={() => setMobileOpen(false)}
+          />
+          <div className="md:hidden fixed top-12 left-0 bottom-0 z-50 w-56 bg-[var(--card)] border-r border-[var(--border)] flex flex-col overflow-y-auto">
+            <nav className="flex-1 py-4">
+              <NavLinks />
+            </nav>
+            <div className="border-t border-[var(--border)] p-4">
+              <Link href="/" onClick={() => setMobileOpen(false)} className="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
+                ← Nazad na sajt
+              </Link>
+            </div>
+          </div>
+        </>
+      )}
+    </>
   )
 }
