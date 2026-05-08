@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { containsProfanity } from '@/lib/validators/profanity'
+import { containsProfanity, getProfanityListFromDb } from '@/lib/validators/profanity'
 
 export async function GET(request: NextRequest) {
   const username = request.nextUrl.searchParams.get('username')
@@ -9,7 +9,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ available: false, reason: 'too_short' })
   }
 
-  if (containsProfanity(username)) {
+  const profanityList = await getProfanityListFromDb()
+  if (containsProfanity(username, profanityList)) {
     return NextResponse.json({ available: false, reason: 'profanity' })
   }
 
