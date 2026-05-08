@@ -1,19 +1,10 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { VezbaClient } from './VezbaClient'
-import lakeWords from '@/lib/words/latinica/lake.json'
-import lakeWordsCyr from '@/lib/words/cirilica/lake.json'
-import lakeWordsEasy from '@/lib/words/easy/lake.json'
 
 type Script = 'latinica' | 'cirilica' | 'easy'
 
 const VALID_SCRIPTS: Script[] = ['latinica', 'cirilica', 'easy']
-
-const SCRIPT_WORDS: Record<Script, string[]> = {
-  latinica: lakeWords,
-  cirilica: lakeWordsCyr,
-  easy: lakeWordsEasy,
-}
 
 const SCRIPT_META: Record<Script, { title: string; description: string }> = {
   latinica: {
@@ -74,7 +65,6 @@ export default async function VezbaPage({
   }
 
   const script = pismo as Script
-  const initialWords = SCRIPT_WORDS[script]
 
-  return <VezbaClient pismo={script} initialWords={initialWords} />
+  return <VezbaClient pismo={script} />
 }
