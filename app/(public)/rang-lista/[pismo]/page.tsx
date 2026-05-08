@@ -16,12 +16,27 @@ interface Props {
   params: Promise<{ pismo: string }>
 }
 
+const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://brzokucanje.rs'
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { pismo } = await params
   if (!VALID_SCRIPTS.includes(pismo as Script)) return {}
+  const script = pismo as Script
   return {
-    title: `Rang lista — ${SCRIPT_LABELS[pismo as Script]} | brzokucanje.rs`,
-    description: `Dnevna, nedeljna i mesečna rang lista za ${SCRIPT_LABELS[pismo as Script]} na brzokucanje.rs`,
+    title: `Rang lista — ${SCRIPT_LABELS[script]}`,
+    description: `Dnevna, nedeljna i mesečna rang lista za ${SCRIPT_LABELS[script]} na brzokucanje.rs`,
+    alternates: {
+      canonical: `${base}/rang-lista/${pismo}`,
+      languages: {
+        'sr-Latn': `${base}/rang-lista/latinica`,
+        'sr-Cyrl': `${base}/rang-lista/cirilica`,
+      },
+    },
+    openGraph: {
+      title: `Rang lista — ${SCRIPT_LABELS[script]} | Brzokucanje.rs`,
+      description: `Top rezultati u RANK modu za ${SCRIPT_LABELS[script]}.`,
+      url: `${base}/rang-lista/${pismo}`,
+    },
   }
 }
 

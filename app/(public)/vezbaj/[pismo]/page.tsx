@@ -34,6 +34,8 @@ export async function generateStaticParams() {
   return VALID_SCRIPTS.map((pismo) => ({ pismo }))
 }
 
+const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://brzokucanje.rs'
+
 export async function generateMetadata({
   params,
 }: {
@@ -42,7 +44,22 @@ export async function generateMetadata({
   const { pismo } = await params
   if (!VALID_SCRIPTS.includes(pismo as Script)) return {}
   const meta = SCRIPT_META[pismo as Script]
-  return { title: meta.title, description: meta.description }
+  return {
+    title: meta.title,
+    description: meta.description,
+    alternates: {
+      canonical: `${base}/vezbaj/${pismo}`,
+      languages: {
+        'sr-Latn': `${base}/vezbaj/latinica`,
+        'sr-Cyrl': `${base}/vezbaj/cirilica`,
+      },
+    },
+    openGraph: {
+      title: meta.title,
+      description: meta.description,
+      url: `${base}/vezbaj/${pismo}`,
+    },
+  }
 }
 
 export default async function VezbaPage({
