@@ -65,13 +65,13 @@ export function Footer() {
             <div className="flex flex-col gap-2">
               <p className="text-xs font-medium text-[var(--foreground)]">Ostalo</p>
               <Link
-                href="/privatnost"
+                href="/politika-privatnosti"
                 className="text-xs text-[var(--muted-foreground)] hover:text-[var(--accent)] transition-colors"
               >
-                Privatnost
+                Politika privatnosti
               </Link>
               <Link
-                href="/uslovi"
+                href="/uslovi-koriscenja"
                 className="text-xs text-[var(--muted-foreground)] hover:text-[var(--accent)] transition-colors"
               >
                 Uslovi korišćenja

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
+import { CookieConsent } from '@/components/CookieConsent'
 import './globals.css'
 
 const inter = Inter({
@@ -98,6 +99,7 @@ export default function RootLayout({
             },
           }}
         />
+        <CookieConsent />
       </body>
     </html>
   )
