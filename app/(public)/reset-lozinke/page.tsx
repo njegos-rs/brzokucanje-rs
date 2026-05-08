@@ -38,8 +38,10 @@ function ResetContent() {
       setServerError(error.message)
       return
     }
+    // Odjavi korisnika nakon reseta — mora da se prijavi sa novom lozinkom
+    await supabase.auth.signOut()
     setDone(true)
-    setTimeout(() => router.push('/'), 2000)
+    setTimeout(() => router.push('/prijava'), 2000)
   }
 
   return (
