@@ -36,7 +36,14 @@ export default async function ProfilPage() {
   const pbs = (pbRes.data ?? []) as PersonalBest[]
   const recentScores = (scoresRes.data ?? []) as Score[]
 
-  const totalTests = recentScores.length
+  const { data: allScoresRes } = await supabase
+    .from('scores')
+    .select('duration_seconds')
+    .eq('user_id', user.id)
+
+  const allScores = allScoresRes ?? []
+  const totalTests = allScores.length
+  const totalMinutes = Math.round(allScores.reduce((a, s) => a + (s.duration_seconds ?? 0), 0) / 60)
   const bestWpm = pbs.length > 0 ? Math.max(...pbs.map((p) => p.best_wpm)) : 0
 
   const SCRIPT_LABELS: Record<string, string> = { latinica: 'Latinica', cirilica: 'Ćirilica', easy: 'Easy' }
@@ -79,12 +86,12 @@ export default async function ProfilPage() {
         </div>
         <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-center">
           <Flame className="mx-auto mb-2 h-5 w-5 text-orange-500" />
-          <p className="font-mono text-2xl font-bold text-[var(--foreground)]">0</p>
+          <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{profile?.streak_current ?? 0}</p>
           <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Streak dana</p>
         </div>
         <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-center">
           <Clock className="mx-auto mb-2 h-5 w-5 text-[var(--muted-foreground)]" />
-          <p className="font-mono text-2xl font-bold text-[var(--foreground)]">—</p>
+          <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{totalMinutes}</p>
           <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Minuta</p>
         </div>
       </div>

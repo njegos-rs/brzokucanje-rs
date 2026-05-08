@@ -25,6 +25,7 @@ interface FinishedState {
   wpmHistory: WpmSnapshot[]
   keystrokes: KeystrokeEntry[]
   scoreId?: string
+  isNewPb?: boolean
 }
 
 interface Props {
@@ -129,7 +130,7 @@ export function RankClient({ pismo, userId, usedCategories }: Props) {
           return
         }
 
-        setFinished({ result, wpmHistory, keystrokes, scoreId: json.id })
+        setFinished({ result, wpmHistory, keystrokes, scoreId: json.id, isNewPb: json.is_new_pb })
       } catch {
         setSubmitError('Mrežna greška. Rezultat nije sačuvan.')
         setFinished({ result, wpmHistory, keystrokes })
@@ -193,6 +194,7 @@ export function RankClient({ pismo, userId, usedCategories }: Props) {
         <ResultScreen
           result={finished.result}
           wpmHistory={finished.wpmHistory}
+          isNewPb={finished.isNewPb}
           onRetry={() => {
             setFinished(null)
             setFocusLost(false)

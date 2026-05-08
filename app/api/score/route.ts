@@ -93,7 +93,6 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase.from('scores').insert(insert).select('id').single()
 
   if (error) {
-    // UNIQUE constraint — daily limit dostignut
     if (error.code === '23505') {
       return NextResponse.json(
         { error: 'Već ste iskoristili dnevni pokušaj za ovu kategoriju.' },
@@ -103,11 +102,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Proveri da li je novi PB
+  const { data: pbData } = await supabase
+    .from('personal_bests')
+    .select('best_wpm')
+    .eq('user_id', user.id)
+    .eq('category', category)
+    .eq('script', script)
+    .maybeSingle()
+
+  const isNewPb = !pbData || serverWpm > pbData.best_wpm
+
   return NextResponse.json({
     id: data.id,
     wpm: serverWpm,
     raw_wpm: serverRaw,
     is_flagged: isFlagged,
     flags: allFlags,
+    is_new_pb: isNewPb,
   })
 }
