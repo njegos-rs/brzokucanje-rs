@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 
 // Helper: mock authenticated Supabase session
-async function mockAuthSession(page: Parameters<typeof test.beforeEach>[0] extends { page: infer P } ? P : never) {
+async function mockAuthSession(page: Page) {
   // Intercept Supabase session check
   await page.route('**/auth/v1/user', async (route) => {
     await route.fulfill({
