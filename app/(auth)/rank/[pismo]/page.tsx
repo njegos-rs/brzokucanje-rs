@@ -43,7 +43,9 @@ export default async function RankPismoPage({ params }: Props) {
     .eq('mode', 'rank')
     .gte('created_at', `${today}T00:00:00`)
 
-  const usedCategories = new Set((usedScores ?? []).map((s) => s.category))
+  const usedCategories = new Set(
+    ((usedScores ?? []) as { category: string }[]).map((s) => s.category)
+  )
 
   return (
     <RankClient
