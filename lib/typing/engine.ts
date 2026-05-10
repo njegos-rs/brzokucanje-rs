@@ -43,6 +43,7 @@ type EngineAction =
   | { type: 'RESET'; text: string; lazyMode: boolean; strictMode: boolean }
   | { type: 'FINISH' }
   | { type: 'APPEND_TEXT'; text: string }
+  | { type: 'SET_STRICT_MODE'; strictMode: boolean }
 
 const LAZY_MAP: Record<string, string[]> = {
   c: ['č', 'ć'],
@@ -158,6 +159,10 @@ function engineReducer(state: EngineState, action: EngineAction): EngineState {
       return { ...state, status: 'finished', endTime: Date.now() }
     }
 
+    case 'SET_STRICT_MODE': {
+      return { ...state, strictMode: action.strictMode }
+    }
+
     default:
       return state
   }
@@ -216,6 +221,11 @@ export function useTypingEngine({
     dispatch({ type: 'RESET', text, lazyMode: false, strictMode })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text])
+
+  // Kad se promeni strictMode prop (toggle 100% tačnost), ažuriraj engine state
+  useEffect(() => {
+    dispatch({ type: 'SET_STRICT_MODE', strictMode })
+  }, [strictMode])
 
   // Kad se promeni timerDuration (korisnik klikne 15s/30s/60s), resetuj brojač
   useEffect(() => {
