@@ -3,11 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 
 const scripts = ['cirilica', 'latinica', 'latinica-bez-kvacica'] as const
 const categories = ['reci', 'recenice', 'citati', 'price', 'vesti'] as const
-const levels = ['easy', 'medium', 'hard'] as const
+const difficulties = ['lake', 'srednje', 'teske'] as const
 
 type Script = (typeof scripts)[number]
-type Category = (typeof categories)[number]
-type Level = (typeof levels)[number]
 
 function isScript(value: string): value is Script {
   return scripts.includes(value as Script)
@@ -26,10 +24,6 @@ function dateToSeed(dateStr: string): number {
   return dateStr.split('-').reduce((acc, part) => acc * 1000 + parseInt(part), 0)
 }
 
-function pickForDay<T>(arr: readonly T[], rng: () => number): T {
-  return arr[Math.floor(rng() * arr.length)]
-}
-
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const scriptParam = searchParams.get('script') ?? 'latinica'
@@ -40,15 +34,9 @@ export async function GET(req: NextRequest) {
 
   const script = scriptParam
   const today = new Date().toISOString().slice(0, 10)
-
-  // Seeded RNG za danas — svi korisnici dobijaju isti izbor
-  const rng = seededRandom(dateToSeed(today))
-  const category: Category = pickForDay(categories, rng)
-  const level: Level = pickForDay(levels, rng)
-
   const supabase = await createClient()
 
-  // Najpre pokušaj da nađeš u daily_texts tabeli (ručno kuriran sadržaj)
+  // 1. Pokušaj iz daily_texts (ručno kuriran sadržaj)
   const { data: dailyText } = await supabase
     .from('daily_texts')
     .select('text_id, text_pool(content_lat, content_cyr, content_easy, category)')
@@ -69,53 +57,47 @@ export async function GET(req: NextRequest) {
         ? pool.content_easy
         : pool.content_lat
 
-    return NextResponse.json({
-      text_id: dailyText.text_id,
-      content,
-      category: pool.category,
-      level,
-    })
+    return NextResponse.json({ text_id: dailyText.text_id, content, category: pool.category })
   }
 
-  // Fallback: nasumično iz text_pool po kategoriji i levelu
-  const { data: poolTexts, error } = await supabase
+  // 2. Seeded RNG: odaberi kategoriju i težinu za danas
+  const rng = seededRandom(dateToSeed(today))
+  const category = categories[Math.floor(rng() * categories.length)]
+  const difficulty = difficulties[Math.floor(rng() * difficulties.length)]
+
+  // 3. Uzmi tekstove po kategoriji i težini
+  const { data: pool } = await supabase
     .from('text_pool')
     .select('id, content_lat, content_cyr, content_easy, category')
     .eq('category', category)
-    .eq('level', level)
+    .eq('difficulty', difficulty)
+    .eq('is_active', true)
     .limit(100)
 
-  if (error || !poolTexts || poolTexts.length === 0) {
-    // Pokušaj bez level filtera
-    const { data: fallback } = await supabase
-      .from('text_pool')
-      .select('id, content_lat, content_cyr, content_easy, category')
-      .eq('category', category)
-      .limit(100)
+  // 4. Fallback: samo kategorija bez težine
+  const texts = (pool && pool.length > 0) ? pool : await supabase
+    .from('text_pool')
+    .select('id, content_lat, content_cyr, content_easy, category')
+    .eq('category', category)
+    .eq('is_active', true)
+    .limit(100)
+    .then(r => r.data ?? [])
 
-    if (!fallback || fallback.length === 0) {
-      return NextResponse.json({ error: 'Nema dostupnog teksta za danas' }, { status: 404 })
-    }
+  // 5. Fallback: bilo koji aktivan tekst
+  const finalTexts = texts.length > 0 ? texts : await supabase
+    .from('text_pool')
+    .select('id, content_lat, content_cyr, content_easy, category')
+    .eq('is_active', true)
+    .limit(100)
+    .then(r => r.data ?? [])
 
-    const rng2 = seededRandom(dateToSeed(today) + 1)
-    const picked = fallback[Math.floor(rng2() * fallback.length)]
-    const content = script === 'cirilica'
-      ? picked.content_cyr
-      : script === 'latinica-bez-kvacica'
-        ? picked.content_easy
-        : picked.content_lat
-
-    return NextResponse.json({
-      text_id: picked.id,
-      content,
-      category: picked.category,
-      level,
-    })
+  if (finalTexts.length === 0) {
+    return NextResponse.json({ error: 'Nema dostupnog teksta za danas' }, { status: 404 })
   }
 
-  // Seeded izbor teksta iz pool-a
-  const rng2 = seededRandom(dateToSeed(today) + 1)
-  const picked = poolTexts[Math.floor(rng2() * poolTexts.length)]
+  // Seeded izbor konkretnog teksta
+  const rng2 = seededRandom(dateToSeed(today) + 999)
+  const picked = finalTexts[Math.floor(rng2() * finalTexts.length)]
 
   const content = script === 'cirilica'
     ? picked.content_cyr
@@ -123,10 +105,5 @@ export async function GET(req: NextRequest) {
       ? picked.content_easy
       : picked.content_lat
 
-  return NextResponse.json({
-    text_id: picked.id,
-    content,
-    category: picked.category,
-    level,
-  })
+  return NextResponse.json({ text_id: picked.id, content, category: picked.category })
 }
