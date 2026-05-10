@@ -117,9 +117,13 @@ export type Database = {
           content_cyr: string
           content_easy: string
           category: string
-          source: string | null
-          difficulty: 'lake' | 'srednje' | 'teske' | null
+          source: 'manual' | 'ai_vezba' | 'ai_rank'
+          pool_mode: 'vezba' | 'rank'
+          script: 'latinica' | 'cirilica' | 'latinica-bez-kvacica' | null
+          difficulty: 'lake' | 'srednje' | 'teske' | 'expert' | null
           is_active: boolean
+          word_count: number | null
+          char_count: number | null
           created_at: string
         }
         Insert: Omit<Database['public']['Tables']['text_pool']['Row'], 'id' | 'created_at'>

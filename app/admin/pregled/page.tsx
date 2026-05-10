@@ -1,6 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
-import { Users, Target, TrendingUp, ShieldAlert } from 'lucide-react'
+import { Users, Target, TrendingUp, ShieldAlert, Database as DatabaseIcon, Activity, Wifi } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
 
 type ScoreRow = Pick<Database['public']['Tables']['scores']['Row'], 'wpm' | 'accuracy' | 'script' | 'user_id'>
@@ -21,6 +21,25 @@ function KpiCard({ label, value, sub, icon: Icon }: { label: string; value: stri
   )
 }
 
+function HealthBar({ value, max, label, warn = 80, critical = 95 }: {
+  value: number; max: number; label: string; warn?: number; critical?: number
+}) {
+  const pct = Math.min(100, Math.round((value / max) * 100))
+  const color = pct >= critical ? 'bg-red-500' : pct >= warn ? 'bg-yellow-500' : 'bg-emerald-500'
+  const textColor = pct >= critical ? 'text-red-400' : pct >= warn ? 'text-yellow-400' : 'text-emerald-400'
+  return (
+    <div>
+      <div className="flex justify-between text-xs mb-1">
+        <span className="text-[var(--muted-foreground)]">{label}</span>
+        <span className={`font-mono font-bold ${textColor}`}>{pct}%</span>
+      </div>
+      <div className="h-2 rounded-full bg-[var(--border)]">
+        <div className={`h-2 rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  )
+}
+
 export default async function AdminPregledPage() {
   const supabase = await createServiceClient()
 
@@ -33,6 +52,9 @@ export default async function AdminPregledPage() {
     flaggedRes,
     recentUsersRes,
     topTodayRes,
+    dbSizeRes,
+    mauRes,
+    textPoolCountRes,
   ] = await Promise.all([
     supabase.from('profiles').select('id', { count: 'exact', head: true }),
     supabase
@@ -56,6 +78,12 @@ export default async function AdminPregledPage() {
       .gte('created_at', `${today}T00:00:00`)
       .order('wpm', { ascending: false })
       .limit(10),
+    supabase.rpc('get_db_size_mb'),
+    supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .gte('updated_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
+    supabase.from('text_pool').select('id', { count: 'exact', head: true }),
   ])
 
   const totalUsers = totalUsersRes.count ?? 0
@@ -64,6 +92,9 @@ export default async function AdminPregledPage() {
   const flaggedCount = flaggedRes.count ?? 0
   const recentUsers = (recentUsersRes.data ?? []) as ProfileRow[]
   const topToday = (topTodayRes.data ?? []) as ScoreRow[]
+  const dbSizeMb = typeof dbSizeRes.data === 'number' ? dbSizeRes.data : 0
+  const mauCount = mauRes.count ?? 0
+  const textPoolCount = textPoolCountRes.count ?? 0
 
   return (
     <div>
@@ -93,6 +124,51 @@ export default async function AdminPregledPage() {
           sub="Čekaju pregled"
           icon={ShieldAlert}
         />
+      </div>
+
+      {/* Supabase Health */}
+      <div className="mb-8 rounded-lg border border-[var(--border)] bg-[var(--card)] p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Activity className="h-4 w-4 text-[var(--muted-foreground)]" />
+          <h2 className="text-sm font-semibold text-[var(--foreground)]">Supabase Health</h2>
+          <span className="ml-auto text-xs text-[var(--muted-foreground)]">Free tier limiti</span>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5 mb-2">
+              <DatabaseIcon className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+              <span className="text-xs font-medium text-[var(--foreground)]">Storage</span>
+            </div>
+            <HealthBar value={dbSizeMb} max={500} label={`${dbSizeMb.toFixed(1)} MB / 500 MB`} />
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Users className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+              <span className="text-xs font-medium text-[var(--foreground)]">MAU (30 dana)</span>
+            </div>
+            <HealthBar value={mauCount} max={50000} label={`${mauCount.toLocaleString('sr-RS')} / 50.000`} />
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Wifi className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+              <span className="text-xs font-medium text-[var(--foreground)]">Text Pool</span>
+            </div>
+            <div>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-[var(--muted-foreground)]">Redova u bazi</span>
+                <span className="font-mono font-bold text-[var(--foreground)]">{textPoolCount.toLocaleString('sr-RS')}</span>
+              </div>
+              <div className="h-2 rounded-full bg-[var(--border)]">
+                <div className="h-2 rounded-full bg-blue-500" style={{ width: `${Math.min(100, (textPoolCount / 100000) * 100)}%` }} />
+              </div>
+            </div>
+          </div>
+        </div>
+        {(dbSizeMb / 500 * 100 >= 80 || mauCount / 50000 * 100 >= 80) && (
+          <div className="mt-4 rounded-md bg-yellow-500/10 border border-yellow-500/30 px-3 py-2 text-xs text-yellow-400">
+            ⚠ Bliži se limitu — razmotri nadogradnju na Supabase Pro plan
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

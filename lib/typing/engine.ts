@@ -21,7 +21,7 @@ export interface KeystrokeEntry {
 
 export type TestMode = 'reci' | 'vreme' | 'tekst'
 export type TestLevel = 'easy' | 'medium' | 'hard' | 'expert'
-export type TimerDuration = 15 | 30 | 60
+export type TimerDuration = 15 | 30 | 60 | 120
 
 interface EngineState {
   status: EngineStatus

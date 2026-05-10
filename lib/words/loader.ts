@@ -1,58 +1,69 @@
 import type { TestLevel } from '@/lib/typing/engine'
 
-// Statički importi — Turbopack ne podržava dynamic template literal imports
-import latLake from './latinica/lake.json'
-import latMedium from './latinica/medium.json'
-import latHard from './latinica/hard.json'
-import latExpert from './latinica/expert.json'
+import base from './base.json'
+import kvacice from './kvacice.json'
+import kvaciceMedium from './kvacice-medium.json'
+import kvaciceExpert from './kvacice-expert.json'
+import medium from './medium.json'
+import expert from './expert.json'
+import cyrBase from './cyr-base.json'
+import cyrMedium from './cyr-medium.json'
+import cyrExpert from './cyr-expert.json'
+import numbers from './numbers.json'
 
-import cyrLake from './cirilica/lake.json'
-import cyrMedium from './cirilica/medium.json'
-import cyrHard from './cirilica/hard.json'
-import cyrExpert from './cirilica/expert.json'
-
-import easyLake from './easy/lake.json'
-import easyMedium from './easy/medium.json'
-import easyHard from './easy/hard.json'
-import easyExpert from './easy/expert.json'
-
-// Tekst mod — smislene rečenice, otežane po levelu
 import latTextEasy from './latinica/text-easy.json'
 import latTextMedium from './latinica/text-medium.json'
 import latTextHard from './latinica/text-hard.json'
 import latTextExpert from './latinica/text-expert.json'
-
 import cyrTextEasy from './cirilica/text-easy.json'
 import cyrTextMedium from './cirilica/text-medium.json'
 import cyrTextHard from './cirilica/text-hard.json'
 import cyrTextExpert from './cirilica/text-expert.json'
-
 import easyTextEasy from './easy/text-easy.json'
 import easyTextMedium from './easy/text-medium.json'
 import easyTextHard from './easy/text-hard.json'
 import easyTextExpert from './easy/text-expert.json'
 
-type Script = 'latinica' | 'cirilica' | 'easy'
+export type Script = 'latinica' | 'cirilica' | 'easy'
+
+// Meša pool-ove po procentima
+function mixPools(...pools: [string[], number][]): string[] {
+  const result: string[] = []
+  for (const [pool, pct] of pools) {
+    const count = Math.round((pool.length * pct) / 100)
+    result.push(...pool.slice(0, count))
+  }
+  return result
+}
+
+// Latinica pool-ovi po težini
+const LAT_POOLS: Record<TestLevel, string[]> = {
+  easy:   mixPools([base as string[], 100]),
+  medium: mixPools([base as string[], 50], [kvacice as string[], 50]),
+  hard:   mixPools([base as string[], 33], [kvacice as string[], 33], [kvaciceMedium as string[], 34]),
+  expert: mixPools([base as string[], 25], [kvacice as string[], 25], [kvaciceMedium as string[], 25], [kvaciceExpert as string[], 25]),
+}
+
+// Bez kvačica pool-ovi po težini
+const BEZ_POOLS: Record<TestLevel, string[]> = {
+  easy:   mixPools([base as string[], 100]),
+  medium: mixPools([base as string[], 67], [medium as string[], 33]),
+  hard:   mixPools([base as string[], 50], [medium as string[], 25], [expert as string[], 25]),
+  expert: mixPools([base as string[], 34], [medium as string[], 33], [expert as string[], 33]),
+}
+
+// Ćirilica pool-ovi po težini
+const CYR_POOLS: Record<TestLevel, string[]> = {
+  easy:   mixPools([cyrBase as string[], 100]),
+  medium: mixPools([cyrBase as string[], 67], [cyrMedium as string[], 33]),
+  hard:   mixPools([cyrBase as string[], 50], [cyrMedium as string[], 25], [cyrExpert as string[], 25]),
+  expert: mixPools([cyrBase as string[], 34], [cyrMedium as string[], 33], [cyrExpert as string[], 33]),
+}
 
 const WORD_MAP: Record<Script, Record<TestLevel, string[]>> = {
-  latinica: {
-    easy:   latLake as string[],
-    medium: latMedium as string[],
-    hard:   latHard as string[],
-    expert: latExpert as string[],
-  },
-  cirilica: {
-    easy:   cyrLake as string[],
-    medium: cyrMedium as string[],
-    hard:   cyrHard as string[],
-    expert: cyrExpert as string[],
-  },
-  easy: {
-    easy:   easyLake as string[],
-    medium: easyMedium as string[],
-    hard:   easyHard as string[],
-    expert: easyExpert as string[],
-  },
+  latinica: LAT_POOLS,
+  easy: BEZ_POOLS,
+  cirilica: CYR_POOLS,
 }
 
 const TEXT_MAP: Record<Script, Record<TestLevel, string[]>> = {
@@ -76,6 +87,9 @@ const TEXT_MAP: Record<Script, Record<TestLevel, string[]>> = {
   },
 }
 
+// Base pool za igru — bez rotacije, uvek isti
+export const GAME_WORDS: string[] = base as string[]
+
 export function loadWords(script: Script, level: TestLevel): string[] {
   return WORD_MAP[script][level]
 }
@@ -84,7 +98,6 @@ export function loadTexts(script: Script, level: TestLevel): string[] {
   return TEXT_MAP[script][level]
 }
 
-// Globalna seen mapa po sesiji — resetuje se refreshom
 const seenSets: Partial<Record<string, Set<string>>> = {}
 
 function getSeenSet(words: string[]): Set<string> {
@@ -102,7 +115,6 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
-// Random raspon reči za reci mod — [min, max]
 const WORD_RANGE_BY_LEVEL: Record<TestLevel, [number, number]> = {
   easy:   [15, 60],
   medium: [20, 70],
@@ -148,3 +160,5 @@ export function buildPhraseTest(phrases: string[], count = 5): string {
 export function resetSeenWords(): void {
   for (const key of Object.keys(seenSets)) delete seenSets[key]
 }
+
+export { numbers }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Plus, Search, Pencil, Eye, EyeOff, X, Loader2, Check } from 'lucide-react'
+import { Plus, Search, Pencil, Eye, EyeOff, X, Loader2, Check, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -67,6 +67,8 @@ export function SadrzajTable({ texts: initial }: Props) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [toggling, setToggling] = useState<string | null>(null)
+  const [generating, setGenerating] = useState(false)
+  const [generateResult, setGenerateResult] = useState<{ totalInserted: number } | null>(null)
 
   const filtered = useMemo(() => {
     let rows = texts
@@ -153,6 +155,27 @@ export function SadrzajTable({ texts: initial }: Props) {
     }
   }
 
+  const handleGenerate = async () => {
+    if (!confirm('Pokrenuće se Gemini AI generisanje (~24 API poziva, može trajati 2-3 minuta). Nastaviti?')) return
+    setGenerating(true)
+    setGenerateResult(null)
+    try {
+      const [wordsRes, textsRes] = await Promise.all([
+        fetch('/api/admin/generate-words', { method: 'POST' }),
+        fetch('/api/admin/generate-texts', { method: 'POST' }),
+      ])
+      const [wordsJson, textsJson] = await Promise.all([wordsRes.json(), textsRes.json()])
+      if (!wordsRes.ok) throw new Error(wordsJson.error ?? 'Greška pri generisanju reči')
+      if (!textsRes.ok) throw new Error(textsJson.error ?? 'Greška pri generisanju tekstova')
+      setGenerateResult({ totalInserted: (wordsJson.totalInserted ?? 0) + (textsJson.totalInserted ?? 0) })
+      router.refresh()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Greška pri generisanju')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   const toggleActive = async (text: TextRow) => {
     setToggling(text.id)
     try {
@@ -218,6 +241,18 @@ export function SadrzajTable({ texts: initial }: Props) {
             </button>
           ))}
         </div>
+        <button
+          onClick={handleGenerate}
+          disabled={generating}
+          className="flex items-center gap-2 rounded-md border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-50 transition-colors"
+          title="Generiši tekstove pomoću Gemini AI"
+        >
+          {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+          {generating ? 'Generišem…' : 'AI Generiši'}
+        </button>
+        {generateResult && (
+          <span className="text-xs text-[var(--correct)]">+{generateResult.totalInserted} tekstova dodato</span>
+        )}
         <button
           onClick={openAdd}
           className="ml-auto flex items-center gap-2 rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] hover:opacity-90 transition-opacity"

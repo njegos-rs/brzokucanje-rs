@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/admin/generate-words",
+      "schedule": "0 3 * * 0"
+    },
+    {
+      "path": "/api/admin/generate-texts",
+      "schedule": "5 3 * * 0"
+    }
+  ]
+}

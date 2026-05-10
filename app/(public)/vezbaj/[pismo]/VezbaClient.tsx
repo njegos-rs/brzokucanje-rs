@@ -22,8 +22,7 @@ const SCRIPT_LABELS: Record<Script, string> = {
   easy: 'Latinica bez kvačica',
 }
 
-const MODE_LABELS: Record<TestMode, string> = {
-  vreme: 'Vreme',
+const MODE_LABELS: Record<Exclude<TestMode, 'vreme'>, string> = {
   reci: 'Reči',
   tekst: 'Tekst',
 }
@@ -35,21 +34,21 @@ const LEVEL_LABELS: Record<TestLevel, string> = {
   expert: 'Expert',
 }
 
-const TIMER_OPTIONS: TimerDuration[] = [15, 30, 60]
 
 interface FinishedState {
   result: ScoringResult
   wpmHistory: WpmSnapshot[]
 }
 
-function makeText(pismo: Script, mode: TestMode, level: TestLevel): string {
-  if (mode === 'tekst') {
+function makeText(pismo: Script, contentMode: 'reci' | 'tekst', level: TestLevel, timerActive = false): string {
+  if (timerActive) {
+    return buildWordTest(loadWords(pismo, level), 80)
+  }
+  if (contentMode === 'tekst') {
     const texts = loadTexts(pismo, level)
     return buildPhraseTest(texts, 4)
   }
-  const words = loadWords(pismo, level)
-  if (mode === 'vreme') return buildWordTest(words, 80)
-  return buildWordTest(words, getRandomWordCount(level))
+  return buildWordTest(loadWords(pismo, level), getRandomWordCount(level))
 }
 
 function readStorage<T>(key: string, fallback: T): T {
@@ -66,35 +65,38 @@ function writeStorage(key: string, value: unknown) {
 
 export function VezbaClient({ pismo }: Props) {
   const router = useRouter()
-  const [mode, setMode] = useState<TestMode>(() => readStorage('vezba_mode', 'reci'))
+  const [contentMode, setContentMode] = useState<'reci' | 'tekst'>(() => readStorage('vezba_content_mode', 'reci'))
   const [level, setLevel] = useState<TestLevel>(() => readStorage('vezba_level', 'easy'))
-  const [timerDuration, setTimerDuration] = useState<TimerDuration>(() => readStorage('vezba_timer', 30))
+  const [timerDuration, setTimerDuration] = useState<TimerDuration | null>(() => readStorage('vezba_timer', null))
   const [strictMode, setStrictMode] = useState<boolean>(() => readStorage('vezba_strict', false))
   const [finished, setFinished] = useState<FinishedState | null>(null)
   const [text, setText] = useState('')
   const pismoRef = useRef(pismo)
-  const modeRef = useRef<TestMode>(readStorage('vezba_mode', 'reci'))
+  const contentModeRef = useRef<'reci' | 'tekst'>(readStorage('vezba_content_mode', 'reci'))
   const levelRef = useRef<TestLevel>(readStorage('vezba_level', 'easy'))
+
+  // Derived: engine mode
+  const mode: TestMode = timerDuration !== null ? 'vreme' : contentMode
 
   // Generišemo tekst tek na klijentu
   useEffect(() => {
-    setText(makeText(pismoRef.current, modeRef.current, levelRef.current))
+    setText(makeText(pismoRef.current, contentModeRef.current, levelRef.current))
   }, [])
 
   // Kad se promeni pismo (navigacija), regeneriši — ali sačuvaj mode/level
   useEffect(() => {
     if (pismo !== pismoRef.current) {
       pismoRef.current = pismo
-      const newText = makeText(pismo, modeRef.current, levelRef.current)
+      const newText = makeText(pismo, contentModeRef.current, levelRef.current)
       setText(newText)
       setFinished(null)
     }
   }, [pismo])
 
-  const changeMode = useCallback((m: TestMode) => {
-    modeRef.current = m
-    setMode(m)
-    writeStorage('vezba_mode', m)
+  const changeContentMode = useCallback((m: 'reci' | 'tekst') => {
+    contentModeRef.current = m
+    setContentMode(m)
+    writeStorage('vezba_content_mode', m)
     setText(makeText(pismoRef.current, m, levelRef.current))
     setFinished(null)
   }, [])
@@ -103,13 +105,14 @@ export function VezbaClient({ pismo }: Props) {
     levelRef.current = l
     setLevel(l)
     writeStorage('vezba_level', l)
-    setText(makeText(pismoRef.current, modeRef.current, l))
+    setText(makeText(pismoRef.current, contentModeRef.current, l))
     setFinished(null)
   }, [])
 
-  const changeTimerDuration = useCallback((t: TimerDuration) => {
+  const changeTimerDuration = useCallback((t: TimerDuration | null) => {
     setTimerDuration(t)
     writeStorage('vezba_timer', t)
+    setFinished(null)
   }, [])
 
   const changeStrictMode = useCallback((v: boolean) => {
@@ -133,14 +136,14 @@ export function VezbaClient({ pismo }: Props) {
   const { chars, cursor, status, timeLeft, spaceBlocked, handleKeyDown, reset } = useTypingEngine({
     text,
     mode,
-    timerDuration,
+    timerDuration: timerDuration ?? 60,
     strictMode,
     onFinish: handleFinish,
     onNeedMoreText: getMoreText,
   })
 
   const handleNewTest = useCallback(() => {
-    setText(makeText(pismoRef.current, modeRef.current, levelRef.current))
+    setText(makeText(pismoRef.current, contentModeRef.current, levelRef.current))
     setFinished(null)
   }, [])
 
@@ -198,16 +201,16 @@ export function VezbaClient({ pismo }: Props) {
           </div>
         </div>
 
-        {/* Red 2: Modovi levo + 100% tačnost toggle desno */}
-        <div className="flex items-center justify-between gap-2">
+        {/* Red 2: Reči/Tekst levo + opcije desno poravnate sa Easy */}
+        <div className="flex items-start justify-between gap-2">
           <div className="flex rounded-lg border border-[var(--border)] overflow-hidden">
-            {(Object.keys(MODE_LABELS) as TestMode[]).map((m) => (
+            {(Object.keys(MODE_LABELS) as Array<'reci' | 'tekst'>).map((m) => (
               <button
                 key={m}
-                onClick={() => changeMode(m)}
+                onClick={() => changeContentMode(m)}
                 className={cn(
                   'px-3.5 py-1.5 text-sm font-medium transition-colors',
-                  mode === m
+                  contentMode === m
                     ? 'bg-[var(--accent)] text-[var(--accent-foreground)]'
                     : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]',
                 )}
@@ -216,9 +219,9 @@ export function VezbaClient({ pismo }: Props) {
               </button>
             ))}
           </div>
-          <div className="flex flex-col items-end gap-0.5">
+          <div className="flex flex-col items-start gap-1.5 min-w-[260px]">
+            {/* 100% tačnost */}
             <div className="flex items-center gap-2">
-              <span className="text-sm text-[var(--muted-foreground)]">100% tačnost</span>
               <button
                 onClick={() => changeStrictMode(!strictMode)}
                 className={cn(
@@ -235,33 +238,45 @@ export function VezbaClient({ pismo }: Props) {
                   )}
                 />
               </button>
+              <span className="text-sm text-[var(--muted-foreground)]">100% tačnost</span>
             </div>
-            <span className="text-[11px] text-[var(--muted-foreground)]/40">
-              svako slovo mora biti na svom mestu
-            </span>
-          </div>
-        </div>
-
-        {/* Red 3: Timer — fiksirana visina, pojavljuje se samo kad je Vreme */}
-        <div className="h-8 flex items-center">
-          {mode === 'vreme' && (
-            <div className="flex items-center gap-0.5">
-              {TIMER_OPTIONS.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => changeTimerDuration(t)}
+            {/* Vreme toggle + sekunde */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => changeTimerDuration(timerDuration !== null ? null : 60)}
+                className={cn(
+                  'relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none',
+                  timerDuration !== null ? 'bg-[var(--accent)]' : 'bg-[var(--border)]',
+                )}
+                role="switch"
+                aria-checked={timerDuration !== null}
+              >
+                <span
                   className={cn(
-                    'rounded-md px-2.5 py-1 text-sm font-mono font-medium transition-colors',
-                    timerDuration === t
-                      ? 'text-[var(--accent)] font-bold'
-                      : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
+                    'inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform duration-200',
+                    timerDuration !== null ? 'translate-x-4' : 'translate-x-0.5',
                   )}
-                >
-                  {t}s
-                </button>
-              ))}
+                />
+              </button>
+              <span className="text-sm text-[var(--muted-foreground)]">Vreme</span>
+              <div className={cn('flex items-center gap-0.5', timerDuration === null && 'invisible')}>
+                {([15, 30, 60, 120] as TimerDuration[]).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => changeTimerDuration(t)}
+                    className={cn(
+                      'rounded-md px-2 py-0.5 text-xs font-mono font-medium transition-colors',
+                      timerDuration === t
+                        ? 'text-[var(--accent)] font-bold'
+                        : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
+                    )}
+                  >
+                    {t}s
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
