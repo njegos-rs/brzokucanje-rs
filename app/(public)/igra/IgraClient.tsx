@@ -2,10 +2,15 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Lock, RotateCcw, Volume2, VolumeX, Zap } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { Eye, EyeOff, Loader2, Lock, RotateCcw, Volume2, VolumeX, Zap } from 'lucide-react'
 import { buildWordTest, loadWords } from '@/lib/words/loader'
 import type { TestLevel } from '@/lib/typing/engine'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 
 type Script = 'latinica' | 'cirilica' | 'easy'
 type GameStatus = 'preview' | 'ready' | 'playing' | 'gameover'
@@ -56,18 +61,25 @@ const SCRIPTS: { id: Script; label: string }[] = [
   { id: 'easy', label: 'Bez kvačica' },
 ]
 
-const LEVELS: { id: TestLevel; label: string }[] = [
-  { id: 'easy', label: 'Easy' },
-  { id: 'medium', label: 'Medium' },
-  { id: 'hard', label: 'Hard' },
-  { id: 'expert', label: 'Expert' },
-]
-
-const PREVIEW_WORDS = ['brzina', 'fokus', 'ritam', 'tastatura']
+const PREVIEW_WORDS = ['brzina', 'fokus', 'ritam', 'tastatura', 'level', 'talas']
 const WIDTH = 900
 const HEIGHT = 560
 const SHIP_X = WIDTH / 2
 const SHIP_Y = HEIGHT - 50
+
+const OAUTH_PROVIDERS = [
+  { id: 'google' as const, label: 'Google', mark: 'G' },
+  { id: 'facebook' as const, label: 'Facebook', mark: 'f' },
+  { id: 'twitter' as const, label: 'X', mark: 'X' },
+  { id: 'apple' as const, label: 'Apple', mark: 'A' },
+]
+
+const gameLoginSchema = z.object({
+  identifier: z.string().min(1, 'Unesi email ili korisničko ime'),
+  password: z.string().min(1, 'Unesi lozinku'),
+})
+
+type GameLoginInput = z.infer<typeof gameLoginSchema>
 
 function pickWord(script: Script, level: TestLevel): string {
   const words = loadWords(script, level).filter((word) => /^[\p{L}]+$/u.test(word) && word.length >= 3 && word.length <= 12)
@@ -95,14 +107,36 @@ function makeEnemy(id: number, script: Script, level: TestLevel, wave: number, e
   }
 }
 
+function levelForNumber(level: number): TestLevel {
+  if (level >= 10) return 'expert'
+  if (level >= 6) return 'hard'
+  if (level >= 3) return 'medium'
+  return 'easy'
+}
+
+function makePreviewEnemy(id: number, existing: Enemy[] = []): Enemy {
+  const word = PREVIEW_WORDS[(id + Math.floor(Math.random() * PREVIEW_WORDS.length)) % PREVIEW_WORDS.length]
+  const x = 90 + Math.random() * (WIDTH - 180)
+  const highest = existing.reduce((min, enemy) => Math.min(min, enemy.y), 20)
+  return {
+    id,
+    word,
+    typed: 0,
+    x,
+    y: highest - 90 - Math.random() * 60,
+    speed: 18 + Math.random() * 12,
+    size: 11,
+  }
+}
+
 function makePreviewEnemies(): Enemy[] {
   return PREVIEW_WORDS.map((word, index) => ({
     id: index + 1,
     word,
     typed: index === 0 ? 3 : 0,
     x: 160 + index * 180,
-    y: 70 + index * 42,
-    speed: 0,
+    y: 35 + index * 46,
+    speed: 16 + index * 3,
     size: 11,
   }))
 }
@@ -129,15 +163,176 @@ function useAudio(enabled: boolean) {
   }, [enabled])
 
   return {
-    shoot: () => tone(560, 0.07, 'triangle', 0.025),
-    hit: () => tone(130, 0.16, 'sawtooth', 0.035),
+    shoot: () => {
+      tone(720, 0.04, 'triangle', 0.02)
+      window.setTimeout(() => tone(430, 0.05, 'sine', 0.014), 24)
+    },
+    hit: () => {
+      tone(120, 0.12, 'sawtooth', 0.035)
+      window.setTimeout(() => tone(240, 0.08, 'triangle', 0.018), 45)
+    },
     miss: () => tone(90, 0.12, 'square', 0.02),
   }
 }
 
+function AuthGate() {
+  const router = useRouter()
+  const [showPassword, setShowPassword] = useState(false)
+  const [serverError, setServerError] = useState<string | null>(null)
+  const [loadingProvider, setLoadingProvider] = useState<string | null>(null)
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<GameLoginInput>({ resolver: zodResolver(gameLoginSchema) })
+
+  const handleOAuth = async (provider: 'google' | 'facebook' | 'apple' | 'twitter') => {
+    setLoadingProvider(provider)
+    const supabase = createClient()
+    await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/igra`,
+      },
+    })
+    setLoadingProvider(null)
+  }
+
+  const onLogin = async (data: GameLoginInput) => {
+    setServerError(null)
+    const supabase = createClient()
+    let email = data.identifier.trim()
+
+    if (!email.includes('@')) {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('username', email)
+        .single()
+
+      if (error || !profile?.email) {
+        setServerError('Nismo pronašli nalog sa tim korisničkim imenom.')
+        return
+      }
+
+      email = profile.email
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password: data.password,
+    })
+
+    if (error) {
+      setServerError('Pogrešan email/korisničko ime ili lozinka.')
+      return
+    }
+
+    router.refresh()
+  }
+
+  return (
+    <div className="w-full max-w-md rounded-lg border border-[var(--border)] bg-[var(--card)]/95 p-5 text-left shadow-xl backdrop-blur">
+      <div className="mb-4 text-center">
+        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-[var(--accent)]/15 text-[var(--accent)]">
+          <Lock className="h-5 w-5" />
+        </div>
+        <h2 className="text-xl font-semibold text-[var(--foreground)]">Moraš biti prijavljen da bi igrao</h2>
+        <p className="mt-1 text-sm text-[var(--muted-foreground)]">Prijavi se nalogom ili nastavi preko društvenih mreža.</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        {OAUTH_PROVIDERS.map((provider) => (
+          <button
+            key={provider.id}
+            type="button"
+            onClick={() => handleOAuth(provider.id)}
+            disabled={loadingProvider !== null}
+            className="flex items-center justify-center gap-2 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--muted)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {loadingProvider === provider.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <span className="font-mono font-bold text-[var(--accent)]">{provider.mark}</span>}
+            {provider.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="my-4 flex items-center gap-3">
+        <div className="h-px flex-1 bg-[var(--border)]" />
+        <span className="text-xs text-[var(--muted-foreground)]">ili</span>
+        <div className="h-px flex-1 bg-[var(--border)]" />
+      </div>
+
+      <form onSubmit={handleSubmit(onLogin)} className="space-y-3">
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-[var(--foreground)]">Email ili korisničko ime</label>
+          <input
+            {...register('identifier')}
+            autoComplete="username"
+            placeholder="janko123 ili janko@primer.rs"
+            className={cn(
+              'w-full rounded-md border bg-[var(--background)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition-colors',
+              'placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30',
+              errors.identifier ? 'border-[var(--incorrect)]' : 'border-[var(--border)]',
+            )}
+          />
+          {errors.identifier && <p className="mt-1 text-xs text-[var(--incorrect)]">{errors.identifier.message}</p>}
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-[var(--foreground)]">Lozinka</label>
+          <div className="relative">
+            <input
+              {...register('password')}
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              placeholder="Tvoja lozinka"
+              className={cn(
+                'w-full rounded-md border bg-[var(--background)] px-3 py-2.5 pr-10 text-sm text-[var(--foreground)] outline-none transition-colors',
+                'placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30',
+                errors.password ? 'border-[var(--incorrect)]' : 'border-[var(--border)]',
+              )}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((value) => !value)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
+              aria-label={showPassword ? 'Sakrij lozinku' : 'Prikaži lozinku'}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          {errors.password && <p className="mt-1 text-xs text-[var(--incorrect)]">{errors.password.message}</p>}
+        </div>
+
+        {serverError && (
+          <div className="rounded-md border border-[var(--incorrect)]/30 bg-[var(--incorrect)]/10 px-3 py-2">
+            <p className="text-sm text-[var(--incorrect)]">{serverError}</p>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="flex w-full items-center justify-center gap-2 rounded-md bg-[var(--accent)] py-2.5 text-sm font-medium text-[var(--accent-foreground)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+          Prijava
+        </button>
+      </form>
+
+      <p className="mt-4 text-center text-sm text-[var(--muted-foreground)]">
+        Nemaš nalog?{' '}
+        <Link href="/registracija" className="text-[var(--accent)] transition-opacity hover:opacity-80">
+          Registruj se
+        </Link>
+      </p>
+    </div>
+  )
+}
+
 export function IgraClient({ canPlay }: Props) {
   const [script, setScript] = useState<Script>('latinica')
-  const [level, setLevel] = useState<TestLevel>('easy')
   const [status, setStatus] = useState<GameStatus>(canPlay ? 'ready' : 'preview')
   const [soundOn, setSoundOn] = useState(true)
   const [enemies, setEnemies] = useState<Enemy[]>(() => makePreviewEnemies())
@@ -156,7 +351,8 @@ export function IgraClient({ canPlay }: Props) {
   const gameAreaRef = useRef<HTMLDivElement | null>(null)
   const audio = useAudio(soundOn && canPlay)
 
-  const levelNumber = Math.max(1, Math.min(12, Math.floor(score / 350) + 1))
+  const levelNumber = Math.max(1, Math.min(12, Math.floor((wave - 1) / 5) + 1))
+  const gameLevel = levelForNumber(levelNumber)
 
   const activeTarget = useMemo(
     () => enemies.find((enemy) => enemy.id === targetId) ?? null,
@@ -182,17 +378,114 @@ export function IgraClient({ canPlay }: Props) {
   const startGame = useCallback(() => {
     if (!canPlay) return
     resetGame('playing')
-    const firstEnemy = makeEnemy(ids.current.enemy++, script, level, 1, [])
-    const secondEnemy = makeEnemy(ids.current.enemy++, script, level, 1, [firstEnemy])
+    const firstEnemy = makeEnemy(ids.current.enemy++, script, levelForNumber(1), 1, [])
+    const secondEnemy = makeEnemy(ids.current.enemy++, script, levelForNumber(1), 1, [firstEnemy])
     setEnemies([firstEnemy, secondEnemy])
     gameAreaRef.current?.focus()
-  }, [canPlay, level, resetGame, script])
+  }, [canPlay, resetGame, script])
 
   useEffect(() => {
     if (!canPlay) {
       setStatus('preview')
       setEnemies(makePreviewEnemies())
+      setTargetId(1)
     }
+  }, [canPlay])
+
+  useEffect(() => {
+    if (canPlay) return
+
+    let frame = 0
+    let demoShotTimer = 0
+    lastFrame.current = null
+
+    const tick = (now: number) => {
+      const previous = lastFrame.current ?? now
+      const delta = Math.min((now - previous) / 1000, 0.05)
+      lastFrame.current = now
+      demoShotTimer += delta
+
+      setShots((current) => current
+        .map((shot) => ({ ...shot, progress: shot.progress + delta * 2.8, life: shot.life - delta * 2.3 }))
+        .filter((shot) => shot.progress < 1 && shot.life > 0))
+      setBursts((current) => current
+        .map((burst) => ({ ...burst, life: burst.life - delta * 2.1 }))
+        .filter((burst) => burst.life > 0))
+      setFragments((current) => current
+        .map((fragment) => ({
+          ...fragment,
+          x: fragment.x + fragment.vx * delta,
+          y: fragment.y + fragment.vy * delta,
+          vy: fragment.vy + 90 * delta,
+          life: fragment.life - delta * 1.7,
+        }))
+        .filter((fragment) => fragment.life > 0))
+
+      setEnemies((current) => {
+        let next = current
+          .map((enemy) => ({ ...enemy, y: enemy.y + enemy.speed * delta }))
+          .filter((enemy) => enemy.y < SHIP_Y - 32)
+
+        while (next.length < 5) {
+          next = [...next, makePreviewEnemy(ids.current.enemy++, next)]
+        }
+
+        const target = next
+          .filter((enemy) => enemy.y > 20)
+          .sort((a, b) => b.y - a.y)[0] ?? next[0]
+
+        if (target && demoShotTimer > 0.34) {
+          demoShotTimer = 0
+          setTargetId(target.id)
+          setShots((value) => [
+            ...value.slice(-7),
+            {
+              id: ids.current.shot++,
+              fromX: SHIP_X,
+              fromY: SHIP_Y,
+              toX: target.x,
+              toY: target.y,
+              progress: 0,
+              life: 1,
+            },
+          ])
+
+          next = next.flatMap((enemy) => {
+            if (enemy.id !== target.id) return [enemy]
+            const typed = enemy.typed + 1
+            if (typed < enemy.word.length) return [{ ...enemy, typed }]
+
+            setBursts((value) => [
+              ...value.slice(-4),
+              { id: ids.current.burst++, x: enemy.x, y: enemy.y, life: 1 },
+            ])
+            setFragments((value) => [
+              ...value.slice(-24),
+              ...Array.from({ length: 8 }, (_, index) => {
+                const angle = (Math.PI * 2 * index) / 8 + Math.random() * 0.35
+                const speed = 45 + Math.random() * 80
+                return {
+                  id: ids.current.fragment++,
+                  x: enemy.x,
+                  y: enemy.y,
+                  vx: Math.cos(angle) * speed,
+                  vy: Math.sin(angle) * speed,
+                  life: 1,
+                }
+              }),
+            ])
+            return []
+          })
+        }
+
+        return next
+      })
+
+      frame = requestAnimationFrame(tick)
+    }
+
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
   }, [canPlay])
 
   useEffect(() => {
@@ -237,7 +530,7 @@ export function IgraClient({ canPlay }: Props) {
 
         if (spawnTimer.current > Math.max(0.8, 2.2 - wave * 0.08)) {
           spawnTimer.current = 0
-          next = [...next, makeEnemy(ids.current.enemy++, script, level, wave, next)]
+          next = [...next, makeEnemy(ids.current.enemy++, script, gameLevel, wave, next)]
         }
 
         return next
@@ -248,10 +541,10 @@ export function IgraClient({ canPlay }: Props) {
 
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [audio, level, script, status, wave])
+  }, [audio, gameLevel, script, status, wave])
 
   useEffect(() => {
-    setWave((current) => Math.max(current, Math.min(12, Math.floor(score / 350) + 1)))
+    setWave((current) => Math.max(current, Math.min(60, Math.floor(score / 180) + 1)))
   }, [score])
 
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -428,16 +721,22 @@ export function IgraClient({ canPlay }: Props) {
             {shots.map((shot) => {
               const x = shot.fromX + (shot.toX - shot.fromX) * shot.progress
               const y = shot.fromY + (shot.toY - shot.fromY) * shot.progress
+              const angle = Math.atan2(shot.toY - shot.fromY, shot.toX - shot.fromX) * 180 / Math.PI
               return (
                 <div
                   key={shot.id}
-                  className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent)] shadow-[0_0_12px_rgba(204,139,37,0.95)]"
+                  className="absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2"
                   style={{
                     left: `${(x / WIDTH) * 100}%`,
                     top: `${(y / HEIGHT) * 100}%`,
                     opacity: shot.life,
+                    transform: `translate(-50%, -50%) rotate(${angle}deg)`,
                   }}
-                />
+                >
+                  <span className="absolute left-2 top-2 h-2.5 w-2.5 rounded-full bg-[var(--accent)] shadow-[0_0_14px_rgba(204,139,37,0.95)]" />
+                  <span className="absolute left-0 top-[9px] h-1.5 w-1.5 rounded-full bg-[var(--accent)]/70" />
+                  <span className="absolute -left-2 top-[10px] h-1 w-1 rounded-full bg-[var(--accent)]/40" />
+                </div>
               )
             })}
 
@@ -475,27 +774,15 @@ export function IgraClient({ canPlay }: Props) {
             </div>
 
             {status !== 'playing' && (
-              <div className="absolute inset-0 flex items-center justify-center bg-[var(--background)]/45 backdrop-blur-[1px]">
-                <div className="w-full max-w-sm rounded-lg border border-[var(--border)] bg-[var(--card)] p-5 text-center shadow-lg">
-                  {previewOverlay ? (
-                    <>
-                      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-[var(--accent)]/15 text-[var(--accent)]">
-                        <Lock className="h-5 w-5" />
-                      </div>
-                      <h2 className="text-lg font-semibold text-[var(--foreground)]">Preview igre</h2>
-                      <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-                        Igru mogu da igraju registrovani korisnici. Preview ostaje vidljiv da vidiš kako izgleda.
-                      </p>
-                      <div className="mt-4 flex justify-center gap-2">
-                        <Link href="/registracija" className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] hover:opacity-90">
-                          Registruj se
-                        </Link>
-                        <Link href="/prijava" className="rounded-md border border-[var(--border)] px-4 py-2 text-sm text-[var(--foreground)] hover:bg-[var(--muted)]">
-                          Prijava
-                        </Link>
-                      </div>
-                    </>
-                  ) : status === 'gameover' ? (
+              <div className={cn(
+                'absolute inset-0 flex items-center justify-center',
+                previewOverlay ? 'bg-[var(--background)]/18' : 'bg-[var(--background)]/45 backdrop-blur-[1px]',
+              )}>
+                {previewOverlay ? (
+                  <AuthGate />
+                ) : (
+                  <div className="w-full max-w-sm rounded-lg border border-[var(--border)] bg-[var(--card)] p-5 text-center shadow-lg">
+                    {status === 'gameover' ? (
                     <>
                       <h2 className="text-lg font-semibold text-[var(--foreground)]">Kraj igre</h2>
                       <p className="mt-2 text-sm text-[var(--muted-foreground)]">
@@ -524,7 +811,8 @@ export function IgraClient({ canPlay }: Props) {
                       </button>
                     </>
                   )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -569,29 +857,10 @@ export function IgraClient({ canPlay }: Props) {
               </div>
             </div>
 
-            <div className="border-t border-[var(--border)] pt-3">
-              <p className="mb-2 text-xs uppercase tracking-widest text-[var(--muted-foreground)]">Težina</p>
-              <div className="grid grid-cols-2 gap-1">
-                {LEVELS.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    disabled={status === 'playing'}
-                    onClick={() => setLevel(item.id)}
-                    className={cn(
-                      'rounded-md px-2 py-1.5 text-sm transition-colors disabled:opacity-50',
-                      level === item.id ? 'bg-[var(--accent)] text-[var(--accent-foreground)]' : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]',
-                    )}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div className="border-t border-[var(--border)] pt-3 text-xs leading-relaxed text-[var(--muted-foreground)]">
               <p>Aktivna meta: <span className="text-[var(--foreground)]">{activeTarget?.word ?? '-'}</span></p>
               <p>Greške: <span className="text-[var(--foreground)]">{mistakes}</span></p>
+              <p>Koncept: <span className="text-[var(--foreground)]">leveli i talasi</span></p>
             </div>
           </aside>
         </div>
