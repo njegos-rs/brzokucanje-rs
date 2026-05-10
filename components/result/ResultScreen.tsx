@@ -15,6 +15,7 @@ interface Props {
   isNewPb?: boolean
   onRetry?: () => void
   onNext: () => void
+  nextLabel?: string
   testMeta?: {
     script: string
     difficulty?: string
@@ -34,7 +35,7 @@ function StatCell({ label, value, sub, accent }: { label: string; value: string;
   )
 }
 
-export function ResultScreen({ result, wpmHistory, isNewPb, onRetry, onNext, testMeta }: Props) {
+export function ResultScreen({ result, wpmHistory, isNewPb, onRetry, onNext, nextLabel = 'Sledeći test', testMeta }: Props) {
   useEffect(() => {
     if (isNewPb) {
       toast(`Novi lični rekord! ${Math.round(result.wpm)} WPM`, {
@@ -120,7 +121,7 @@ export function ResultScreen({ result, wpmHistory, isNewPb, onRetry, onNext, tes
           onClick={onNext}
           className="flex items-center gap-2 rounded-md bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-[var(--accent-foreground)] hover:opacity-90 transition-opacity"
         >
-          Sledeći test
+          {nextLabel}
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>

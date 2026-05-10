@@ -60,8 +60,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ text_id: dailyText.text_id, content, category: pool.category })
   }
 
-  // 2. Seeded RNG: odaberi kategoriju i težinu za danas
-  const rng = seededRandom(dateToSeed(today))
+  // 2. Seeded RNG: odaberi kategoriju i težinu za danas (seed po datumu, isti za sve korisnike)
+  const scriptIndex = scripts.indexOf(script)
+  const rng = seededRandom(dateToSeed(today) + scriptIndex * 7919)
   const category = categories[Math.floor(rng() * categories.length)]
   const difficulty = difficulties[Math.floor(rng() * difficulties.length)]
 
@@ -95,8 +96,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Nema dostupnog teksta za danas' }, { status: 404 })
   }
 
-  // Seeded izbor konkretnog teksta
-  const rng2 = seededRandom(dateToSeed(today) + 999)
+  // Seeded izbor konkretnog teksta (script-specifičan seed)
+  const rng2 = seededRandom(dateToSeed(today) + scriptIndex * 7919 + 999)
   const picked = finalTexts[Math.floor(rng2() * finalTexts.length)]
 
   const content = script === 'cirilica'

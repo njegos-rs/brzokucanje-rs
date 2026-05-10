@@ -259,6 +259,7 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
           wpmHistory={finished.wpmHistory}
           isNewPb={finished.isNewPb}
           onNext={() => router.push(`/rang-lista/${pismo}`)}
+          nextLabel="Vidi rang listu"
         />
       </div>
     )

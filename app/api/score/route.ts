@@ -62,9 +62,6 @@ export async function POST(req: NextRequest) {
   const allFlags = [...acFlags.flags, ...srFlags]
   const isFlagged = allFlags.length > 0
 
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? null
-  const userAgent = req.headers.get('user-agent') ?? null
-
   const insert: ScoreInsert = {
     user_id: user.id,
     category: category as ScoreInsert['category'],
@@ -83,8 +80,6 @@ export async function POST(req: NextRequest) {
     is_flagged: isFlagged,
     flag_reason: isFlagged ? allFlags.join(', ') : null,
     text_id: text_id ?? null,
-    ip_address: ip,
-    user_agent: userAgent,
   }
 
   const { data, error } = await supabase.from('scores').insert(insert).select('id').single()
