@@ -8,6 +8,7 @@ const STATIC_ROUTES = [
   { url: '/vezbaj/latinica', priority: 0.9, changeFrequency: 'weekly' },
   { url: '/vezbaj/cirilica', priority: 0.9, changeFrequency: 'weekly' },
   { url: '/vezbaj/easy', priority: 0.8, changeFrequency: 'weekly' },
+  { url: '/igra', priority: 0.7, changeFrequency: 'weekly' },
   { url: '/rang-lista/latinica', priority: 0.8, changeFrequency: 'daily' },
   { url: '/rang-lista/cirilica', priority: 0.8, changeFrequency: 'daily' },
   { url: '/rang-lista/easy', priority: 0.7, changeFrequency: 'daily' },
