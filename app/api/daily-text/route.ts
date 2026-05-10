@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 const scripts = ['cirilica', 'latinica', 'latinica-bez-kvacica'] as const
 const categories = ['recenice', 'citati', 'price'] as const
-const difficulties = ['lake', 'srednje', 'teske'] as const
+const difficulties = ['easy', 'medium', 'hard', 'expert'] as const
 
 type Script = (typeof scripts)[number]
 

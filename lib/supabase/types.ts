@@ -120,7 +120,7 @@ export type Database = {
           source: 'manual' | 'ai_vezba' | 'ai_rank'
           pool_mode: 'vezba' | 'rank'
           script: 'latinica' | 'cirilica' | 'latinica-bez-kvacica' | null
-          difficulty: 'lake' | 'srednje' | 'teske' | 'expert' | null
+          difficulty: 'easy' | 'medium' | 'hard' | 'expert' | null
           is_active: boolean
           word_count: number | null
           char_count: number | null
@@ -236,6 +236,10 @@ export type Database = {
       generate_daily_texts: {
         Args: { p_date?: string }
         Returns: void
+      }
+      get_db_size_mb: {
+        Args: Record<string, never>
+        Returns: number
       }
     }
     Enums: Record<string, never>

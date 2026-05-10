@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
 type Category = 'reci' | 'recenice' | 'citati' | 'price' | 'vesti'
-type Difficulty = 'lake' | 'srednje' | 'teske'
+type Difficulty = 'easy' | 'medium' | 'hard' | 'expert'
 
 interface TextRow {
   id: string
@@ -22,7 +22,7 @@ interface TextRow {
 }
 
 const CATEGORIES: Category[] = ['reci', 'recenice', 'citati', 'price', 'vesti']
-const DIFFICULTIES: Difficulty[] = ['lake', 'srednje', 'teske']
+const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard', 'expert']
 
 const CATEGORY_LABELS: Record<Category, string> = {
   reci: 'Reči',
@@ -123,9 +123,13 @@ export function SadrzajTable({ texts: initial }: Props) {
         content_cyr: form.content_cyr.trim(),
         content_easy: form.content_easy.trim(),
         category: form.category,
-        source: form.source.trim() || null,
+        source: (form.source.trim() || 'manual') as 'manual' | 'ai_vezba' | 'ai_rank',
         difficulty: (form.difficulty || null) as Difficulty | null,
         is_active: form.is_active,
+        script: null,
+        pool_mode: 'vezba' as 'vezba' | 'rank',
+        word_count: form.content_lat.trim().split(/\s+/).filter(Boolean).length,
+        char_count: form.content_lat.trim().length,
       }
 
       if (modal.editing) {
