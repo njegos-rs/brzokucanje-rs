@@ -30,6 +30,7 @@ interface Shot {
   fromY: number
   toX: number
   toY: number
+  progress: number
   life: number
 }
 
@@ -37,6 +38,15 @@ interface Burst {
   id: number
   x: number
   y: number
+  life: number
+}
+
+interface Fragment {
+  id: number
+  x: number
+  y: number
+  vx: number
+  vy: number
   life: number
 }
 
@@ -133,23 +143,20 @@ export function IgraClient({ canPlay }: Props) {
   const [enemies, setEnemies] = useState<Enemy[]>(() => makePreviewEnemies())
   const [shots, setShots] = useState<Shot[]>([])
   const [bursts, setBursts] = useState<Burst[]>([])
+  const [fragments, setFragments] = useState<Fragment[]>([])
   const [targetId, setTargetId] = useState<number | null>(null)
   const [score, setScore] = useState(0)
   const [lives, setLives] = useState(3)
   const [wave, setWave] = useState(1)
-  const [typed, setTyped] = useState(0)
   const [mistakes, setMistakes] = useState(0)
-  const [startedAt, setStartedAt] = useState<number | null>(null)
 
-  const ids = useRef({ enemy: 10, shot: 1, burst: 1 })
+  const ids = useRef({ enemy: 10, shot: 1, burst: 1, fragment: 1 })
   const lastFrame = useRef<number | null>(null)
   const spawnTimer = useRef(0)
   const gameAreaRef = useRef<HTMLDivElement | null>(null)
   const audio = useAudio(soundOn && canPlay)
 
-  const accuracy = typed === 0 ? 100 : Math.max(0, Math.round(((typed - mistakes) / typed) * 100))
-  const elapsedMinutes = startedAt ? Math.max((Date.now() - startedAt) / 60000, 0.01) : 0
-  const wpm = startedAt ? Math.round((typed / 5) / elapsedMinutes) : 0
+  const levelNumber = Math.max(1, Math.min(12, Math.floor(score / 350) + 1))
 
   const activeTarget = useMemo(
     () => enemies.find((enemy) => enemy.id === targetId) ?? null,
@@ -157,26 +164,24 @@ export function IgraClient({ canPlay }: Props) {
   )
 
   const resetGame = useCallback((nextStatus: GameStatus = 'ready') => {
-    ids.current = { enemy: 10, shot: 1, burst: 1 }
+    ids.current = { enemy: 10, shot: 1, burst: 1, fragment: 1 }
     lastFrame.current = null
     spawnTimer.current = 0
     setEnemies([])
     setShots([])
     setBursts([])
+    setFragments([])
     setTargetId(null)
     setScore(0)
     setLives(3)
     setWave(1)
-    setTyped(0)
     setMistakes(0)
-    setStartedAt(null)
     setStatus(nextStatus)
   }, [])
 
   const startGame = useCallback(() => {
     if (!canPlay) return
     resetGame('playing')
-    setStartedAt(Date.now())
     const firstEnemy = makeEnemy(ids.current.enemy++, script, level, 1, [])
     const secondEnemy = makeEnemy(ids.current.enemy++, script, level, 1, [firstEnemy])
     setEnemies([firstEnemy, secondEnemy])
@@ -201,11 +206,20 @@ export function IgraClient({ canPlay }: Props) {
       spawnTimer.current += delta
 
       setShots((current) => current
-        .map((shot) => ({ ...shot, life: shot.life - delta * 4 }))
-        .filter((shot) => shot.life > 0))
+        .map((shot) => ({ ...shot, progress: shot.progress + delta * 3.4, life: shot.life - delta * 2.8 }))
+        .filter((shot) => shot.progress < 1 && shot.life > 0))
       setBursts((current) => current
         .map((burst) => ({ ...burst, life: burst.life - delta * 2.4 }))
         .filter((burst) => burst.life > 0))
+      setFragments((current) => current
+        .map((fragment) => ({
+          ...fragment,
+          x: fragment.x + fragment.vx * delta,
+          y: fragment.y + fragment.vy * delta,
+          vy: fragment.vy + 120 * delta,
+          life: fragment.life - delta * 1.8,
+        }))
+        .filter((fragment) => fragment.life > 0))
 
       setEnemies((current) => {
         let next = current.map((enemy) => ({ ...enemy, y: enemy.y + enemy.speed * delta }))
@@ -254,13 +268,23 @@ export function IgraClient({ canPlay }: Props) {
     if (status !== 'playing' || event.key.length !== 1) return
 
     const key = event.key.toLocaleLowerCase('sr-RS')
-    setTyped((value) => value + 1)
 
     setEnemies((current) => {
       const currentTarget = current.find((enemy) => enemy.id === targetId)
-      const nextTarget = currentTarget && currentTarget.word[currentTarget.typed]?.toLocaleLowerCase('sr-RS') === key
-        ? currentTarget
-        : current.find((enemy) => enemy.typed === 0 && enemy.word[0]?.toLocaleLowerCase('sr-RS') === key)
+
+      if (currentTarget) {
+        const expected = currentTarget.word[currentTarget.typed]?.toLocaleLowerCase('sr-RS')
+        if (expected !== key) {
+          setMistakes((value) => value + 1)
+          audio.miss()
+          return current
+        }
+      }
+
+      const nextTarget = currentTarget
+        ?? current
+          .filter((enemy) => enemy.typed === 0 && enemy.word[0]?.toLocaleLowerCase('sr-RS') === key)
+          .sort((a, b) => b.y - a.y)[0]
 
       if (!nextTarget) {
         setMistakes((value) => value + 1)
@@ -278,6 +302,7 @@ export function IgraClient({ canPlay }: Props) {
           fromY: SHIP_Y,
           toX: nextTarget.x,
           toY: nextTarget.y,
+          progress: 0,
           life: 1,
         },
       ])
@@ -304,6 +329,21 @@ export function IgraClient({ canPlay }: Props) {
         setBursts((value) => [
           ...value,
           { id: ids.current.burst++, x: destroyedEnemy.x, y: destroyedEnemy.y, life: 1 },
+        ])
+        setFragments((value) => [
+          ...value,
+          ...Array.from({ length: 10 }, (_, index) => {
+            const angle = (Math.PI * 2 * index) / 10 + Math.random() * 0.4
+            const speed = 50 + Math.random() * 95
+            return {
+              id: ids.current.fragment++,
+              x: destroyedEnemy.x,
+              y: destroyedEnemy.y,
+              vx: Math.cos(angle) * speed,
+              vy: Math.sin(angle) * speed,
+              life: 1,
+            }
+          }),
         ])
       }
 
@@ -386,19 +426,15 @@ export function IgraClient({ canPlay }: Props) {
             })}
 
             {shots.map((shot) => {
-              const dx = shot.toX - shot.fromX
-              const dy = shot.toY - shot.fromY
-              const length = Math.sqrt(dx * dx + dy * dy)
-              const angle = Math.atan2(dy, dx) * 180 / Math.PI
+              const x = shot.fromX + (shot.toX - shot.fromX) * shot.progress
+              const y = shot.fromY + (shot.toY - shot.fromY) * shot.progress
               return (
                 <div
                   key={shot.id}
-                  className="absolute h-px origin-left bg-[var(--accent)] shadow-[0_0_10px_rgba(204,139,37,0.9)]"
+                  className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent)] shadow-[0_0_12px_rgba(204,139,37,0.95)]"
                   style={{
-                    left: `${(shot.fromX / WIDTH) * 100}%`,
-                    top: `${(shot.fromY / HEIGHT) * 100}%`,
-                    width: `${(length / WIDTH) * 100}%`,
-                    transform: `rotate(${angle}deg)`,
+                    left: `${(x / WIDTH) * 100}%`,
+                    top: `${(y / HEIGHT) * 100}%`,
                     opacity: shot.life,
                   }}
                 />
@@ -408,12 +444,24 @@ export function IgraClient({ canPlay }: Props) {
             {bursts.map((burst) => (
               <div
                 key={burst.id}
-                className="absolute h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--accent)]"
+                className="absolute h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--accent)] bg-[var(--accent)]/10 shadow-[0_0_22px_rgba(204,139,37,0.65)]"
                 style={{
                   left: `${(burst.x / WIDTH) * 100}%`,
                   top: `${(burst.y / HEIGHT) * 100}%`,
                   transform: `translate(-50%, -50%) scale(${1.4 - burst.life})`,
                   opacity: burst.life,
+                }}
+              />
+            ))}
+
+            {fragments.map((fragment) => (
+              <div
+                key={fragment.id}
+                className="absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-[2px] bg-[var(--accent)]"
+                style={{
+                  left: `${(fragment.x / WIDTH) * 100}%`,
+                  top: `${(fragment.y / HEIGHT) * 100}%`,
+                  opacity: fragment.life,
                 }}
               />
             ))}
@@ -451,7 +499,7 @@ export function IgraClient({ canPlay }: Props) {
                     <>
                       <h2 className="text-lg font-semibold text-[var(--foreground)]">Kraj igre</h2>
                       <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-                        Score {score} · {wpm} WPM · tačnost {accuracy}%
+                        Score {score} · level {levelNumber} · talas {wave}
                       </p>
                       <button
                         type="button"
@@ -492,12 +540,12 @@ export function IgraClient({ canPlay }: Props) {
                 <p className="text-xs text-[var(--muted-foreground)]">životi</p>
               </div>
               <div>
-                <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{wave}</p>
-                <p className="text-xs text-[var(--muted-foreground)]">talas</p>
+                <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{levelNumber}</p>
+                <p className="text-xs text-[var(--muted-foreground)]">level</p>
               </div>
               <div>
-                <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{wpm}</p>
-                <p className="text-xs text-[var(--muted-foreground)]">wpm</p>
+                <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{wave}</p>
+                <p className="text-xs text-[var(--muted-foreground)]">talas</p>
               </div>
             </div>
 
@@ -543,7 +591,7 @@ export function IgraClient({ canPlay }: Props) {
 
             <div className="border-t border-[var(--border)] pt-3 text-xs leading-relaxed text-[var(--muted-foreground)]">
               <p>Aktivna meta: <span className="text-[var(--foreground)]">{activeTarget?.word ?? '-'}</span></p>
-              <p>Tačnost: <span className="text-[var(--foreground)]">{accuracy}%</span></p>
+              <p>Greške: <span className="text-[var(--foreground)]">{mistakes}</span></p>
             </div>
           </aside>
         </div>
