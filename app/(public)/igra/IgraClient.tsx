@@ -3,49 +3,45 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Lock, RotateCcw, Volume2, VolumeX } from 'lucide-react'
-import { buildWordTest, loadWords } from '@/lib/words/loader'
-import type { TestLevel } from '@/lib/typing/engine'
+import { loadWords } from '@/lib/words/loader'
 import { cn } from '@/lib/utils'
 
-type Script = 'latinica' | 'cirilica' | 'easy'
 type GameStatus = 'preview' | 'ready' | 'playing' | 'gameover'
 
 // Level config: thresholds in seconds of play time
-// Early levels are forgiving — ramp is barely noticeable until level 5+
 const LEVEL_CONFIG: {
-  minWords: number  // minimum word length
-  maxWords: number  // maximum word length
-  baseSpeed: number // px/s base fall speed
-  spawnInterval: number // seconds between spawns
+  minWords: number
+  maxWords: number
+  baseSpeed: number
+  spawnInterval: number // max seconds between spawns
+  minOnScreen: number   // always keep at least this many falling
   maxOnScreen: number
-  testLevel: TestLevel
   label: string
   message: string
 }[] = [
-  // Level 1 — 0-20s
-  { minWords: 3, maxWords: 4, baseSpeed: 16, spawnInterval: 3.2, maxOnScreen: 2, testLevel: 'easy', label: '1', message: 'Odličan start!' },
-  // Level 2 — 20-45s
-  { minWords: 3, maxWords: 5, baseSpeed: 19, spawnInterval: 2.8, maxOnScreen: 2, testLevel: 'easy', label: '2', message: 'Sve bolje i bolje!' },
-  // Level 3 — 45-75s
-  { minWords: 3, maxWords: 6, baseSpeed: 22, spawnInterval: 2.5, maxOnScreen: 3, testLevel: 'easy', label: '3', message: 'Odličan ritam!' },
-  // Level 4 — 75-110s
-  { minWords: 4, maxWords: 6, baseSpeed: 26, spawnInterval: 2.2, maxOnScreen: 3, testLevel: 'medium', label: '4', message: 'Pravi igrač!' },
-  // Level 5 — 110-150s
-  { minWords: 4, maxWords: 7, baseSpeed: 30, spawnInterval: 2.0, maxOnScreen: 3, testLevel: 'medium', label: '5', message: 'Fenomenalno!' },
-  // Level 6 — 150-195s
-  { minWords: 5, maxWords: 7, baseSpeed: 34, spawnInterval: 1.8, maxOnScreen: 4, testLevel: 'medium', label: '6', message: 'Legenda nastaje!' },
-  // Level 7 — 195-245s
-  { minWords: 5, maxWords: 8, baseSpeed: 39, spawnInterval: 1.6, maxOnScreen: 4, testLevel: 'hard', label: '7', message: 'Brutalan tempo!' },
-  // Level 8 — 245-300s
-  { minWords: 5, maxWords: 9, baseSpeed: 44, spawnInterval: 1.4, maxOnScreen: 4, testLevel: 'hard', label: '8', message: 'Nezaustavljiv si!' },
-  // Level 9 — 300-360s
-  { minWords: 6, maxWords: 10, baseSpeed: 50, spawnInterval: 1.2, maxOnScreen: 5, testLevel: 'hard', label: '9', message: 'Vrh!' },
-  // Level 10+ — 360s+
-  { minWords: 6, maxWords: 12, baseSpeed: 57, spawnInterval: 1.0, maxOnScreen: 5, testLevel: 'expert', label: '10', message: 'HAOS MOD!' },
+  // Level 1 — 0-25s: very chill
+  { minWords: 3, maxWords: 5, baseSpeed: 18, spawnInterval: 2.5, minOnScreen: 2, maxOnScreen: 3, label: '1', message: 'Odličan start!' },
+  // Level 2 — 25-55s
+  { minWords: 3, maxWords: 6, baseSpeed: 22, spawnInterval: 2.2, minOnScreen: 2, maxOnScreen: 3, label: '2', message: 'Sve bolje i bolje!' },
+  // Level 3 — 55-90s
+  { minWords: 4, maxWords: 6, baseSpeed: 26, spawnInterval: 2.0, minOnScreen: 3, maxOnScreen: 4, label: '3', message: 'Odličan ritam!' },
+  // Level 4 — 90-130s
+  { minWords: 4, maxWords: 7, baseSpeed: 30, spawnInterval: 1.8, minOnScreen: 3, maxOnScreen: 4, label: '4', message: 'Pravi igrač!' },
+  // Level 5 — 130-175s
+  { minWords: 5, maxWords: 7, baseSpeed: 35, spawnInterval: 1.6, minOnScreen: 3, maxOnScreen: 4, label: '5', message: 'Fenomenalno!' },
+  // Level 6 — 175-225s
+  { minWords: 5, maxWords: 8, baseSpeed: 40, spawnInterval: 1.4, minOnScreen: 4, maxOnScreen: 5, label: '6', message: 'Legenda nastaje!' },
+  // Level 7 — 225-280s
+  { minWords: 5, maxWords: 9, baseSpeed: 46, spawnInterval: 1.2, minOnScreen: 4, maxOnScreen: 5, label: '7', message: 'Brutalan tempo!' },
+  // Level 8 — 280-340s
+  { minWords: 6, maxWords: 9, baseSpeed: 52, spawnInterval: 1.0, minOnScreen: 4, maxOnScreen: 5, label: '8', message: 'Nezaustavljiv si!' },
+  // Level 9 — 340-400s
+  { minWords: 6, maxWords: 10, baseSpeed: 59, spawnInterval: 0.9, minOnScreen: 5, maxOnScreen: 6, label: '9', message: 'Vrh!' },
+  // Level 10+ — 400s+
+  { minWords: 6, maxWords: 12, baseSpeed: 67, spawnInterval: 0.8, minOnScreen: 5, maxOnScreen: 6, label: '10', message: 'HAOS MOD!' },
 ]
 
-// Time thresholds (seconds) when each level unlocks
-const LEVEL_THRESHOLDS = [0, 20, 45, 75, 110, 150, 195, 245, 300, 360]
+const LEVEL_THRESHOLDS = [0, 25, 55, 90, 130, 175, 225, 280, 340, 400]
 
 function getLevelIndex(elapsed: number): number {
   let idx = 0
@@ -95,11 +91,8 @@ interface Fragment {
   life: number
 }
 
-const SCRIPTS: { id: Script; label: string }[] = [
-  { id: 'latinica', label: 'Latinica' },
-  { id: 'cirilica', label: 'Ćirilica' },
-  { id: 'easy', label: 'Bez kvačica' },
-]
+const GAME_SCRIPT = 'easy' as const
+type Script = typeof GAME_SCRIPT
 
 const PREVIEW_WORDS = ['brzina', 'fokus', 'ritam', 'tastatura', 'level', 'talas']
 const WIDTH = 900
@@ -108,37 +101,25 @@ const SHIP_X = WIDTH / 2
 const SHIP_Y = HEIGHT - 50
 
 
-function pickWord(script: Script, level: TestLevel, minLen: number, maxLen: number): string {
-  const words = loadWords(script, level).filter(
-    (word) => /^[\p{L}]+$/u.test(word) && word.length >= minLen && word.length <= maxLen
-  )
-  if (words.length === 0) {
-    const fallback = loadWords(script, 'easy').filter((w) => /^[\p{L}]+$/u.test(w) && w.length >= 3)
-    return fallback[Math.floor(Math.random() * fallback.length)] ?? 'test'
-  }
-  const built = buildWordTest(words, 1)
-  return built.split(' ')[0] ?? words[Math.floor(Math.random() * words.length)] ?? 'test'
+// All words pre-loaded once — filtered by length at pick time
+const ALL_GAME_WORDS = loadWords(GAME_SCRIPT, 'easy').filter((w) => /^[a-z]+$/.test(w))
+
+function pickWord(minLen: number, maxLen: number): string {
+  const pool = ALL_GAME_WORDS.filter((w) => w.length >= minLen && w.length <= maxLen)
+  const src = pool.length > 0 ? pool : ALL_GAME_WORDS
+  return src[Math.floor(Math.random() * src.length)] ?? 'test'
 }
 
-function makeEnemy(id: number, script: Script, levelIdx: number, existing: Enemy[]): Enemy {
+function makeEnemy(id: number, levelIdx: number, existing: Enemy[]): Enemy {
   const cfg = LEVEL_CONFIG[levelIdx]
-  let word = pickWord(script, cfg.testLevel, cfg.minWords, cfg.maxWords)
-  const usedLetters = new Set(existing.map((e) => e.word[0]?.toLocaleLowerCase('sr-RS')))
-  for (let i = 0; i < 10 && usedLetters.has(word[0]?.toLocaleLowerCase('sr-RS')); i++) {
-    word = pickWord(script, cfg.testLevel, cfg.minWords, cfg.maxWords)
+  let word = pickWord(cfg.minWords, cfg.maxWords)
+  const usedLetters = new Set(existing.map((e) => e.word[0]))
+  for (let i = 0; i < 10 && usedLetters.has(word[0]); i++) {
+    word = pickWord(cfg.minWords, cfg.maxWords)
   }
   const x = 80 + Math.random() * (WIDTH - 160)
-  // Small random variance ±15% on speed so not all words fall identically
-  const speedVariance = cfg.baseSpeed * (0.85 + Math.random() * 0.30)
-  return {
-    id,
-    word,
-    typed: 0,
-    x,
-    y: -30 - Math.random() * 60,
-    speed: speedVariance,
-    size: 8 + Math.min(10, word.length),
-  }
+  const speed = cfg.baseSpeed * (0.85 + Math.random() * 0.30)
+  return { id, word, typed: 0, x, y: -30 - Math.random() * 60, speed, size: 8 + Math.min(10, word.length) }
 }
 
 function makePreviewEnemy(id: number, existing: Enemy[] = []): Enemy {
@@ -231,7 +212,6 @@ function AuthGate() {
 }
 
 export function IgraClient({ canPlay }: Props) {
-  const [script, setScript] = useState<Script>('latinica')
   const [status, setStatus] = useState<GameStatus>(canPlay ? 'ready' : 'preview')
   const [soundOn, setSoundOn] = useState(true)
   const [enemies, setEnemies] = useState<Enemy[]>(() => makePreviewEnemies())
@@ -286,10 +266,15 @@ export function IgraClient({ canPlay }: Props) {
   const startGame = useCallback(() => {
     if (!canPlay) return
     resetGame('playing')
-    const firstEnemy = makeEnemy(ids.current.enemy++, script, 0, [])
-    setEnemies([firstEnemy])
+    // Spawn minOnScreen enemies immediately at start
+    const cfg = LEVEL_CONFIG[0]
+    const initial: Enemy[] = []
+    for (let i = 0; i < cfg.minOnScreen; i++) {
+      initial.push(makeEnemy(ids.current.enemy++, 0, initial))
+    }
+    setEnemies(initial)
     gameAreaRef.current?.focus()
-  }, [canPlay, resetGame, script])
+  }, [canPlay, resetGame])
 
   useEffect(() => {
     if (!canPlay) {
@@ -449,9 +434,13 @@ export function IgraClient({ canPlay }: Props) {
           next = next.filter((enemy) => enemy.y <= SHIP_Y - 20)
         }
 
+        // Always refill to minOnScreen immediately; respect maxOnScreen via interval
+        while (next.length < cfg.minOnScreen) {
+          next = [...next, makeEnemy(ids.current.enemy++, levelIdxRef.current, next)]
+        }
         if (spawnTimer.current > cfg.spawnInterval && next.length < cfg.maxOnScreen) {
           spawnTimer.current = 0
-          next = [...next, makeEnemy(ids.current.enemy++, script, levelIdxRef.current, next)]
+          next = [...next, makeEnemy(ids.current.enemy++, levelIdxRef.current, next)]
         }
 
         return next
@@ -462,7 +451,7 @@ export function IgraClient({ canPlay }: Props) {
 
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [audio, script, status])
+  }, [audio, status])
 
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!canPlay) return
@@ -791,26 +780,6 @@ export function IgraClient({ canPlay }: Props) {
                       : '100%'
                   }}
                 />
-              </div>
-            </div>
-
-            <div className="border-t border-[var(--border)] pt-3">
-              <p className="mb-2 text-xs uppercase tracking-widest text-[var(--muted-foreground)]">Pismo</p>
-              <div className="grid gap-1">
-                {SCRIPTS.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    disabled={status === 'playing'}
-                    onClick={() => setScript(item.id)}
-                    className={cn(
-                      'rounded-md px-2.5 py-1.5 text-left text-sm transition-colors disabled:opacity-50',
-                      script === item.id ? 'bg-[var(--accent)] text-[var(--accent-foreground)]' : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]',
-                    )}
-                  >
-                    {item.label}
-                  </button>
-                ))}
               </div>
             </div>
 
