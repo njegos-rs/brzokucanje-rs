@@ -62,7 +62,7 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
   const [userRankAlready, setUserRankAlready] = useState<number | null>(null)
   const [loadingBoard, setLoadingBoard] = useState(false)
 
-  const fetchLeaderboard = useCallback(async (script: Script, cat?: Category | null) => {
+  const fetchLeaderboard = useCallback(async (script: Script, cat: Category | null) => {
     setLoadingBoard(true)
     try {
       const catParam = cat ? `&category=${cat}` : ''
@@ -98,13 +98,17 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
   }, [pismo])
 
   useEffect(() => {
-    if (playedToday) {
+    fetchDailyText()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pismo])
+
+  // Kad imamo kategoriju i user je već odigrao, učitaj leaderboard
+  useEffect(() => {
+    if (playedToday && category) {
       fetchLeaderboard(pismo, category)
-    } else {
-      fetchDailyText()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playedToday, pismo])
+  }, [playedToday, category, pismo])
 
   // Tab focus tracking — invalidira test
   useEffect(() => {

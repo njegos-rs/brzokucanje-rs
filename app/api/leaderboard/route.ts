@@ -18,18 +18,20 @@ function isCategory(value: string): value is Category {
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const scriptParam = searchParams.get('script') ?? 'latinica'
-  const categoryParam = searchParams.get('category') ?? 'reci'
+  const categoryParam = searchParams.get('category')
   const period = searchParams.get('period') ?? 'daily'
   const limitParam = parseInt(searchParams.get('limit') ?? '10', 10)
   const limit = Math.min(Math.max(limitParam, 1), 100)
 
-  if (!isScript(scriptParam) || !isCategory(categoryParam)) {
+  if (!isScript(scriptParam)) {
     return NextResponse.json({ error: 'Neispravni parametri' }, { status: 400 })
+  }
+  if (categoryParam && !isCategory(categoryParam)) {
+    return NextResponse.json({ error: 'Neispravna kategorija' }, { status: 400 })
   }
 
   const script = scriptParam
-  const category = categoryParam
-
+  const category: Category | null = (categoryParam as Category) ?? null
   const supabase = await createClient()
 
   const today = new Date().toISOString().slice(0, 10)
@@ -42,36 +44,33 @@ export async function GET(req: NextRequest) {
   let error: { message: string } | null = null
 
   if (period === 'daily') {
-    const res = await supabase
+    let q = supabase
       .from('v_daily_leaderboard' as 'scores')
       .select('user_id, username, wpm, raw_wpm, accuracy, score, created_at, daily_rank')
       .eq('script', script)
-      .eq('category', category)
       .gte('created_at', `${today}T00:00:00`)
-      .order('daily_rank', { ascending: true })
-      .limit(limit)
+    if (category) q = q.eq('category', category) as typeof q
+    const res = await q.order('daily_rank', { ascending: true }).limit(limit)
     data = (res.data ?? []) as unknown[]
     error = res.error
   } else if (period === 'weekly') {
-    const res = await supabase
+    let q = supabase
       .from('v_weekly_leaderboard' as 'scores')
       .select('user_id, username, wpm, score, accuracy, test_count, weekly_rank')
       .eq('script', script)
-      .eq('category', category)
       .gte('created_at', weekStart.toISOString())
-      .order('weekly_rank', { ascending: true })
-      .limit(limit)
+    if (category) q = q.eq('category', category) as typeof q
+    const res = await q.order('weekly_rank', { ascending: true }).limit(limit)
     data = (res.data ?? []) as unknown[]
     error = res.error
   } else if (period === 'monthly') {
-    const res = await supabase
+    let q = supabase
       .from('v_monthly_leaderboard' as 'scores')
       .select('user_id, username, wpm, score, accuracy, test_count, monthly_rank')
       .eq('script', script)
-      .eq('category', category)
       .gte('created_at', monthStart.toISOString())
-      .order('monthly_rank', { ascending: true })
-      .limit(limit)
+    if (category) q = q.eq('category', category) as typeof q
+    const res = await q.order('monthly_rank', { ascending: true }).limit(limit)
     data = (res.data ?? []) as unknown[]
     error = res.error
   } else {
@@ -82,5 +81,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ data, period, script, category })
+  return NextResponse.json({ data, period, script })
 }

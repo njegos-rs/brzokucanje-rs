@@ -40,11 +40,21 @@ export function LeaderboardContent({ script }: Props) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [dailyCategory, setDailyCategory] = useState<string | null>(null)
+
+  // Fetch dnevne kategorije da bi leaderboard matchovao rang test
+  useEffect(() => {
+    fetch(`/api/daily-text?script=${script}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((j) => setDailyCategory(j?.category ?? null))
+      .catch(() => {})
+  }, [script])
 
   useEffect(() => {
     setLoading(true)
     setError(null)
-    fetch(`/api/leaderboard?script=${script}&period=${period}&limit=25`)
+    const catParam = period === 'daily' && dailyCategory ? `&category=${dailyCategory}` : ''
+    fetch(`/api/leaderboard?script=${script}&period=${period}&limit=25${catParam}`)
       .then((r) => r.json())
       .then((j) => {
         setEntries((j.data ?? []) as LeaderboardEntry[])
@@ -54,7 +64,7 @@ export function LeaderboardContent({ script }: Props) {
         setError('Greška pri učitavanju rang liste.')
         setLoading(false)
       })
-  }, [script, period])
+  }, [script, period, dailyCategory])
 
   const pismoTabovi: Script[] = ['latinica', 'cirilica', 'latinica-bez-kvacica']
 
