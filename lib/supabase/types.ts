@@ -63,7 +63,7 @@ export type Database = {
           created_at: string
           text_id: string | null
         }
-        Insert: Omit<Database['public']['Tables']['scores']['Row'], 'id' | 'created_at'>
+        Insert: Omit<Database['public']['Tables']['scores']['Row'], 'id' | 'created_at' | 'flag_reviewed' | 'review_decision' | 'reviewed_by'>
         Update: {
           flag_reviewed?: boolean
           review_decision?: string | null
