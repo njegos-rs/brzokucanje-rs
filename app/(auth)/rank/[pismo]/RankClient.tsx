@@ -19,13 +19,6 @@ const SCRIPT_LABELS: Record<Script, string> = {
   'latinica-bez-kvacica': 'Latinica bez kvačica',
 }
 
-const CATEGORY_LABELS: Record<Category, string> = {
-  reci: 'Reči',
-  recenice: 'Rečenice',
-  citati: 'Citati',
-  price: 'Priče',
-  vesti: 'Vesti',
-}
 
 interface LeaderboardEntry {
   user_id: string
@@ -55,7 +48,7 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
   const router = useRouter()
   const [dailyText, setDailyText] = useState<{ text_id: string; content: string } | null>(null)
   const [category, setCategory] = useState<Category | null>(null)
-  const [level, setLevel] = useState<string | null>(null)
+  const [playedToday, setPlayedToday] = useState(alreadyPlayed)
   const [loadingText, setLoadingText] = useState(false)
   const [textError, setTextError] = useState<string | null>(null)
   const [finished, setFinished] = useState<FinishedState | null>(null)
@@ -69,10 +62,11 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
   const [userRankAlready, setUserRankAlready] = useState<number | null>(null)
   const [loadingBoard, setLoadingBoard] = useState(false)
 
-  const fetchLeaderboard = useCallback(async (script: Script) => {
+  const fetchLeaderboard = useCallback(async (script: Script, cat?: Category | null) => {
     setLoadingBoard(true)
     try {
-      const res = await fetch(`/api/leaderboard?script=${script}&period=daily&limit=25`)
+      const catParam = cat ? `&category=${cat}` : ''
+      const res = await fetch(`/api/leaderboard?script=${script}&period=daily&limit=25${catParam}`)
       const json = await res.json()
       const entries: LeaderboardEntry[] = json.data ?? []
       setLeaderboard(entries)
@@ -96,7 +90,6 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
       const j = await res.json()
       setDailyText({ text_id: j.text_id, content: j.content })
       setCategory(j.category ?? null)
-      setLevel(j.level ?? null)
     } catch {
       setTextError('Mrežna greška. Pokušaj ponovo.')
     } finally {
@@ -105,12 +98,13 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
   }, [pismo])
 
   useEffect(() => {
-    if (alreadyPlayed) {
-      fetchLeaderboard(pismo)
+    if (playedToday) {
+      fetchLeaderboard(pismo, category)
     } else {
       fetchDailyText()
     }
-  }, [alreadyPlayed, pismo, fetchDailyText, fetchLeaderboard])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playedToday, pismo])
 
   // Tab focus tracking — invalidira test
   useEffect(() => {
@@ -180,7 +174,8 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
         let userRank: number | undefined
         let totalPlayers: number | undefined
         try {
-          const rankRes = await fetch(`/api/leaderboard?script=${pismo}&period=daily&limit=1000`)
+          const catParam = category ? `&category=${category}` : ''
+          const rankRes = await fetch(`/api/leaderboard?script=${pismo}&period=daily&limit=1000${catParam}`)
           const rankJson = await rankRes.json()
           const entries: LeaderboardEntry[] = rankJson.data ?? []
           const pos = entries.findIndex((e) => e.user_id === userId)
@@ -190,6 +185,7 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
           }
         } catch { /* ignorisi */ }
 
+        setPlayedToday(true)
         setFinished({ result, wpmHistory, keystrokes, scoreId: json.id, isNewPb: json.is_new_pb, userRank, totalPlayers })
       } catch {
         setSubmitError('Mrežna greška. Rezultat nije sačuvan.')
@@ -265,7 +261,7 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
   }
 
   // Ekran "već odigrano danas"
-  if (alreadyPlayed) {
+  if (playedToday && !finished) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-8">
         {/* Pismo tabovi */}
@@ -376,16 +372,10 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
         ))}
       </div>
 
-      <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
+      <div className="mb-4">
         <p className="text-sm text-[var(--muted-foreground)]">
           Jedan pokušaj dnevno. Rezultati idu na rang listu.
         </p>
-        {category && (
-          <span className="rounded-full bg-[var(--accent)]/15 px-3 py-1 text-xs font-medium text-[var(--accent)]">
-            {CATEGORY_LABELS[category as Category] ?? category}
-            {level && ` · ${level}`}
-          </span>
-        )}
       </div>
 
       {loadingText && (

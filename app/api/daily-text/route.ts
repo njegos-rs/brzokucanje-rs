@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 const scripts = ['cirilica', 'latinica', 'latinica-bez-kvacica'] as const
-const categories = ['reci', 'recenice', 'citati', 'price', 'vesti'] as const
+const categories = ['recenice', 'citati', 'price'] as const
 const difficulties = ['lake', 'srednje', 'teske'] as const
 
 type Script = (typeof scripts)[number]
