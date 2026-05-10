@@ -2,13 +2,58 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Lock, RotateCcw, Volume2, VolumeX, Zap } from 'lucide-react'
+import { Lock, RotateCcw, Volume2, VolumeX } from 'lucide-react'
 import { buildWordTest, loadWords } from '@/lib/words/loader'
 import type { TestLevel } from '@/lib/typing/engine'
 import { cn } from '@/lib/utils'
 
 type Script = 'latinica' | 'cirilica' | 'easy'
 type GameStatus = 'preview' | 'ready' | 'playing' | 'gameover'
+
+// Level config: thresholds in seconds of play time
+// Early levels are forgiving — ramp is barely noticeable until level 5+
+const LEVEL_CONFIG: {
+  minWords: number  // minimum word length
+  maxWords: number  // maximum word length
+  baseSpeed: number // px/s base fall speed
+  spawnInterval: number // seconds between spawns
+  maxOnScreen: number
+  testLevel: TestLevel
+  label: string
+  message: string
+}[] = [
+  // Level 1 — 0-20s
+  { minWords: 3, maxWords: 4, baseSpeed: 16, spawnInterval: 3.2, maxOnScreen: 2, testLevel: 'easy', label: '1', message: 'Odličan start!' },
+  // Level 2 — 20-45s
+  { minWords: 3, maxWords: 5, baseSpeed: 19, spawnInterval: 2.8, maxOnScreen: 2, testLevel: 'easy', label: '2', message: 'Sve bolje i bolje!' },
+  // Level 3 — 45-75s
+  { minWords: 3, maxWords: 6, baseSpeed: 22, spawnInterval: 2.5, maxOnScreen: 3, testLevel: 'easy', label: '3', message: 'Odličan ritam!' },
+  // Level 4 — 75-110s
+  { minWords: 4, maxWords: 6, baseSpeed: 26, spawnInterval: 2.2, maxOnScreen: 3, testLevel: 'medium', label: '4', message: 'Pravi igrač!' },
+  // Level 5 — 110-150s
+  { minWords: 4, maxWords: 7, baseSpeed: 30, spawnInterval: 2.0, maxOnScreen: 3, testLevel: 'medium', label: '5', message: 'Fenomenalno!' },
+  // Level 6 — 150-195s
+  { minWords: 5, maxWords: 7, baseSpeed: 34, spawnInterval: 1.8, maxOnScreen: 4, testLevel: 'medium', label: '6', message: 'Legenda nastaje!' },
+  // Level 7 — 195-245s
+  { minWords: 5, maxWords: 8, baseSpeed: 39, spawnInterval: 1.6, maxOnScreen: 4, testLevel: 'hard', label: '7', message: 'Brutalan tempo!' },
+  // Level 8 — 245-300s
+  { minWords: 5, maxWords: 9, baseSpeed: 44, spawnInterval: 1.4, maxOnScreen: 4, testLevel: 'hard', label: '8', message: 'Nezaustavljiv si!' },
+  // Level 9 — 300-360s
+  { minWords: 6, maxWords: 10, baseSpeed: 50, spawnInterval: 1.2, maxOnScreen: 5, testLevel: 'hard', label: '9', message: 'Vrh!' },
+  // Level 10+ — 360s+
+  { minWords: 6, maxWords: 12, baseSpeed: 57, spawnInterval: 1.0, maxOnScreen: 5, testLevel: 'expert', label: '10', message: 'HAOS MOD!' },
+]
+
+// Time thresholds (seconds) when each level unlocks
+const LEVEL_THRESHOLDS = [0, 20, 45, 75, 110, 150, 195, 245, 300, 360]
+
+function getLevelIndex(elapsed: number): number {
+  let idx = 0
+  for (let i = 0; i < LEVEL_THRESHOLDS.length; i++) {
+    if (elapsed >= LEVEL_THRESHOLDS[i]) idx = i
+  }
+  return Math.min(idx, LEVEL_CONFIG.length - 1)
+}
 
 interface Props {
   canPlay: boolean
@@ -63,37 +108,37 @@ const SHIP_X = WIDTH / 2
 const SHIP_Y = HEIGHT - 50
 
 
-function pickWord(script: Script, level: TestLevel): string {
-  const words = loadWords(script, level).filter((word) => /^[\p{L}]+$/u.test(word) && word.length >= 3 && word.length <= 12)
+function pickWord(script: Script, level: TestLevel, minLen: number, maxLen: number): string {
+  const words = loadWords(script, level).filter(
+    (word) => /^[\p{L}]+$/u.test(word) && word.length >= minLen && word.length <= maxLen
+  )
+  if (words.length === 0) {
+    const fallback = loadWords(script, 'easy').filter((w) => /^[\p{L}]+$/u.test(w) && w.length >= 3)
+    return fallback[Math.floor(Math.random() * fallback.length)] ?? 'test'
+  }
   const built = buildWordTest(words, 1)
   return built.split(' ')[0] ?? words[Math.floor(Math.random() * words.length)] ?? 'test'
 }
 
-function makeEnemy(id: number, script: Script, level: TestLevel, wave: number, existing: Enemy[]): Enemy {
-  let word = pickWord(script, level)
-  const usedLetters = new Set(existing.map((enemy) => enemy.word[0]?.toLocaleLowerCase('sr-RS')))
-
-  for (let i = 0; i < 10 && usedLetters.has(word[0]?.toLocaleLowerCase('sr-RS')); i += 1) {
-    word = pickWord(script, level)
+function makeEnemy(id: number, script: Script, levelIdx: number, existing: Enemy[]): Enemy {
+  const cfg = LEVEL_CONFIG[levelIdx]
+  let word = pickWord(script, cfg.testLevel, cfg.minWords, cfg.maxWords)
+  const usedLetters = new Set(existing.map((e) => e.word[0]?.toLocaleLowerCase('sr-RS')))
+  for (let i = 0; i < 10 && usedLetters.has(word[0]?.toLocaleLowerCase('sr-RS')); i++) {
+    word = pickWord(script, cfg.testLevel, cfg.minWords, cfg.maxWords)
   }
-
   const x = 80 + Math.random() * (WIDTH - 160)
+  // Small random variance ±15% on speed so not all words fall identically
+  const speedVariance = cfg.baseSpeed * (0.85 + Math.random() * 0.30)
   return {
     id,
     word,
     typed: 0,
     x,
-    y: -30 - Math.random() * 80,
-    speed: 24 + wave * 4 + Math.random() * 18,
+    y: -30 - Math.random() * 60,
+    speed: speedVariance,
     size: 8 + Math.min(10, word.length),
   }
-}
-
-function levelForNumber(level: number): TestLevel {
-  if (level >= 10) return 'expert'
-  if (level >= 6) return 'hard'
-  if (level >= 3) return 'medium'
-  return 'easy'
 }
 
 function makePreviewEnemy(id: number, existing: Enemy[] = []): Enemy {
@@ -196,17 +241,21 @@ export function IgraClient({ canPlay }: Props) {
   const [targetId, setTargetId] = useState<number | null>(null)
   const [score, setScore] = useState(0)
   const [lives, setLives] = useState(3)
-  const [wave, setWave] = useState(1)
+  const [elapsed, setElapsed] = useState(0)
+  const [levelIdx, setLevelIdx] = useState(0)
+  const [levelUpMsg, setLevelUpMsg] = useState<string | null>(null)
+  const [streak, setStreak] = useState(0)
   const [mistakes, setMistakes] = useState(0)
 
   const ids = useRef({ enemy: 10, shot: 1, burst: 1, fragment: 1 })
   const lastFrame = useRef<number | null>(null)
   const spawnTimer = useRef(0)
+  const elapsedRef = useRef(0)
+  const levelIdxRef = useRef(0)
   const gameAreaRef = useRef<HTMLDivElement | null>(null)
   const audio = useAudio(soundOn && canPlay)
 
-  const levelNumber = Math.max(1, Math.min(12, Math.floor((wave - 1) / 5) + 1))
-  const gameLevel = levelForNumber(levelNumber)
+  const currentLevel = LEVEL_CONFIG[levelIdx]
 
   const activeTarget = useMemo(
     () => enemies.find((enemy) => enemy.id === targetId) ?? null,
@@ -217,6 +266,8 @@ export function IgraClient({ canPlay }: Props) {
     ids.current = { enemy: 10, shot: 1, burst: 1, fragment: 1 }
     lastFrame.current = null
     spawnTimer.current = 0
+    elapsedRef.current = 0
+    levelIdxRef.current = 0
     setEnemies([])
     setShots([])
     setBursts([])
@@ -224,7 +275,10 @@ export function IgraClient({ canPlay }: Props) {
     setTargetId(null)
     setScore(0)
     setLives(3)
-    setWave(1)
+    setElapsed(0)
+    setLevelIdx(0)
+    setLevelUpMsg(null)
+    setStreak(0)
     setMistakes(0)
     setStatus(nextStatus)
   }, [])
@@ -232,9 +286,8 @@ export function IgraClient({ canPlay }: Props) {
   const startGame = useCallback(() => {
     if (!canPlay) return
     resetGame('playing')
-    const firstEnemy = makeEnemy(ids.current.enemy++, script, levelForNumber(1), 1, [])
-    const secondEnemy = makeEnemy(ids.current.enemy++, script, levelForNumber(1), 1, [firstEnemy])
-    setEnemies([firstEnemy, secondEnemy])
+    const firstEnemy = makeEnemy(ids.current.enemy++, script, 0, [])
+    setEnemies([firstEnemy])
     gameAreaRef.current?.focus()
   }, [canPlay, resetGame, script])
 
@@ -351,6 +404,19 @@ export function IgraClient({ canPlay }: Props) {
       const delta = Math.min((now - previous) / 1000, 0.05)
       lastFrame.current = now
       spawnTimer.current += delta
+      elapsedRef.current += delta
+
+      // Level progression based on elapsed time
+      const newLevelIdx = getLevelIndex(elapsedRef.current)
+      if (newLevelIdx !== levelIdxRef.current) {
+        levelIdxRef.current = newLevelIdx
+        setLevelIdx(newLevelIdx)
+        setLevelUpMsg(LEVEL_CONFIG[newLevelIdx].message)
+        setTimeout(() => setLevelUpMsg(null), 2200)
+      }
+      setElapsed(Math.floor(elapsedRef.current))
+
+      const cfg = LEVEL_CONFIG[levelIdxRef.current]
 
       setShots((current) => current
         .map((shot) => ({ ...shot, progress: shot.progress + delta * 3.4, life: shot.life - delta * 2.8 }))
@@ -373,6 +439,7 @@ export function IgraClient({ canPlay }: Props) {
         const escaped = next.filter((enemy) => enemy.y > SHIP_Y - 20)
         if (escaped.length > 0) {
           audio.miss()
+          setStreak(0)
           setLives((value) => {
             const remaining = value - escaped.length
             if (remaining <= 0) setStatus('gameover')
@@ -382,9 +449,9 @@ export function IgraClient({ canPlay }: Props) {
           next = next.filter((enemy) => enemy.y <= SHIP_Y - 20)
         }
 
-        if (spawnTimer.current > Math.max(0.8, 2.2 - wave * 0.08)) {
+        if (spawnTimer.current > cfg.spawnInterval && next.length < cfg.maxOnScreen) {
           spawnTimer.current = 0
-          next = [...next, makeEnemy(ids.current.enemy++, script, gameLevel, wave, next)]
+          next = [...next, makeEnemy(ids.current.enemy++, script, levelIdxRef.current, next)]
         }
 
         return next
@@ -395,11 +462,7 @@ export function IgraClient({ canPlay }: Props) {
 
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [audio, gameLevel, script, status, wave])
-
-  useEffect(() => {
-    setWave((current) => Math.max(current, Math.min(60, Math.floor(score / 180) + 1)))
-  }, [score])
+  }, [audio, script, status])
 
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!canPlay) return
@@ -423,6 +486,7 @@ export function IgraClient({ canPlay }: Props) {
         const expected = currentTarget.word[currentTarget.typed]?.toLocaleLowerCase('sr-RS')
         if (expected !== key) {
           setMistakes((value) => value + 1)
+          setStreak(0)
           audio.miss()
           return current
         }
@@ -435,6 +499,7 @@ export function IgraClient({ canPlay }: Props) {
 
       if (!nextTarget) {
         setMistakes((value) => value + 1)
+        setStreak(0)
         audio.miss()
         return current
       }
@@ -472,7 +537,13 @@ export function IgraClient({ canPlay }: Props) {
       if (destroyedEnemy) {
         audio.hit()
         setTargetId(null)
-        setScore((value) => value + destroyedEnemy.word.length * 20 + wave * 10)
+        setStreak((s) => s + 1)
+        // Score: base * level multiplier * streak bonus (capped at 5x)
+        setScore((value) => {
+          const base = destroyedEnemy.word.length * 25
+          const lvlBonus = (levelIdxRef.current + 1) * 15
+          return value + base + lvlBonus
+        })
         setBursts((value) => [
           ...value,
           { id: ids.current.burst++, x: destroyedEnemy.x, y: destroyedEnemy.y, life: 1 },
@@ -496,7 +567,7 @@ export function IgraClient({ canPlay }: Props) {
 
       return next
     })
-  }, [audio, canPlay, startGame, status, targetId, wave])
+  }, [audio, canPlay, startGame, status, targetId])
 
   const previewOverlay = !canPlay
 
@@ -505,10 +576,6 @@ export function IgraClient({ canPlay }: Props) {
       <div className="mx-auto flex max-w-6xl flex-col gap-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--card)] px-2.5 py-1 text-xs text-[var(--muted-foreground)]">
-              <Zap className="h-3.5 w-3.5 text-[var(--accent)]" />
-              Igra za vežbanje brzog kucanja
-            </div>
             <h1 className="text-2xl font-bold text-[var(--foreground)]">Svemirsko kucanje</h1>
             <p className="mt-1 max-w-xl text-sm text-[var(--muted-foreground)]">
               Kucaj reči koje padaju odozgo i brod će ih obarati slovo po slovo.
@@ -627,6 +694,15 @@ export function IgraClient({ canPlay }: Props) {
               </div>
             </div>
 
+            {/* Level-up notification */}
+            {levelUpMsg && (
+              <div className="pointer-events-none absolute inset-x-0 top-8 flex justify-center">
+                <div className="animate-bounce rounded-full border border-[var(--accent)] bg-[var(--accent)]/20 px-5 py-2 text-sm font-semibold text-[var(--accent)] shadow-lg backdrop-blur-sm">
+                  Level {currentLevel.label} — {levelUpMsg}
+                </div>
+              </div>
+            )}
+
             {status !== 'playing' && (
               <div className={cn(
                 'absolute inset-0 flex items-center justify-center',
@@ -639,8 +715,9 @@ export function IgraClient({ canPlay }: Props) {
                     {status === 'gameover' ? (
                     <>
                       <h2 className="text-lg font-semibold text-[var(--foreground)]">Kraj igre</h2>
-                      <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-                        Score {score} · level {levelNumber} · talas {wave}
+                      <p className="mt-1 text-2xl font-bold text-[var(--accent)]">{score.toLocaleString()}</p>
+                      <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                        Level {currentLevel.label} · {elapsed}s · {streak} streak
                       </p>
                       <button
                         type="button"
@@ -673,8 +750,8 @@ export function IgraClient({ canPlay }: Props) {
 
           <aside className="flex flex-col gap-3 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <p className="font-mono text-2xl font-bold text-[var(--accent)]">{score}</p>
+              <div className="col-span-2">
+                <p className="font-mono text-3xl font-bold text-[var(--accent)]">{score.toLocaleString()}</p>
                 <p className="text-xs text-[var(--muted-foreground)]">score</p>
               </div>
               <div>
@@ -682,12 +759,38 @@ export function IgraClient({ canPlay }: Props) {
                 <p className="text-xs text-[var(--muted-foreground)]">životi</p>
               </div>
               <div>
-                <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{levelNumber}</p>
+                <p className={cn('font-mono text-2xl font-bold', streak >= 5 ? 'text-[var(--accent)]' : 'text-[var(--foreground)]')}>
+                  {streak >= 5 ? `${streak}🔥` : streak}
+                </p>
+                <p className="text-xs text-[var(--muted-foreground)]">streak</p>
+              </div>
+              <div>
+                <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{currentLevel.label}</p>
                 <p className="text-xs text-[var(--muted-foreground)]">level</p>
               </div>
               <div>
-                <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{wave}</p>
-                <p className="text-xs text-[var(--muted-foreground)]">talas</p>
+                <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{elapsed}s</p>
+                <p className="text-xs text-[var(--muted-foreground)]">vreme</p>
+              </div>
+            </div>
+
+            {/* Level progress bar */}
+            <div className="border-t border-[var(--border)] pt-3">
+              <div className="mb-1 flex justify-between text-xs text-[var(--muted-foreground)]">
+                <span>Level {currentLevel.label}</span>
+                {levelIdx < LEVEL_CONFIG.length - 1 && (
+                  <span>{Math.max(0, LEVEL_THRESHOLDS[levelIdx + 1] - elapsed)}s do sl.</span>
+                )}
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--muted)]">
+                <div
+                  className="h-full rounded-full bg-[var(--accent)] transition-all duration-1000"
+                  style={{
+                    width: levelIdx < LEVEL_CONFIG.length - 1
+                      ? `${Math.min(100, ((elapsed - LEVEL_THRESHOLDS[levelIdx]) / (LEVEL_THRESHOLDS[levelIdx + 1] - LEVEL_THRESHOLDS[levelIdx])) * 100)}%`
+                      : '100%'
+                  }}
+                />
               </div>
             </div>
 
@@ -712,9 +815,8 @@ export function IgraClient({ canPlay }: Props) {
             </div>
 
             <div className="border-t border-[var(--border)] pt-3 text-xs leading-relaxed text-[var(--muted-foreground)]">
-              <p>Aktivna meta: <span className="text-[var(--foreground)]">{activeTarget?.word ?? '-'}</span></p>
+              <p>Meta: <span className="text-[var(--foreground)]">{activeTarget?.word ?? '-'}</span></p>
               <p>Greške: <span className="text-[var(--foreground)]">{mistakes}</span></p>
-              <p>Koncept: <span className="text-[var(--foreground)]">leveli i talasi</span></p>
             </div>
           </aside>
         </div>
