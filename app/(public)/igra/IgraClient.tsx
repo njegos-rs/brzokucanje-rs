@@ -2,15 +2,10 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Eye, EyeOff, Loader2, Lock, RotateCcw, Volume2, VolumeX, Zap } from 'lucide-react'
+import { Lock, RotateCcw, Volume2, VolumeX, Zap } from 'lucide-react'
 import { buildWordTest, loadWords } from '@/lib/words/loader'
 import type { TestLevel } from '@/lib/typing/engine'
 import { cn } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
 
 type Script = 'latinica' | 'cirilica' | 'easy'
 type GameStatus = 'preview' | 'ready' | 'playing' | 'gameover'
@@ -67,19 +62,6 @@ const HEIGHT = 560
 const SHIP_X = WIDTH / 2
 const SHIP_Y = HEIGHT - 50
 
-const OAUTH_PROVIDERS = [
-  { id: 'google' as const, label: 'Google', mark: 'G' },
-  { id: 'facebook' as const, label: 'Facebook', mark: 'f' },
-  { id: 'twitter' as const, label: 'X', mark: 'X' },
-  { id: 'apple' as const, label: 'Apple', mark: 'A' },
-]
-
-const gameLoginSchema = z.object({
-  identifier: z.string().min(1, 'Unesi email ili korisničko ime'),
-  password: z.string().min(1, 'Unesi lozinku'),
-})
-
-type GameLoginInput = z.infer<typeof gameLoginSchema>
 
 function pickWord(script: Script, level: TestLevel): string {
   const words = loadWords(script, level).filter((word) => /^[\p{L}]+$/u.test(word) && word.length >= 3 && word.length <= 12)
@@ -176,157 +158,29 @@ function useAudio(enabled: boolean) {
 }
 
 function AuthGate() {
-  const router = useRouter()
-  const [showPassword, setShowPassword] = useState(false)
-  const [serverError, setServerError] = useState<string | null>(null)
-  const [loadingProvider, setLoadingProvider] = useState<string | null>(null)
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<GameLoginInput>({ resolver: zodResolver(gameLoginSchema) })
-
-  const handleOAuth = async (provider: 'google' | 'facebook' | 'apple' | 'twitter') => {
-    setLoadingProvider(provider)
-    const supabase = createClient()
-    await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/igra`,
-      },
-    })
-    setLoadingProvider(null)
-  }
-
-  const onLogin = async (data: GameLoginInput) => {
-    setServerError(null)
-    const supabase = createClient()
-    let email = data.identifier.trim()
-
-    if (!email.includes('@')) {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('username', email)
-        .single()
-
-      if (error || !profile?.email) {
-        setServerError('Nismo pronašli nalog sa tim korisničkim imenom.')
-        return
-      }
-
-      email = profile.email
-    }
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password: data.password,
-    })
-
-    if (error) {
-      setServerError('Pogrešan email/korisničko ime ili lozinka.')
-      return
-    }
-
-    router.refresh()
-  }
-
   return (
-    <div className="w-full max-w-md rounded-lg border border-[var(--border)] bg-[var(--card)]/95 p-5 text-left shadow-xl backdrop-blur">
-      <div className="mb-4 text-center">
-        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-[var(--accent)]/15 text-[var(--accent)]">
-          <Lock className="h-5 w-5" />
-        </div>
-        <h2 className="text-xl font-semibold text-[var(--foreground)]">Moraš biti prijavljen da bi igrao</h2>
-        <p className="mt-1 text-sm text-[var(--muted-foreground)]">Prijavi se nalogom ili nastavi preko društvenih mreža.</p>
+    <div className="w-full max-w-sm rounded-lg border border-[var(--border)] bg-[var(--card)]/92 p-5 text-center shadow-xl backdrop-blur-sm">
+      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-[var(--accent)]/15 text-[var(--accent)]">
+        <Lock className="h-5 w-5" />
       </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        {OAUTH_PROVIDERS.map((provider) => (
-          <button
-            key={provider.id}
-            type="button"
-            onClick={() => handleOAuth(provider.id)}
-            disabled={loadingProvider !== null}
-            className="flex items-center justify-center gap-2 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--muted)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loadingProvider === provider.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <span className="font-mono font-bold text-[var(--accent)]">{provider.mark}</span>}
-            {provider.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="my-4 flex items-center gap-3">
-        <div className="h-px flex-1 bg-[var(--border)]" />
-        <span className="text-xs text-[var(--muted-foreground)]">ili</span>
-        <div className="h-px flex-1 bg-[var(--border)]" />
-      </div>
-
-      <form onSubmit={handleSubmit(onLogin)} className="space-y-3">
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-[var(--foreground)]">Email ili korisničko ime</label>
-          <input
-            {...register('identifier')}
-            autoComplete="username"
-            placeholder="janko123 ili janko@primer.rs"
-            className={cn(
-              'w-full rounded-md border bg-[var(--background)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none transition-colors',
-              'placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30',
-              errors.identifier ? 'border-[var(--incorrect)]' : 'border-[var(--border)]',
-            )}
-          />
-          {errors.identifier && <p className="mt-1 text-xs text-[var(--incorrect)]">{errors.identifier.message}</p>}
-        </div>
-
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-[var(--foreground)]">Lozinka</label>
-          <div className="relative">
-            <input
-              {...register('password')}
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
-              placeholder="Tvoja lozinka"
-              className={cn(
-                'w-full rounded-md border bg-[var(--background)] px-3 py-2.5 pr-10 text-sm text-[var(--foreground)] outline-none transition-colors',
-                'placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30',
-                errors.password ? 'border-[var(--incorrect)]' : 'border-[var(--border)]',
-              )}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((value) => !value)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
-              aria-label={showPassword ? 'Sakrij lozinku' : 'Prikaži lozinku'}
-            >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </div>
-          {errors.password && <p className="mt-1 text-xs text-[var(--incorrect)]">{errors.password.message}</p>}
-        </div>
-
-        {serverError && (
-          <div className="rounded-md border border-[var(--incorrect)]/30 bg-[var(--incorrect)]/10 px-3 py-2">
-            <p className="text-sm text-[var(--incorrect)]">{serverError}</p>
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="flex w-full items-center justify-center gap-2 rounded-md bg-[var(--accent)] py-2.5 text-sm font-medium text-[var(--accent-foreground)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-          Prijava
-        </button>
-      </form>
-
-      <p className="mt-4 text-center text-sm text-[var(--muted-foreground)]">
-        Nemaš nalog?{' '}
-        <Link href="/registracija" className="text-[var(--accent)] transition-opacity hover:opacity-80">
-          Registruj se
-        </Link>
+      <h2 className="text-xl font-semibold text-[var(--foreground)]">Moraš biti prijavljen da bi igrao</h2>
+      <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+        U pozadini možeš da vidiš preview igre. Prijavi se ili napravi nalog da bi igrao.
       </p>
+      <div className="mt-5 flex justify-center gap-2">
+        <Link
+          href="/prijava"
+          className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] transition-opacity hover:opacity-90"
+        >
+          Prijava
+        </Link>
+        <Link
+          href="/registracija"
+          className="rounded-md border border-[var(--border)] px-4 py-2 text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
+        >
+          Registracija
+        </Link>
+      </div>
     </div>
   )
 }
