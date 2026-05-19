@@ -116,7 +116,7 @@ export default async function ProfilPage() {
         </div>
         <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-center">
           <Flame className="mx-auto mb-2 h-5 w-5 text-orange-500" />
-          <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{profile?.streak_current ?? 0}</p>
+          <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{profile?.current_streak ?? 0}</p>
           <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Streak dana</p>
         </div>
         <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-center">
