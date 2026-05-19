@@ -60,8 +60,8 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
   const router = useRouter()
   const { soundTheme } = useSettingsStore()
   const { play: playKeystroke } = useKeystrokeSound(soundTheme)
-  const [dailyText, setDailyText] = useState<{ text_id: string; content: string } | null>(
-    initialDailyText.text_id ? { text_id: initialDailyText.text_id, content: initialDailyText.content } : null
+  const [dailyText, setDailyText] = useState<{ text_id: string | null; content: string } | null>(
+    initialDailyText.content ? { text_id: initialDailyText.text_id, content: initialDailyText.content } : null
   )
   const [category, setCategory] = useState<Category | null>(initialDailyText.category === 'recenice' ? 'recenice' : 'reci')
   const [dailyDuration, setDailyDuration] = useState<number>(initialDailyText.duration_seconds)
@@ -99,7 +99,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
 
   // Kada se promeni pismo (navigacija), sinhronizujemo stanje sa novim propovima sa servera
   useEffect(() => {
-    setDailyText(initialDailyText.text_id ? { text_id: initialDailyText.text_id, content: initialDailyText.content } : null)
+    setDailyText(initialDailyText.content ? { text_id: initialDailyText.text_id, content: initialDailyText.content } : null)
     const cat = initialDailyText.category === 'recenice' ? 'recenice' : 'reci'
     setCategory(cat)
     setDailyDuration(initialDailyText.duration_seconds)
