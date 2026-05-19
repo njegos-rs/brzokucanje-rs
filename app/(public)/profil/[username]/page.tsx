@@ -75,10 +75,10 @@ export default async function PublicProfilPage({ params }: Props) {
       {/* Header */}
       <div className="mb-8 flex items-center gap-4">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent)]/15 text-2xl font-bold text-[var(--accent)]">
-          {profile.username[0].toUpperCase()}
+          {(profile.username ?? 'U').charAt(0).toUpperCase()}
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">{profile.username}</h1>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">{profile.username ?? 'Nepoznat'}</h1>
           <p className="text-sm text-[var(--muted-foreground)]">
             Član od {new Date(profile.created_at).toLocaleDateString('sr-RS', { year: 'numeric', month: 'long' })}
           </p>

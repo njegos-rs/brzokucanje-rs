@@ -23,7 +23,7 @@ export default async function AdminAntiCheatPage() {
     .order('created_at', { ascending: false })
     .limit(100)
 
-  type Row = FlaggedScore & { profiles: { username: string } | null }
+  type Row = FlaggedScore & { profiles: { username: string | null } | null }
   const scoreRows = data ?? []
   const userIds = Array.from(new Set(scoreRows.map((score) => score.user_id)))
   const { data: profiles } = userIds.length
@@ -71,7 +71,7 @@ export default async function AdminAntiCheatPage() {
   )
 }
 
-function FlaggedTable({ scores }: { scores: (FlaggedScore & { profiles: { username: string } | null })[] }) {
+function FlaggedTable({ scores }: { scores: (FlaggedScore & { profiles: { username: string | null } | null })[] }) {
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] overflow-hidden">
       <table className="w-full text-sm">
@@ -90,7 +90,7 @@ function FlaggedTable({ scores }: { scores: (FlaggedScore & { profiles: { userna
           {scores.map((s) => (
             <tr key={s.id} className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--muted)]/20 transition-colors">
               <td className="px-4 py-3 font-medium text-[var(--foreground)]">
-                {s.profiles?.username ?? String(s.user_id).slice(0, 8) + '…'}
+                {s.profiles?.username ?? `${String(s.user_id).slice(0, 8)}…`}
               </td>
               <td className="px-4 py-3 max-w-[200px]">
                 <span className="truncate block text-xs text-[var(--incorrect)]" title={s.flag_reason ?? ''}>

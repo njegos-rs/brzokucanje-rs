@@ -12,12 +12,12 @@ export default async function AdminKorisniciPage() {
 
   const { data } = await supabase
     .from('profiles')
-    .select('id, username, email, created_at, is_admin, is_banned, ban_reason, streak_current, newsletter_subscribed')
+    .select('id, username, email, created_at, is_admin, is_banned, ban_reason, current_streak, newsletter_subscribed')
     .order('created_at', { ascending: false })
     .limit(200)
 
   const profiles = (data ?? []) as Pick<ProfileRow,
-    'id' | 'username' | 'email' | 'created_at' | 'is_admin' | 'is_banned' | 'ban_reason' | 'streak_current' | 'newsletter_subscribed'
+    'id' | 'username' | 'email' | 'created_at' | 'is_admin' | 'is_banned' | 'ban_reason' | 'current_streak' | 'newsletter_subscribed'
   >[]
 
   return (

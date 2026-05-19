@@ -24,6 +24,8 @@
   --upcoming: #737370;
 
   /* Fonts */
+  --font-inter: 'Inter', system-ui, sans-serif;
+  --font-jetbrains-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);
 }
@@ -61,7 +63,7 @@
 }
 
 html {
-  font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
+  font-family: var(--font-inter);
 }
 
 body {

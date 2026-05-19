@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 
 interface Props {
   userId: string
-  username: string
+  username: string | null
   isBanned: boolean
   banReason: string | null
 }
@@ -81,7 +81,7 @@ export function BanActions({ userId, username, isBanned, banReason }: Props) {
             className="flex items-center gap-2 rounded-md border border-[var(--border)] px-4 py-2 text-sm text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors disabled:opacity-50"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle className="h-3.5 w-3.5 text-[var(--correct)]" />}
-            Unbanuj {username}
+            Unbanuj {username ?? 'korisnika'}
           </button>
         </div>
       ) : (
@@ -92,7 +92,7 @@ export function BanActions({ userId, username, isBanned, banReason }: Props) {
               className="flex items-center gap-2 rounded-md border border-[var(--incorrect)]/40 px-4 py-2 text-sm text-[var(--incorrect)] hover:bg-[var(--incorrect)]/10 transition-colors"
             >
               <Ban className="h-3.5 w-3.5" />
-              Banuj {username}
+              Banuj {username ?? 'korisnika'}
             </button>
           ) : (
             <div className="space-y-2">

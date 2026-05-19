@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ShieldCheck, ShieldX, Ban, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import type { Database } from '@/lib/supabase/types'
 
 interface Props {
   scoreId: string
@@ -27,9 +28,15 @@ export function ReviewActions({ scoreId, userId, username, isReviewed, decision 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Niste prijavljeni')
 
+      const reviewUpdate: Database['public']['Tables']['scores']['Update'] = {
+        flag_reviewed: true,
+        review_decision: reviewDecision,
+        reviewed_by: user.id,
+      }
+
       const { error: err } = await supabase
         .from('scores')
-        .update({ flag_reviewed: true, review_decision: reviewDecision as string, reviewed_by: user.id })
+        .update(reviewUpdate)
         .eq('id', scoreId)
 
       if (err) throw err
@@ -70,7 +77,11 @@ export function ReviewActions({ scoreId, userId, username, isReviewed, decision 
       if (err) throw err
 
       // Automatski reject score
-      await supabase.from('scores').update({ flag_reviewed: true, review_decision: 'rejected' as string, reviewed_by: user.id }).eq('id', scoreId)
+      await supabase.from('scores').update({
+        flag_reviewed: true,
+        review_decision: 'rejected',
+        reviewed_by: user.id,
+      }).eq('id', scoreId)
 
       router.push('/admin/anti-cheat')
     } catch (e) {

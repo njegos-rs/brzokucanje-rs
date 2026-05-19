@@ -7,17 +7,17 @@ import { cn } from '@/lib/utils'
 
 interface Profile {
   id: string
-  username: string
+  username: string | null
   email: string | null
   created_at: string
   is_admin: boolean
   is_banned: boolean
   ban_reason: string | null
-  streak_current: number
+  current_streak: number
   newsletter_subscribed: boolean
 }
 
-type SortField = 'username' | 'created_at' | 'streak_current'
+type SortField = 'username' | 'created_at' | 'current_streak'
 type SortDir = 'asc' | 'desc'
 type Filter = 'all' | 'admin' | 'banned' | 'active'
 
@@ -36,7 +36,7 @@ export function KorisniciTable({ profiles }: Props) {
     if (query.trim()) {
       const q = query.toLowerCase()
       rows = rows.filter(
-        (p) => p.username.toLowerCase().includes(q) || p.email?.toLowerCase().includes(q),
+        (p) => (p.username ?? '').toLowerCase().includes(q) || p.email?.toLowerCase().includes(q),
       )
     }
 
@@ -128,10 +128,10 @@ export function KorisniciTable({ profiles }: Props) {
               </th>
               <th className="hidden md:table-cell px-4 py-3 text-right">
                 <button
-                  onClick={() => toggleSort('streak_current')}
+                  onClick={() => toggleSort('current_streak')}
                   className="flex items-center justify-end gap-1 text-xs font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] w-full"
                 >
-                  Streak <SortIcon field="streak_current" />
+                  Streak <SortIcon field="current_streak" />
                 </button>
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-[var(--muted-foreground)]">Status</th>
@@ -150,7 +150,7 @@ export function KorisniciTable({ profiles }: Props) {
               <tr key={p.id} className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--muted)]/20 transition-colors">
                 <td className="px-4 py-3 font-medium text-[var(--foreground)]">
                   <Link href={`/admin/korisnici/${p.id}`} className="hover:text-[var(--accent)] transition-colors">
-                    {p.username}
+                   {p.username ?? 'Nepoznat'}
                   </Link>
                 </td>
                 <td className="hidden md:table-cell px-4 py-3 text-[var(--muted-foreground)] text-xs">
@@ -160,7 +160,7 @@ export function KorisniciTable({ profiles }: Props) {
                   {new Date(p.created_at).toLocaleDateString('sr-RS')}
                 </td>
                 <td className="hidden md:table-cell px-4 py-3 text-right font-mono text-[var(--muted-foreground)]">
-                  {p.streak_current}
+                  {p.current_streak}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1.5">

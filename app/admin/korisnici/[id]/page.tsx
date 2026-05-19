@@ -49,7 +49,7 @@ export default async function KorisnikDetailPage({ params }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">{profile.username}</h1>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">{profile.username ?? 'Nepoznat'}</h1>
           <p className="text-sm text-[var(--muted-foreground)]">{profile.email}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -71,7 +71,7 @@ export default async function KorisnikDetailPage({ params }: Props) {
         {[
           { label: 'Ukupno testova', value: totalTests, icon: Target },
           { label: 'Prosečni WPM', value: avgWpm, icon: Target },
-          { label: 'Streak', value: `${profile.streak_current} dana`, icon: Flame },
+          { label: 'Streak', value: `${profile.current_streak} dana`, icon: Flame },
           { label: 'Flagovani', value: flaggedCount, icon: Shield },
         ].map(({ label, value, icon: Icon }) => (
           <div key={label} className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
@@ -87,7 +87,7 @@ export default async function KorisnikDetailPage({ params }: Props) {
       {/* Ban/Unban actions */}
       <BanActions
         userId={id}
-        username={profile.username}
+        username={profile.username ?? 'Nepoznat'}
         isBanned={profile.is_banned}
         banReason={profile.ban_reason}
       />

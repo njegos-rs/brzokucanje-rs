@@ -29,11 +29,11 @@ export default async function AntiCheatDetailPage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username, email')
+    .select('username')
     .eq('id', data.user_id)
     .maybeSingle()
 
-  const score: ScoreRow & { profiles: { username: string; email: string | null } | null } = {
+  const score: ScoreRow & { profiles: { username: string | null } | null } = {
     ...data,
     profiles: profile,
   }
