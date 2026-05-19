@@ -47,7 +47,7 @@ export function Footer() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <p className="text-xs font-medium text-[var(--foreground)]">Rang lista</p>
+              <p className="text-xs font-medium text-[var(--foreground)]">Rank lista</p>
               <Link
                 href="/rang-lista/latinica"
                 className="text-xs text-[var(--muted-foreground)] hover:text-[var(--accent)] transition-colors"

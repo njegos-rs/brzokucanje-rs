@@ -23,8 +23,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!VALID_SCRIPTS.includes(pismo as Script)) return {}
   const script = pismo as Script
   return {
-    title: `Rang lista — ${SCRIPT_LABELS[script]}`,
-    description: `Dnevna, nedeljna i mesečna rang lista za ${SCRIPT_LABELS[script]} na brzokucanje.rs`,
+    title: `Rank lista — ${SCRIPT_LABELS[script]}`,
+    description: `Dnevna, nedeljna i mesečna rank lista za ${SCRIPT_LABELS[script]} na brzokucanje.rs`,
     alternates: {
       canonical: `${base}/rang-lista/${pismo}`,
       languages: {
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     },
     openGraph: {
-      title: `Rang lista — ${SCRIPT_LABELS[script]} | Brzokucanje.rs`,
+      title: `Rank lista — ${SCRIPT_LABELS[script]} | Brzokucanje.rs`,
       description: `Top rezultati u RANK modu za ${SCRIPT_LABELS[script]}.`,
       url: `${base}/rang-lista/${pismo}`,
     },
@@ -46,7 +46,7 @@ export default async function RangListaPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="mb-2 text-2xl font-bold text-[var(--foreground)]">Rang lista</h1>
+      <h1 className="mb-2 text-2xl font-bold text-[var(--foreground)]">Rank lista</h1>
       <p className="mb-8 text-sm text-[var(--muted-foreground)]">Top rezultati u RANK modu.</p>
       <Suspense fallback={<div className="py-16 text-center text-sm text-[var(--muted-foreground)]">Učitavam…</div>}>
         <LeaderboardContent script={pismo as Script} />

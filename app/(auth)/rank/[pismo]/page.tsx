@@ -2,6 +2,7 @@ import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import { RankClient } from './RankClient'
+import { getDailyTextData } from '@/lib/words/daily'
 
 type Script = 'latinica' | 'cirilica' | 'latinica-bez-kvacica'
 const VALID_SCRIPTS: Script[] = ['latinica', 'cirilica', 'latinica-bez-kvacica']
@@ -46,11 +47,15 @@ export default async function RankPismoPage({ params }: Props) {
 
   const alreadyPlayed = !!usedScore
 
+  // Učitavamo dnevni tekst odmah na serveru da sprečimo treperenje i odlaganje
+  const initialDailyText = getDailyTextData(script, today)
+
   return (
     <RankClient
       pismo={script}
       userId={user.id}
       alreadyPlayed={alreadyPlayed}
+      initialDailyText={initialDailyText}
     />
   )
 }

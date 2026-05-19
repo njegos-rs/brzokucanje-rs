@@ -2,13 +2,15 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { useTypingEngine, type WpmSnapshot, type TestMode, type TestLevel, type TimerDuration } from '@/lib/typing/engine'
+import { useTypingEngine, type WpmSnapshot, type TestMode, type TestLevel, type TimerDuration, type KeystrokeEntry } from '@/lib/typing/engine'
 import { TypingArea } from '@/components/typing/TypingArea'
 import { WpmChart } from '@/components/result/WpmChart'
 import { loadWords, loadTexts, buildWordTest, buildPhraseTest, getRandomWordCount } from '@/lib/words/loader'
 import { cn } from '@/lib/utils'
 import { RotateCcw, ChevronRight } from 'lucide-react'
 import type { ScoringResult } from '@/lib/typing/scoring'
+import { useSettingsStore } from '@/lib/stores/settings-store'
+import { useKeystrokeSound } from '@/lib/hooks/useKeystrokeSound'
 
 type Script = 'latinica' | 'cirilica' | 'easy'
 
@@ -41,14 +43,15 @@ interface FinishedState {
 }
 
 function makeText(pismo: Script, contentMode: 'reci' | 'tekst', level: TestLevel, timerActive = false): string {
-  if (timerActive) {
-    return buildWordTest(loadWords(pismo, level), 80)
-  }
   if (contentMode === 'tekst') {
     const texts = loadTexts(pismo, level)
-    return buildPhraseTest(texts, 4)
+    return buildPhraseTest(texts, timerActive ? 12 : 4, level)
   }
-  return buildWordTest(loadWords(pismo, level), getRandomWordCount(level))
+
+  if (timerActive) {
+    return buildWordTest(loadWords(pismo, level), 80, level)
+  }
+  return buildWordTest(loadWords(pismo, level), getRandomWordCount(level), level)
 }
 
 function readStorage<T>(key: string, fallback: T): T {
@@ -74,6 +77,11 @@ export function VezbaClient({ pismo }: Props) {
   const pismoRef = useRef(pismo)
   const contentModeRef = useRef<'reci' | 'tekst'>(readStorage('vezba_content_mode', 'reci'))
   const levelRef = useRef<TestLevel>(readStorage('vezba_level', 'easy'))
+  const timerDurationRef = useRef<TimerDuration | null>(timerDuration)
+  const strictModeRef = useRef(strictMode)
+
+  const { soundTheme } = useSettingsStore()
+  const { play: playKeystroke } = useKeystrokeSound(soundTheme)
 
   // Derived: engine mode
   const mode: TestMode = timerDuration !== null ? 'vreme' : contentMode
@@ -110,27 +118,57 @@ export function VezbaClient({ pismo }: Props) {
   }, [])
 
   const changeTimerDuration = useCallback((t: TimerDuration | null) => {
+    timerDurationRef.current = t
     setTimerDuration(t)
     writeStorage('vezba_timer', t)
     setFinished(null)
   }, [])
 
   const changeStrictMode = useCallback((v: boolean) => {
+    strictModeRef.current = v
     setStrictMode(v)
     writeStorage('vezba_strict', v)
   }, [])
 
   const changePismo = useCallback((s: Script) => {
-    pismoRef.current = s
     router.push(`/vezbaj/${s}`)
   }, [router])
 
   const getMoreText = useCallback(() => {
-    return buildWordTest(loadWords(pismoRef.current, levelRef.current), 40)
+    return buildWordTest(loadWords(pismoRef.current, levelRef.current), 40, levelRef.current)
   }, [])
 
-  const handleFinish = useCallback((result: ScoringResult, _ks: unknown[], wpmHistory: WpmSnapshot[]) => {
+  const handleFinish = useCallback(async (result: ScoringResult, keystrokes: KeystrokeEntry[], wpmHistory: WpmSnapshot[]) => {
     setFinished({ result, wpmHistory })
+
+    const durationSeconds = wpmHistory.length > 0 ? wpmHistory[wpmHistory.length - 1].second : 0
+    if (durationSeconds < 2) return
+
+    const correctChars = keystrokes.filter((k) => k.action === 'correct').length
+    const totalChars = keystrokes.filter((k) => k.action !== 'backspace').length
+    const errorsCount = keystrokes.filter((k) => k.action === 'incorrect').length
+
+    const scriptMap: Record<Script, string> = { latinica: 'latinica', cirilica: 'cirilica', easy: 'latinica-bez-kvacica' }
+
+    try {
+      await fetch('/api/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category: contentModeRef.current === 'tekst' ? 'recenice' : 'reci',
+          script: scriptMap[pismoRef.current],
+          mode: 'vezba',
+          duration_seconds: durationSeconds,
+          correct_chars: correctChars,
+          total_chars: totalChars,
+          errors: errorsCount,
+          keystroke_log: keystrokes,
+          timer_seconds: timerDurationRef.current,
+          strict_mode: strictModeRef.current,
+          level: levelRef.current,
+        }),
+      })
+    } catch { /* ignorisi — vežba se ne blokira ako save ne uspe */ }
   }, [])
 
   const { chars, cursor, status, timeLeft, spaceBlocked, handleKeyDown, reset } = useTypingEngine({
@@ -138,6 +176,7 @@ export function VezbaClient({ pismo }: Props) {
     mode,
     timerDuration: timerDuration ?? 60,
     strictMode,
+    lazyMode: false,
     onFinish: handleFinish,
     onNeedMoreText: getMoreText,
   })
@@ -285,7 +324,7 @@ export function VezbaClient({ pismo }: Props) {
         chars={chars}
         cursor={cursor}
         status={status}
-        onKeyDown={handleKeyDown}
+        onKeyDown={(e) => { playKeystroke(); handleKeyDown(e) }}
         timeLeft={timeLeft}
         mode={mode}
         spaceBlocked={spaceBlocked}
@@ -330,6 +369,13 @@ export function VezbaClient({ pismo }: Props) {
           <div className="flex items-end gap-6 mb-6">
             <div>
               <p className="font-mono text-5xl font-bold text-[var(--accent)] leading-none">
+                {Math.round(finished.result.score)}
+              </p>
+              <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">skor</p>
+              <p className="mt-1 max-w-xs text-xs text-[var(--muted-foreground)]">WPM sa kaznom za greske.</p>
+            </div>
+            <div className="mb-0.5">
+              <p className="font-mono text-3xl font-bold text-[var(--foreground)] leading-none">
                 {Math.round(finished.result.wpm)}
               </p>
               <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">wpm</p>
@@ -352,10 +398,6 @@ export function VezbaClient({ pismo }: Props) {
               <p className="text-[var(--foreground)]">{Math.round(finished.result.consistency)}%</p>
               <p className="text-[10px] uppercase tracking-widest text-[var(--muted-foreground)] mt-0.5">konzistentnost</p>
             </div>
-            <div>
-              <p className="text-[var(--foreground)]">{Math.round(finished.result.score)}</p>
-              <p className="text-[10px] uppercase tracking-widest text-[var(--muted-foreground)] mt-0.5">score</p>
-            </div>
           </div>
 
           {/* Chart */}
@@ -367,11 +409,11 @@ export function VezbaClient({ pismo }: Props) {
 
           {/* Legenda metrika */}
           <div className="text-xs text-[var(--muted-foreground)] space-y-1.5 border-t border-[var(--border)] pt-4">
-            <p><span className="text-[var(--foreground)]">wpm</span> — reči u minuti (5 tačnih znakova = 1 reč)</p>
-            <p><span className="text-[var(--foreground)]">raw</span> — sve ukucane znakove, uključujući greške</p>
-            <p><span className="text-[var(--foreground)]">tačnost</span> — procenat tačno ukucanih znakova</p>
-            <p><span className="text-[var(--foreground)]">konzistentnost</span> — ravnomernost ritma kucanja; 100% = jednak razmak između svakog udara, niže = oscilacije u brzini</p>
-            <p><span className="text-[var(--foreground)]">score</span> — rezultat svih parametara</p>
+            <p><span className="text-[var(--foreground)]">wpm</span> — reci u minuti (5 tacnih znakova = 1 rec)</p>
+            <p><span className="text-[var(--foreground)]">raw</span> — brzina svih pritisaka, ukljucujuci greske</p>
+            <p><span className="text-[var(--foreground)]">tacnost</span> — procenat tacno ukucanih znakova</p>
+            <p><span className="text-[var(--foreground)]">konzistentnost</span> — ravnomernost ritma; ne odlucuje rang</p>
+            <p><span className="text-[var(--foreground)]">skor</span> — glavni rezultat: WPM sa kaznom za greske</p>
           </div>
         </div>
       )}

@@ -18,7 +18,7 @@ export default function UsloviKoriscenjaPage() {
           <p className="text-[var(--muted-foreground)]">
             <strong className="text-[var(--foreground)]">Brzokucanje.rs</strong> je besplatni online servis za testiranje
             i vežbanje brzine kucanja na srpskom jeziku — ćiriličnim i latiničnim pismom. Servis omogućava merenje brzine
-            (WPM), tačnosti i konzistentnosti kucanja, kao i takmičenje na rang listi.
+            (WPM), tačnosti i konzistentnosti kucanja, kao i takmičenje na rank listi.
           </p>
         </section>
 
@@ -44,7 +44,7 @@ export default function UsloviKoriscenjaPage() {
             </li>
             <li className="flex gap-2">
               <span className="mt-0.5 shrink-0 text-[var(--accent)]">—</span>
-              <span>Kreiranje više naloga radi manipulacije rang listom je zabranjeno.</span>
+              <span>Kreiranje više naloga radi manipulacije rank listom je zabranjeno.</span>
             </li>
             <li className="flex gap-2">
               <span className="mt-0.5 shrink-0 text-[var(--accent)]">—</span>
@@ -67,7 +67,7 @@ export default function UsloviKoriscenjaPage() {
             </li>
             <li className="flex gap-2">
               <span className="mt-0.5 shrink-0 text-[var(--accent)]">—</span>
-              <span>Manipulacija rang listom bilo kojim tehničkim ili netehničkim sredstvima.</span>
+              <span>Manipulacija rank listom bilo kojim tehničkim ili netehničkim sredstvima.</span>
             </li>
             <li className="flex gap-2">
               <span className="mt-0.5 shrink-0 text-[var(--accent)]">—</span>

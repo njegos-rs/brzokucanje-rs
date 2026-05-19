@@ -2,14 +2,14 @@
 
 import { useState } from 'react'
 import {
-  LineChart,
+  CartesianGrid,
   Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
 } from 'recharts'
 import type { WpmSnapshot } from '@/lib/typing/engine'
 import { cn } from '@/lib/utils'
@@ -24,10 +24,13 @@ interface TooltipPayload {
   name: string
   value: number
   color: string
+  payload?: WpmSnapshot
 }
 
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: TooltipPayload[]; label?: number }) {
   if (!active || !payload?.length) return null
+  const point = payload[0]?.payload
+
   return (
     <div className="rounded border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-xs font-mono shadow-lg">
       <p className="mb-1 text-[var(--muted-foreground)]">{label}s</p>
@@ -36,25 +39,28 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
           {p.name}: {p.value}
         </p>
       ))}
+      {point && <p className="mt-1 text-[var(--incorrect)]">greske ukupno: {point.errors}</p>}
     </div>
   )
 }
 
 export function WpmChart({ data, finalWpm, rawWpm }: Props) {
   const [showRaw, setShowRaw] = useState(true)
-  const [showErrors, setShowErrors] = useState(true)
 
   const accentColor = 'var(--accent)'
   const rawColor = '#737378'
-  const errorColor = '#FF6B6B'
-
   const maxWpm = Math.max(...data.map((d) => Math.max(d.wpm, d.rawWpm)), finalWpm, rawWpm, 10)
-  const maxErrors = Math.max(...data.map((d) => d.errors), 1)
+  const totalErrors = data.at(-1)?.errors ?? 0
 
   return (
     <div className="w-full">
-      {/* Toggle buttons */}
-      <div className="mb-3 flex gap-2 justify-end">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-widest text-[var(--muted-foreground)]">Brzina kroz test</p>
+          <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+            Linija pokazuje WPM po sekundama. Greske su prikazane odvojeno, bez druge skale.
+          </p>
+        </div>
         <button
           onClick={() => setShowRaw((v) => !v)}
           className={cn(
@@ -65,17 +71,6 @@ export function WpmChart({ data, finalWpm, rawWpm }: Props) {
           )}
         >
           raw
-        </button>
-        <button
-          onClick={() => setShowErrors((v) => !v)}
-          className={cn(
-            'rounded px-2 py-1 text-xs font-mono transition-colors border',
-            showErrors
-              ? 'border-[var(--border)] text-[var(--incorrect)]'
-              : 'border-transparent text-[var(--incorrect)]/40',
-          )}
-        >
-          greške
         </button>
       </div>
 
@@ -96,26 +91,8 @@ export function WpmChart({ data, finalWpm, rawWpm }: Props) {
             axisLine={false}
             tickLine={false}
           />
-          {showErrors && (
-            <YAxis
-              yAxisId="errors"
-              orientation="right"
-              domain={[0, Math.ceil(maxErrors * 1.5)]}
-              tick={{ fontSize: 10, fill: errorColor, fontFamily: 'var(--font-mono)' }}
-              axisLine={false}
-              tickLine={false}
-              allowDecimals={false}
-            />
-          )}
           <Tooltip content={<CustomTooltip />} />
-          {/* Final WPM referentna linija */}
-          <ReferenceLine
-            yAxisId="wpm"
-            y={finalWpm}
-            stroke={accentColor}
-            strokeDasharray="4 2"
-            strokeOpacity={0.4}
-          />
+          <ReferenceLine yAxisId="wpm" y={finalWpm} stroke={accentColor} strokeDasharray="4 2" strokeOpacity={0.4} />
           <Line
             yAxisId="wpm"
             type="monotone"
@@ -139,20 +116,17 @@ export function WpmChart({ data, finalWpm, rawWpm }: Props) {
               activeDot={{ r: 3, fill: rawColor }}
             />
           )}
-          {showErrors && (
-            <Line
-              yAxisId="errors"
-              type="monotone"
-              dataKey="errors"
-              name="greške"
-              stroke={errorColor}
-              strokeWidth={1.5}
-              dot={{ r: 3, fill: errorColor, strokeWidth: 0 }}
-              activeDot={{ r: 4, fill: errorColor }}
-            />
-          )}
         </LineChart>
       </ResponsiveContainer>
+
+      <div className="mt-2 flex flex-wrap gap-4 text-xs text-[var(--muted-foreground)]">
+        <span>
+          <span className="font-mono text-[var(--accent)]">{finalWpm}</span> finalni WPM
+        </span>
+        <span>
+          <span className="font-mono text-[var(--foreground)]">{totalErrors}</span> gresaka tokom testa
+        </span>
+      </div>
     </div>
   )
 }

@@ -135,7 +135,7 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
         ) : (
           <div
             ref={innerRef}
-            className="font-mono text-2xl md:text-3xl tracking-wide flex flex-wrap justify-center transition-transform duration-150"
+            className="font-mono text-2xl md:text-3xl tracking-wide flex flex-wrap transition-transform duration-150"
             style={{
               lineHeight: `${LINE_HEIGHT_PX}px`,
               transform: `translateY(-${offsetY}px)`,

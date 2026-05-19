@@ -3,11 +3,23 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { formatDistanceToNow } from 'date-fns'
 import { sr } from 'date-fns/locale'
-import { Flame, Trophy, Target, Clock } from 'lucide-react'
+import { Flame, Trophy, Target, Clock, Medal } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
+import { LogoutButton } from './LogoutButton'
+import { ProfilTabs } from './ProfilTabs'
 
-type PersonalBest = Database['public']['Tables']['personal_bests']['Row']
-type Score = Pick<Database['public']['Tables']['scores']['Row'], 'wpm' | 'accuracy' | 'created_at' | 'script' | 'category' | 'mode'>
+interface PbRow {
+  id: string
+  script: string
+  category: string
+  game_mode: 'rank' | 'vezba'
+  timer_seconds: number | null
+  strict_mode: boolean
+  level: string | null
+  best_wpm: number
+  best_accuracy: number
+  best_score: number
+}
 
 export const metadata: Metadata = { title: 'Profil' }
 
@@ -16,38 +28,58 @@ export default async function ProfilPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/prijava')
 
-  const [profileRes, pbRes, scoresRes] = await Promise.all([
+  const [profileRes, pbRes, scoresRes, winsRes, statsRes] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase
-      .from('personal_bests')
-      .select('*')
+      .from('personal_bests' as 'scores')
+      .select('id, script, category, game_mode, timer_seconds, strict_mode, level, best_wpm, best_accuracy, best_score')
       .eq('user_id', user.id)
-      .order('best_wpm', { ascending: false }),
+      .order('best_score', { ascending: false }),
     supabase
       .from('scores')
-      .select('wpm, accuracy, created_at, script, category, mode')
+      .select('wpm, accuracy, created_at, script, category, mode, level, timer_seconds, strict_mode')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(10),
+    supabase
+      .from('wins' as 'scores')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id),
+    supabase
+      .from('scores')
+      .select('duration_seconds')
+      .eq('user_id', user.id),
   ])
+
+  const { data: gamePb } = await supabase
+    .from('game_scores')
+    .select('score, level, elapsed_seconds, words_destroyed')
+    .eq('user_id', user.id)
+    .order('score', { ascending: false })
+    .limit(1)
+    .maybeSingle()
 
   type Profile = Database['public']['Tables']['profiles']['Row']
   const profile = profileRes.data as Profile | null
-  const pbs = (pbRes.data ?? []) as PersonalBest[]
-  const recentScores = (scoresRes.data ?? []) as Score[]
-
-  const { data: allScoresRes } = await supabase
-    .from('scores')
-    .select('duration_seconds')
-    .eq('user_id', user.id)
-
-  const allScores = allScoresRes ?? []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pbs = ((pbRes.data ?? []) as any[]) as PbRow[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recentScores = (scoresRes.data ?? []) as any[]
+  const totalWins = winsRes.count ?? 0
+  const allScores = statsRes.data ?? []
   const totalTests = allScores.length
-  const totalMinutes = Math.round(allScores.reduce((a, s) => a + (s.duration_seconds ?? 0), 0) / 60)
-  const bestWpm = pbs.length > 0 ? Math.max(...pbs.map((p) => p.best_wpm)) : 0
+  const totalMinutes = Math.round(allScores.reduce((a: number, s: { duration_seconds: number | null }) => a + (s.duration_seconds ?? 0), 0) / 60)
 
-  const SCRIPT_LABELS: Record<string, string> = { latinica: 'Latinica', cirilica: 'Ćirilica', easy: 'Easy' }
-  const CATEGORY_LABELS: Record<string, string> = { reci: 'Reči', recenice: 'Rečenice', citati: 'Citati' }
+  // Rank PB-ovi — samo pismo, bez kategorije (ne otkrivamo šta je bio test)
+  const rankPbs = pbs
+    .filter((p) => p.game_mode === 'rank' || !p.game_mode)
+    .sort((a, b) => b.best_score - a.best_score)
+
+  // Vežba PB-ovi — sve kombinacije koje je korisnik odigrao
+  const vezbaPbs = pbs
+    .filter((p) => p.game_mode === 'vezba')
+    .sort((a, b) => b.best_score - a.best_score)
+
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
@@ -57,27 +89,25 @@ export default async function ProfilPage() {
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent)]/15 text-2xl font-bold text-[var(--accent)]">
             {(profile?.username ?? user.email ?? 'K')[0].toUpperCase()}
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-[var(--foreground)]">
               {profile?.username ?? user.email?.split('@')[0]}
             </h1>
             <p className="text-sm text-[var(--muted-foreground)]">
               Član{' '}
-              {formatDistanceToNow(new Date(user.created_at), {
-                addSuffix: true,
-                locale: sr,
-              })}
+              {formatDistanceToNow(new Date(user.created_at), { addSuffix: true, locale: sr })}
             </p>
           </div>
+          <LogoutButton />
         </div>
       </div>
 
       {/* KPI kartice */}
-      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
         <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-center">
-          <Trophy className="mx-auto mb-2 h-5 w-5 text-[var(--accent)]" />
-          <p className="font-mono text-2xl font-bold text-[var(--accent)]">{Math.round(bestWpm)}</p>
-          <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Najbolji WPM</p>
+          <Trophy className="mx-auto mb-2 h-5 w-5 text-yellow-500" />
+          <p className="font-mono text-2xl font-bold text-yellow-500">{totalWins}</p>
+          <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Pobeda #1</p>
         </div>
         <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-center">
           <Target className="mx-auto mb-2 h-5 w-5 text-[var(--muted-foreground)]" />
@@ -94,87 +124,22 @@ export default async function ProfilPage() {
           <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{totalMinutes}</p>
           <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Minuta</p>
         </div>
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-center">
+          <Medal className="mx-auto mb-2 h-5 w-5 text-[var(--accent)]" />
+          <p className="font-mono text-2xl font-bold text-[var(--accent)]">{gamePb ? gamePb.score.toLocaleString() : '—'}</p>
+          <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Igrica skor</p>
+        </div>
       </div>
 
-      {/* Lični rekordi */}
-      {pbs.length > 0 && (
-        <div className="mb-8">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-            Lični rekordi
-          </h2>
-          <div className="overflow-hidden rounded-lg border border-[var(--border)]">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--border)] bg-[var(--muted)]">
-                  <th className="px-4 py-2.5 text-left font-medium text-[var(--muted-foreground)]">Pismo</th>
-                  <th className="px-4 py-2.5 text-left font-medium text-[var(--muted-foreground)]">Kategorija</th>
-                  <th className="px-4 py-2.5 text-right font-mono font-medium text-[var(--muted-foreground)]">WPM</th>
-                  <th className="px-4 py-2.5 text-right font-mono font-medium text-[var(--muted-foreground)]">Tačnost</th>
-                </tr>
-              </thead>
-              <tbody className="bg-[var(--card)]">
-                {pbs.map((pb) => (
-                  <tr key={pb.id} className="border-b border-[var(--border)] last:border-0">
-                    <td className="px-4 py-3 text-[var(--foreground)]">
-                      {SCRIPT_LABELS[pb.script] ?? pb.script}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--muted-foreground)]">
-                      {CATEGORY_LABELS[pb.category] ?? pb.category}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-[var(--accent)]">
-                      {Math.round(pb.best_wpm)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-[var(--foreground)]">
-                      {Math.round(pb.best_accuracy)}%
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Nedavni testovi */}
-      {recentScores.length > 0 && (
-        <div>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-            Nedavni testovi
-          </h2>
-          <div className="overflow-hidden rounded-lg border border-[var(--border)]">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--border)] bg-[var(--muted)]">
-                  <th className="px-4 py-2.5 text-left font-medium text-[var(--muted-foreground)]">Pismo</th>
-                  <th className="px-4 py-2.5 text-right font-mono font-medium text-[var(--muted-foreground)]">WPM</th>
-                  <th className="px-4 py-2.5 text-right font-mono font-medium text-[var(--muted-foreground)]">Tačnost</th>
-                  <th className="px-4 py-2.5 text-right font-medium text-[var(--muted-foreground)]">Kad</th>
-                </tr>
-              </thead>
-              <tbody className="bg-[var(--card)]">
-                {recentScores.map((score, i) => (
-                  <tr key={i} className="border-b border-[var(--border)] last:border-0">
-                    <td className="px-4 py-3 text-[var(--foreground)]">
-                      {SCRIPT_LABELS[score.script] ?? score.script}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono font-semibold text-[var(--foreground)]">
-                      {Math.round(score.wpm)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-[var(--muted-foreground)]">
-                      {Math.round(score.accuracy)}%
-                    </td>
-                    <td className="px-4 py-3 text-right text-[var(--muted-foreground)]">
-                      {formatDistanceToNow(new Date(score.created_at), { addSuffix: true, locale: sr })}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {recentScores.length === 0 && pbs.length === 0 && (
+      {/* Tabovi */}
+      {(rankPbs.length > 0 || vezbaPbs.length > 0 || recentScores.length > 0 || gamePb) ? (
+        <ProfilTabs
+          rankPbs={rankPbs}
+          vezbaPbs={vezbaPbs}
+          recentScores={recentScores}
+          gamePb={gamePb}
+        />
+      ) : (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-8 text-center">
           <p className="text-[var(--muted-foreground)]">Još nema testova. Počni da vežbaš!</p>
           <a

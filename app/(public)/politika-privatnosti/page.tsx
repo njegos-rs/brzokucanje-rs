@@ -41,7 +41,7 @@ export default function PolitikaPrivatnostiPage() {
             <li className="flex gap-2">
               <span className="mt-0.5 shrink-0 text-[var(--accent)]">—</span>
               <span>
-                <strong className="text-[var(--foreground)]">Korisničko ime</strong> — javno prikazano ime na rang listi.
+                <strong className="text-[var(--foreground)]">Korisničko ime</strong> — javno prikazano ime na rank listi.
               </span>
             </li>
             <li className="flex gap-2">
@@ -81,7 +81,7 @@ export default function PolitikaPrivatnostiPage() {
           <ul className="space-y-2 text-[var(--muted-foreground)]">
             <li className="flex gap-2">
               <span className="mt-0.5 shrink-0 text-[var(--accent)]">—</span>
-              <span>Pružanje usluge: autentikacija, čuvanje rezultata, prikaz rang liste.</span>
+              <span>Pružanje usluge: autentikacija, čuvanje rezultata, prikaz rank liste.</span>
             </li>
             <li className="flex gap-2">
               <span className="mt-0.5 shrink-0 text-[var(--accent)]">—</span>

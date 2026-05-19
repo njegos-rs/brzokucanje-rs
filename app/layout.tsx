@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     template: '%s | Brzokucanje.rs',
   },
   description:
-    'Besplatni online test brzine kucanja na srpskom jeziku. Vežbaj ćirilicu i latinicu, prati napredak i takmič se na rang listi.',
+    'Besplatni online test brzine kucanja na srpskom jeziku. Vežbaj ćirilicu i latinicu, prati napredak i takmič se na rank listi.',
   keywords: [
     'brzo kucanje',
     'test brzine kucanja',
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     'typing test srpski',
     'test kucanja online',
     'vežba kucanja',
-    'rang lista kucanja',
+    'rank lista kucanja',
   ],
   metadataBase: new URL(appUrl),
   alternates: {

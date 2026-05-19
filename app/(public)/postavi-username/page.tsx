@@ -95,7 +95,7 @@ export default function PostaviUsernamePage() {
       <div className="w-full max-w-sm">
         <h1 className="mb-1 text-2xl font-bold text-[var(--foreground)]">Izaberi korisničko ime</h1>
         <p className="mb-8 text-sm text-[var(--muted-foreground)]">
-          Ovo ime će biti prikazano na rang listi i u zaglavlju sajta.
+          Ovo ime će biti prikazano na rank listi i u zaglavlju sajta.
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -109,7 +109,7 @@ export default function PostaviUsernamePage() {
                 type="text"
                 autoComplete="username"
                 autoFocus
-                placeholder="janko123"
+                placeholder=""
                 className={cn(
                   'w-full rounded-md border bg-[var(--card)] px-3 py-2.5 pr-9 text-sm text-[var(--foreground)] outline-none transition-colors',
                   'placeholder:text-[var(--muted-foreground)]',

@@ -9,9 +9,11 @@ import { Lock, AlertTriangle, Crown, Medal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ScoringResult } from '@/lib/typing/scoring'
 import type { KeystrokeEntry } from '@/lib/typing/engine'
+import { useSettingsStore } from '@/lib/stores/settings-store'
+import { useKeystrokeSound } from '@/lib/hooks/useKeystrokeSound'
 
 type Script = 'latinica' | 'cirilica' | 'latinica-bez-kvacica'
-type Category = 'reci' | 'recenice' | 'citati' | 'price' | 'vesti'
+type Category = 'reci' | 'recenice'
 
 const SCRIPT_LABELS: Record<Script, string> = {
   latinica: 'Latinica',
@@ -38,24 +40,41 @@ interface FinishedState {
   totalPlayers?: number
 }
 
+interface InitialDailyText {
+  text_id: string | null
+  content: string
+  category: 'reci' | 'recenice'
+  difficulty: import('@/lib/typing/engine').TestLevel
+  duration_seconds: number
+  mode: 'reci' | 'tekst'
+}
+
 interface Props {
   pismo: Script
   userId: string
   alreadyPlayed: boolean
+  initialDailyText: InitialDailyText
 }
 
-export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
+export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: Props) {
   const router = useRouter()
-  const [dailyText, setDailyText] = useState<{ text_id: string; content: string } | null>(null)
-  const [category, setCategory] = useState<Category | null>(null)
+  const { soundTheme } = useSettingsStore()
+  const { play: playKeystroke } = useKeystrokeSound(soundTheme)
+  const [dailyText, setDailyText] = useState<{ text_id: string; content: string } | null>(initialDailyText)
+  const [category, setCategory] = useState<Category | null>(initialDailyText.category === 'recenice' ? 'recenice' : 'reci')
+  const [dailyDuration, setDailyDuration] = useState<number>(initialDailyText.duration_seconds)
+  const [dailyMode, setDailyMode] = useState<'reci' | 'tekst'>(initialDailyText.mode)
   const [playedToday, setPlayedToday] = useState(alreadyPlayed)
-  const [loadingText, setLoadingText] = useState(false)
+  const [loadingText] = useState(false)
   const [textError, setTextError] = useState<string | null>(null)
   const [finished, setFinished] = useState<FinishedState | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [focusLost, setFocusLost] = useState(false)
   const focusLostRef = useRef(false)
+  const startLoggedRef = useRef(false)
+  const attemptPromiseRef = useRef<Promise<string | null> | null>(null)
+  const playedTodayRef = useRef(alreadyPlayed)
 
   // Za "već odigrano" ekran — leaderboard
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
@@ -76,39 +95,27 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
     finally { setLoadingBoard(false) }
   }, [userId])
 
-  const fetchDailyText = useCallback(async () => {
-    setLoadingText(true)
+  // Kada se promeni pismo (navigacija), sinhronizujemo stanje sa novim propovima sa servera
+  useEffect(() => {
+    setDailyText(initialDailyText)
+    const cat = initialDailyText.category === 'recenice' ? 'recenice' : 'reci'
+    setCategory(cat)
+    setDailyDuration(initialDailyText.duration_seconds)
+    setDailyMode(initialDailyText.mode)
+    
+    setPlayedToday(alreadyPlayed)
+    playedTodayRef.current = alreadyPlayed
+    setFinished(null)
+    setFocusLost(false)
+    focusLostRef.current = false
+    startLoggedRef.current = false
+    attemptPromiseRef.current = null
     setTextError(null)
-    setDailyText(null)
-    try {
-      const res = await fetch(`/api/daily-text?script=${pismo}`)
-      if (!res.ok) {
-        const j = await res.json()
-        setTextError(j.error ?? 'Greška pri učitavanju dnevnog teksta.')
-        return
-      }
-      const j = await res.json()
-      setDailyText({ text_id: j.text_id, content: j.content })
-      setCategory(j.category ?? null)
-    } catch {
-      setTextError('Mrežna greška. Pokušaj ponovo.')
-    } finally {
-      setLoadingText(false)
-    }
-  }, [pismo])
 
-  useEffect(() => {
-    fetchDailyText()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pismo])
-
-  // Kad imamo kategoriju i user je već odigrao, učitaj leaderboard
-  useEffect(() => {
-    if (playedToday && category) {
-      fetchLeaderboard(pismo, category)
+    if (alreadyPlayed) {
+      fetchLeaderboard(pismo, cat)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playedToday, category, pismo])
+  }, [pismo, initialDailyText, alreadyPlayed, fetchLeaderboard])
 
   // Tab focus tracking — invalidira test
   useEffect(() => {
@@ -129,6 +136,8 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+
+
   const handleFinish = useCallback(
     async (result: ScoringResult, keystrokes: KeystrokeEntry[], wpmHistory: WpmSnapshot[]) => {
       if (focusLostRef.current) {
@@ -145,10 +154,13 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
         const totalChars = keystrokes.filter((k) => k.action !== 'backspace').length
         const errorsCount = keystrokes.filter((k) => k.action === 'incorrect').length
 
+        const resolvedId = attemptPromiseRef.current ? await attemptPromiseRef.current : undefined
+
         const res = await fetch('/api/score', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            id: resolvedId,
             category,
             script: pismo,
             mode: 'rank',
@@ -189,6 +201,7 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
           }
         } catch { /* ignorisi */ }
 
+        playedTodayRef.current = true
         setPlayedToday(true)
         setFinished({ result, wpmHistory, keystrokes, scoreId: json.id, isNewPb: json.is_new_pb, userRank, totalPlayers })
       } catch {
@@ -206,10 +219,34 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
     text: dailyText?.content ?? '',
     lazyMode: false,
     onFinish: handleFinish,
+    mode: dailyMode === 'reci' ? 'vreme' : 'tekst',
+    timerDuration: dailyDuration as import('@/lib/typing/engine').TimerDuration,
   })
   engineRef.current = engine
 
   const { chars, cursor, status, handleKeyDown } = engine
+
+  // Prati početak kucanja i kreira 0-score pokušaj u bazi da spreči restartovanje
+  useEffect(() => {
+    if (status === 'running' && !startLoggedRef.current) {
+      startLoggedRef.current = true
+      attemptPromiseRef.current = fetch('/api/rank/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category, script: pismo, text_id: dailyText?.text_id })
+      })
+      .then(async (r) => {
+        const data = await r.json()
+        if (data.error) {
+          setTextError(data.error)
+          return null
+        }
+        if (data.id) return data.id
+        return null
+      })
+      .catch(() => null)
+    }
+  }, [status, category, pismo, dailyText])
 
   // Anti-cheat: blokira paste
   useEffect(() => {
@@ -249,7 +286,7 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
               onClick={() => router.push(`/rang-lista/${pismo}`)}
               className="mt-3 text-sm text-[var(--accent)] hover:opacity-80 transition-opacity"
             >
-              Pogledaj rang listu →
+              Pogledaj rank listu →
             </button>
           </div>
         )}
@@ -259,7 +296,7 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
           wpmHistory={finished.wpmHistory}
           isNewPb={finished.isNewPb}
           onNext={() => router.push(`/rang-lista/${pismo}`)}
-          nextLabel="Vidi rang listu"
+          nextLabel="Vidi rank listu"
         />
       </div>
     )
@@ -302,11 +339,16 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
 
         {/* Mini leaderboard */}
         {loadingBoard ? (
-          <div className="py-8 text-center text-sm text-[var(--muted-foreground)]">Učitavam rang listu…</div>
-        ) : leaderboard.length > 0 && (
+          <div className="py-8 text-center text-sm text-[var(--muted-foreground)]">Učitavam rank listu…</div>
+        ) : leaderboard.length === 0 ? (
+          <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-8 text-center">
+            <p className="text-sm font-medium text-[var(--foreground)]">Dnevna rank lista — {SCRIPT_LABELS[pismo]}</p>
+            <p className="mt-2 text-sm text-[var(--muted-foreground)]">Još niko nije odigrao rank test danas. Budi prvi!</p>
+          </div>
+        ) : (
           <div className="rounded-lg border border-[var(--border)] bg-[var(--card)]">
             <div className="px-4 py-3 border-b border-[var(--border)]">
-              <p className="text-sm font-medium text-[var(--foreground)]">Dnevna rang lista — {SCRIPT_LABELS[pismo]}</p>
+              <p className="text-sm font-medium text-[var(--foreground)]">Dnevna rank lista — {SCRIPT_LABELS[pismo]}</p>
             </div>
             <table className="w-full text-sm">
               <thead>
@@ -379,7 +421,7 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
 
       <div className="mb-4">
         <p className="text-sm text-[var(--muted-foreground)]">
-          Jedan pokušaj dnevno. Rezultati idu na rang listu.
+          Jedan pokušaj dnevno. Rezultati idu na rank listu.
         </p>
       </div>
 
@@ -391,9 +433,6 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
       {textError && (
         <div className="rounded-md border border-[var(--incorrect)]/30 bg-[var(--incorrect)]/10 px-3 py-4 text-center text-sm text-[var(--incorrect)]">
           {textError}
-          <button onClick={fetchDailyText} className="ml-2 underline hover:opacity-80">
-            Pokušaj ponovo
-          </button>
         </div>
       )}
 
@@ -410,7 +449,7 @@ export function RankClient({ pismo, userId, alreadyPlayed }: Props) {
             chars={chars}
             cursor={cursor}
             status={status}
-            onKeyDown={handleKeyDown}
+            onKeyDown={(e) => { playKeystroke(); handleKeyDown(e) }}
           />
           <div className="mt-4">
             <p className="text-xs text-[var(--muted-foreground)]">

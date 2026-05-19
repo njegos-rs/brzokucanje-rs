@@ -2,6 +2,7 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { SoundTheme } from '@/lib/hooks/useKeystrokeSound'
 
 type Theme = 'auto' | 'light' | 'dark'
 type FontSize = 'S' | 'M' | 'L'
@@ -13,14 +14,12 @@ interface SettingsState {
   fontSize: FontSize
   caretStyle: CaretStyle
   quickRestartKey: QuickRestartKey
-  lazyMode: boolean
-  soundEnabled: boolean
+  soundTheme: SoundTheme
   setTheme: (theme: Theme) => void
   setFontSize: (size: FontSize) => void
   setCaretStyle: (style: CaretStyle) => void
   setQuickRestartKey: (key: QuickRestartKey) => void
-  setLazyMode: (enabled: boolean) => void
-  setSoundEnabled: (enabled: boolean) => void
+  setSoundTheme: (theme: SoundTheme) => void
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -30,14 +29,12 @@ export const useSettingsStore = create<SettingsState>()(
       fontSize: 'M',
       caretStyle: 'line',
       quickRestartKey: 'tab',
-      lazyMode: false,
-      soundEnabled: false,
+      soundTheme: 'off',
       setTheme: (theme) => set({ theme }),
       setFontSize: (fontSize) => set({ fontSize }),
       setCaretStyle: (caretStyle) => set({ caretStyle }),
       setQuickRestartKey: (quickRestartKey) => set({ quickRestartKey }),
-      setLazyMode: (lazyMode) => set({ lazyMode }),
-      setSoundEnabled: (soundEnabled) => set({ soundEnabled }),
+      setSoundTheme: (soundTheme) => set({ soundTheme }),
     }),
     { name: 'brzokucanje-settings' },
   ),

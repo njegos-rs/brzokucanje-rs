@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getDayRangeInAppTimeZone } from '@/lib/date'
 
 const scripts = ['cirilica', 'latinica', 'latinica-bez-kvacica'] as const
-const categories = ['reci', 'recenice', 'citati', 'price', 'vesti'] as const
+const categories = ['reci', 'recenice'] as const
 
 type Script = (typeof scripts)[number]
 type Category = (typeof categories)[number]
@@ -34,11 +35,7 @@ export async function GET(req: NextRequest) {
   const category: Category | null = (categoryParam as Category) ?? null
   const supabase = await createClient()
 
-  const today = new Date().toISOString().slice(0, 10)
-  const weekStart = new Date()
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay())
-  const monthStart = new Date()
-  monthStart.setDate(1)
+  const { startIso, endIso } = getDayRangeInAppTimeZone()
 
   let data: unknown[] = []
   let error: { message: string } | null = null
@@ -48,7 +45,8 @@ export async function GET(req: NextRequest) {
       .from('v_daily_leaderboard' as 'scores')
       .select('user_id, username, wpm, raw_wpm, accuracy, score, created_at, daily_rank')
       .eq('script', script)
-      .gte('created_at', `${today}T00:00:00`)
+      .gte('created_at', startIso)
+      .lt('created_at', endIso)
     if (category) q = q.eq('category', category) as typeof q
     const res = await q.order('daily_rank', { ascending: true }).limit(limit)
     data = (res.data ?? []) as unknown[]
@@ -56,21 +54,28 @@ export async function GET(req: NextRequest) {
   } else if (period === 'weekly') {
     let q = supabase
       .from('v_weekly_leaderboard' as 'scores')
-      .select('user_id, username, wpm, score, accuracy, test_count, weekly_rank')
+      .select('user_id, username, avg_wpm, avg_accuracy, active_days, total_days, period_score, period_rank')
       .eq('script', script)
-      .gte('created_at', weekStart.toISOString())
     if (category) q = q.eq('category', category) as typeof q
-    const res = await q.order('weekly_rank', { ascending: true }).limit(limit)
+    const res = await q.order('period_rank', { ascending: true }).limit(limit)
     data = (res.data ?? []) as unknown[]
     error = res.error
   } else if (period === 'monthly') {
     let q = supabase
       .from('v_monthly_leaderboard' as 'scores')
-      .select('user_id, username, wpm, score, accuracy, test_count, monthly_rank')
+      .select('user_id, username, avg_wpm, avg_accuracy, active_days, total_days, period_score, period_rank')
       .eq('script', script)
-      .gte('created_at', monthStart.toISOString())
     if (category) q = q.eq('category', category) as typeof q
-    const res = await q.order('monthly_rank', { ascending: true }).limit(limit)
+    const res = await q.order('period_rank', { ascending: true }).limit(limit)
+    data = (res.data ?? []) as unknown[]
+    error = res.error
+  } else if (period === 'yearly') {
+    let q = supabase
+      .from('v_yearly_leaderboard' as 'scores')
+      .select('user_id, username, avg_wpm, avg_accuracy, active_days, total_days, period_score, period_rank')
+      .eq('script', script)
+    if (category) q = q.eq('category', category) as typeof q
+    const res = await q.order('period_rank', { ascending: true }).limit(limit)
     data = (res.data ?? []) as unknown[]
     error = res.error
   } else {

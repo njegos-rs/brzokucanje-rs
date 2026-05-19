@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname, useRouter } from 'next/navigation'
-import { Menu, X, LogOut, User, Settings, Shield, Sun, Moon } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { Menu, X, User, Settings, Shield, Sun, Moon } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -12,20 +12,19 @@ import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 const NAV_LINKS = [
   { href: '/vezbaj/latinica', label: 'Vežbaj' },
-  { href: '/rank/latinica', label: 'Rang test' },
-  { href: '/rang-lista/latinica', label: 'Rang lista' },
+  { href: '/rank/latinica', label: 'Rank test' },
+  { href: '/rang-lista/latinica', label: 'Rank lista' },
   { href: '/igra', label: 'Igra' },
 ]
 
 export function Header() {
   const pathname = usePathname()
-  const router = useRouter()
   const { theme, toggle: toggleTheme } = useTheme()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [username, setUsername] = useState<string | undefined>(undefined)
-  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [username, setUsername] = useState<string | null>(null)
+  const [profileLoaded, setProfileLoaded] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -41,26 +40,21 @@ export function Header() {
           .then(({ data: profile }) => {
             const p = profile as { username: string; is_admin: boolean } | null
             setIsAdmin(p?.is_admin ?? false)
-            setUsername(p?.username ?? data.user!.email?.split('@')[0])
+            setUsername(p?.username ?? data.user!.email?.split('@')[0] ?? null)
+            setProfileLoaded(true)
           })
+      } else {
+        setProfileLoaded(true)
       }
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
-      if (!session?.user) { setIsAdmin(false); setUsername(undefined) }
+      if (!session?.user) { setIsAdmin(false); setUsername(null) }
     })
 
     return () => subscription.unsubscribe()
   }, [])
-
-  const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    setUserMenuOpen(false)
-    router.push('/')
-    router.refresh()
-  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-[var(--border)] bg-[var(--background)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)]/60">
@@ -101,58 +95,32 @@ export function Header() {
           >
             {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           </button>
-          {user ? (
-            <div className="relative">
-              <button
-                onClick={() => setUserMenuOpen((v) => !v)}
+          {!profileLoaded ? (
+            <div className="h-8 w-32 rounded-md bg-[var(--muted)] animate-pulse" aria-hidden="true" />
+          ) : user ? (
+            <div className="flex items-center gap-1.5">
+              <Link
+                href="/podesavanja"
+                className="p-1.5 rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
+                aria-label="Podešavanja"
+              >
+                <Settings className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/profil"
                 className="flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
               >
                 <User className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-                <span>{username ?? user.email?.split('@')[0]}</span>
-              </button>
-              {userMenuOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setUserMenuOpen(false)}
-                  />
-                  <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-md border border-[var(--border)] bg-[var(--card)] py-1 shadow-lg">
-                    <Link
-                      href="/profil"
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
-                    >
-                      <User className="h-3.5 w-3.5" />
-                      Profil
-                    </Link>
-                    <Link
-                      href="/podesavanja"
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
-                    >
-                      <Settings className="h-3.5 w-3.5" />
-                      Podešavanja
-                    </Link>
-                    {isAdmin && (
-                      <Link
-                        href="/admin/pregled"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--accent)] hover:bg-[var(--muted)] transition-colors"
-                      >
-                        <Shield className="h-3.5 w-3.5" />
-                        Admin
-                      </Link>
-                    )}
-                    <hr className="my-1 border-[var(--border)]" />
-                    <button
-                      onClick={handleLogout}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
-                    >
-                      <LogOut className="h-3.5 w-3.5" />
-                      Odjavi se
-                    </button>
-                  </div>
-                </>
+                <span>{username}</span>
+              </Link>
+              {isAdmin && (
+                <Link
+                  href="/admin/pregled"
+                  className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-[var(--accent)] hover:bg-[var(--muted)] transition-colors"
+                >
+                  <Shield className="h-3.5 w-3.5" />
+                  Admin
+                </Link>
               )}
             </div>
           ) : (
@@ -230,12 +198,6 @@ export function Header() {
                     Admin panel
                   </Link>
                 )}
-                <button
-                  onClick={() => { setMobileOpen(false); handleLogout() }}
-                  className="py-2 text-left text-sm text-[var(--muted-foreground)]"
-                >
-                  Odjavi se
-                </button>
               </>
             ) : (
               <>

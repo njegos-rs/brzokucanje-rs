@@ -1,4 +1,4 @@
-// Monkeytype scoring formule — NE menjati bez konsultacije sa klijentom (CLAUDE.md sekcija 3)
+// Scoring je namerno jednostavan: WPM je brzina, score je WPM kaznjen greskama.
 
 export interface ScoringInput {
   correctChars: number

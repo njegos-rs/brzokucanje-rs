@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { calcAll, calcWpm, calcRawWpm, type ScoringResult } from './scoring'
-import { cyrToLat } from '@/lib/transliteration'
 
 export type CharState = 'upcoming' | 'correct' | 'incorrect' | 'extra'
 
@@ -21,7 +20,7 @@ export interface KeystrokeEntry {
 
 export type TestMode = 'reci' | 'vreme' | 'tekst'
 export type TestLevel = 'easy' | 'medium' | 'hard' | 'expert'
-export type TimerDuration = 15 | 30 | 60 | 120
+export type TimerDuration = 15 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100 | 110 | 120
 
 interface EngineState {
   status: EngineStatus
@@ -54,6 +53,7 @@ const LAZY_MAP: Record<string, string[]> = {
 function isLazyMatch(typed: string, expected: string, lazy: boolean): boolean {
   if (typed === expected) return true
   if (!lazy) return false
+  
   const accepted = LAZY_MAP[typed.toLowerCase()]
   return accepted?.includes(expected.toLowerCase()) ?? false
 }
@@ -101,7 +101,7 @@ function engineReducer(state: EngineState, action: EngineAction): EngineState {
         state.lastKeystrokeTime !== null ? action.now - state.lastKeystrokeTime : null
 
       const expected = state.chars[state.cursor].char
-      const typedKey = cyrToLat(action.key)
+      const typedKey = action.key
       const correct = isLazyMatch(typedKey, expected, state.lazyMode)
 
       const newChars = [...state.chars]
@@ -218,7 +218,7 @@ export function useTypingEngine({
       timerRef.current = null
     }
     setTimeLeft(timerDuration)
-    dispatch({ type: 'RESET', text, lazyMode: false, strictMode })
+    dispatch({ type: 'RESET', text, lazyMode, strictMode })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text])
 
