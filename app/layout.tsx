@@ -3,15 +3,10 @@ import Script from 'next/script'
 import { Toaster } from 'react-hot-toast'
 import { CookieConsent } from '@/components/CookieConsent'
 import { ThemeProvider } from '@/components/ThemeProvider'
+import { getSiteUrl } from '@/lib/site'
 import './globals.css'
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL
-  ? process.env.NEXT_PUBLIC_APP_URL.startsWith('http')
-    ? process.env.NEXT_PUBLIC_APP_URL
-    : `https://${process.env.NEXT_PUBLIC_APP_URL}`
-  : process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'https://brzokucanje.rs'
+const appUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: {

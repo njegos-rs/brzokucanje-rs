@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { VezbaClient } from './VezbaClient'
+import { getSiteUrl } from '@/lib/site'
 
 type Script = 'latinica' | 'cirilica' | 'easy'
 
@@ -25,7 +26,7 @@ export async function generateStaticParams() {
   return VALID_SCRIPTS.map((pismo) => ({ pismo }))
 }
 
-const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://brzokucanje.rs'
+const base = getSiteUrl()
 
 export async function generateMetadata({
   params,

@@ -1,7 +1,9 @@
 import type { MetadataRoute } from 'next'
 import { createClient } from '@/lib/supabase/server'
 
-const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://brzokucanje.rs'
+import { getSiteUrl } from '@/lib/site'
+
+const base = getSiteUrl()
 
 const STATIC_ROUTES = [
   { url: '/', priority: 1.0, changeFrequency: 'daily' },

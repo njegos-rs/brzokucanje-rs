@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { LeaderboardContent } from './LeaderboardContent'
+import { getSiteUrl } from '@/lib/site'
 
 type Script = 'latinica' | 'cirilica' | 'latinica-bez-kvacica'
 const VALID_SCRIPTS: Script[] = ['latinica', 'cirilica', 'latinica-bez-kvacica']
@@ -16,7 +17,7 @@ interface Props {
   params: Promise<{ pismo: string }>
 }
 
-const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://brzokucanje.rs'
+const base = getSiteUrl()
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { pismo } = await params
