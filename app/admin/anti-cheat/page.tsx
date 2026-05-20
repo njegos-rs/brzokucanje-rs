@@ -6,26 +6,36 @@ import type { Database } from '@/lib/supabase/types'
 
 export const metadata: Metadata = { title: 'Admin — Anti-cheat' }
 
-type ScoreRow = Database['public']['Tables']['scores']['Row']
-
-type FlaggedScore = Pick<ScoreRow,
-  'id' | 'user_id' | 'wpm' | 'accuracy' | 'script' | 'category' | 'mode' |
-  'flag_reason' | 'flag_reviewed' | 'review_decision' | 'created_at'
->
+// flag_reviewed and review_decision are not yet in generated types (pending migration)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type FlaggedScore = {
+  id: string
+  user_id: string
+  wpm: number
+  accuracy: number
+  script: string
+  category: string
+  mode: string
+  flag_reason: string | null
+  flag_reviewed: boolean | null
+  review_decision: string | null
+  created_at: string
+}
 
 export default async function AdminAntiCheatPage() {
   const supabase = await createServiceClient()
 
-  const { data } = await supabase
+  const { data: rawData } = await supabase
     .from('scores')
-    .select('id, user_id, wpm, accuracy, script, category, mode, flag_reason, flag_reviewed, review_decision, created_at')
+    .select('id, user_id, wpm, accuracy, script, category, mode, flag_reason, created_at')
     .eq('is_flagged', true)
     .order('created_at', { ascending: false })
     .limit(100)
 
+  const scoreRows = (rawData ?? []) as any[]
+
   type Row = FlaggedScore & { profiles: { username: string | null } | null }
-  const scoreRows = data ?? []
-  const userIds = Array.from(new Set(scoreRows.map((score) => score.user_id)))
+  const userIds = Array.from(new Set(scoreRows.map((score) => score.user_id as string)))
   const { data: profiles } = userIds.length
     ? await supabase.from('profiles').select('id, username').in('id', userIds)
     : { data: [] }

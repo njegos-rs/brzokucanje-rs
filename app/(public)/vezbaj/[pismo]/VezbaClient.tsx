@@ -101,39 +101,6 @@ export function VezbaClient({ pismo }: Props) {
     }
   }, [pismo])
 
-  const changeContentMode = useCallback((m: 'reci' | 'tekst') => {
-    contentModeRef.current = m
-    setContentMode(m)
-    writeStorage('vezba_content_mode', m)
-    setText(makeText(pismoRef.current, m, levelRef.current))
-    setFinished(null)
-  }, [])
-
-  const changeLevel = useCallback((l: TestLevel) => {
-    levelRef.current = l
-    setLevel(l)
-    writeStorage('vezba_level', l)
-    setText(makeText(pismoRef.current, contentModeRef.current, l))
-    setFinished(null)
-  }, [])
-
-  const changeTimerDuration = useCallback((t: TimerDuration | null) => {
-    timerDurationRef.current = t
-    setTimerDuration(t)
-    writeStorage('vezba_timer', t)
-    setFinished(null)
-  }, [])
-
-  const changeStrictMode = useCallback((v: boolean) => {
-    strictModeRef.current = v
-    setStrictMode(v)
-    writeStorage('vezba_strict', v)
-  }, [])
-
-  const changePismo = useCallback((s: Script) => {
-    router.push(`/vezbaj/${s}`)
-  }, [router])
-
   const getMoreText = useCallback(() => {
     return buildWordTest(loadWords(pismoRef.current, levelRef.current), 40, levelRef.current)
   }, [])
@@ -180,6 +147,49 @@ export function VezbaClient({ pismo }: Props) {
     onFinish: handleFinish,
     onNeedMoreText: getMoreText,
   })
+
+  const changeContentMode = useCallback((m: 'reci' | 'tekst') => {
+    const nextText = makeText(pismoRef.current, m, levelRef.current)
+    contentModeRef.current = m
+    setContentMode(m)
+    writeStorage('vezba_content_mode', m)
+    setText(nextText)
+    reset(nextText, timerDurationRef.current ?? 60)
+    setFinished(null)
+  }, [reset])
+
+  const changeLevel = useCallback((l: TestLevel) => {
+    const nextText = makeText(pismoRef.current, contentModeRef.current, l)
+    levelRef.current = l
+    setLevel(l)
+    writeStorage('vezba_level', l)
+    setText(nextText)
+    reset(nextText, timerDurationRef.current ?? 60)
+    setFinished(null)
+  }, [reset])
+
+  const changeTimerDuration = useCallback((t: TimerDuration | null) => {
+    const nextTimerDuration = t ?? 60
+    timerDurationRef.current = t
+    setTimerDuration(t)
+    writeStorage('vezba_timer', t)
+    reset(undefined, nextTimerDuration)
+    setFinished(null)
+  }, [reset])
+
+  const changeStrictMode = useCallback((v: boolean) => {
+    strictModeRef.current = v
+    setStrictMode(v)
+    writeStorage('vezba_strict', v)
+  }, [])
+
+  const changePismo = useCallback((s: Script) => {
+    const nextText = makeText(s, contentModeRef.current, levelRef.current)
+    pismoRef.current = s
+    setText(nextText)
+    reset(nextText, timerDurationRef.current ?? 60)
+    router.push(`/vezbaj/${s}`)
+  }, [reset, router])
 
   const handleNewTest = useCallback(() => {
     setText(makeText(pismoRef.current, contentModeRef.current, levelRef.current))

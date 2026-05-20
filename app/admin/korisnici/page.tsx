@@ -1,24 +1,19 @@
 import type { Metadata } from 'next'
 import { createServiceClient } from '@/lib/supabase/server'
 import { KorisniciTable } from '@/components/admin/KorisniciTable'
-import type { Database } from '@/lib/supabase/types'
-
 export const metadata: Metadata = { title: 'Admin — Korisnici' }
-
-type ProfileRow = Database['public']['Tables']['profiles']['Row']
 
 export default async function AdminKorisniciPage() {
   const supabase = await createServiceClient()
 
   const { data } = await supabase
     .from('profiles')
-    .select('id, username, email, created_at, is_admin, is_banned, ban_reason, current_streak, newsletter_subscribed')
+    .select('id, username, created_at, is_admin, is_banned, ban_reason, current_streak')
     .order('created_at', { ascending: false })
     .limit(200)
 
-  const profiles = (data ?? []) as Pick<ProfileRow,
-    'id' | 'username' | 'email' | 'created_at' | 'is_admin' | 'is_banned' | 'ban_reason' | 'current_streak' | 'newsletter_subscribed'
-  >[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const profiles = (data ?? []) as any[]
 
   return (
     <div>

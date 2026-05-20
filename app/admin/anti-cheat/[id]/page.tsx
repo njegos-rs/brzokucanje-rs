@@ -109,8 +109,8 @@ export default async function AntiCheatDetailPage({ params }: Props) {
         scoreId={id}
         userId={score.user_id}
         username={score.profiles?.username ?? 'Nepoznat'}
-        isReviewed={score.flag_reviewed ?? false}
-        decision={score.review_decision}
+        isReviewed={(score as any).flag_reviewed ?? false}
+        decision={(score as any).review_decision}
       />
     </div>
   )

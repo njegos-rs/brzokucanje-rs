@@ -28,20 +28,18 @@ export function ReviewActions({ scoreId, userId, username, isReviewed, decision 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Niste prijavljeni')
 
-      const reviewUpdate: Database['public']['Tables']['scores']['Update'] = {
-        flag_reviewed: true,
-        review_decision: reviewDecision,
-        reviewed_by: user.id,
-      }
-
-      const { error: err } = await supabase
+      const { error: err } = await (supabase as any)
         .from('scores')
-        .update(reviewUpdate)
+        .update({
+          flag_reviewed: true,
+          review_decision: reviewDecision,
+          reviewed_by: user.id,
+        })
         .eq('id', scoreId)
 
       if (err) throw err
 
-      await supabase.from('admin_actions').insert({
+      await (supabase as any).from('admin_actions').insert({
         admin_id: user.id,
         action: `anticheat_${reviewDecision}`,
         target_type: 'score',
@@ -77,7 +75,7 @@ export function ReviewActions({ scoreId, userId, username, isReviewed, decision 
       if (err) throw err
 
       // Automatski reject score
-      await supabase.from('scores').update({
+      await (supabase as any).from('scores').update({
         flag_reviewed: true,
         review_decision: 'rejected',
         reviewed_by: user.id,

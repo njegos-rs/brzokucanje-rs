@@ -1,10 +1,9 @@
 import type { Metadata } from 'next'
 import { createServiceClient } from '@/lib/supabase/server'
-import type { Database } from '@/lib/supabase/types'
-
 export const metadata: Metadata = { title: 'Admin — Audit log' }
 
-type ActionRow = Database['public']['Tables']['admin_actions']['Row']
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ActionRow = any
 
 const ACTION_LABELS: Record<string, string> = {
   anticheat_approved: 'Anti-cheat: odobren',
@@ -16,7 +15,8 @@ const ACTION_LABELS: Record<string, string> = {
 export default async function AdminAuditPage() {
   const supabase = await createServiceClient()
 
-  const { data } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase as any)
     .from('admin_actions')
     .select('id, admin_id, action, target_type, target_id, details, created_at')
     .order('created_at', { ascending: false })

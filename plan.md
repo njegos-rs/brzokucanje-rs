@@ -250,6 +250,7 @@ Ovaj plan koristi sledeće oznake. Pratimo ih dosledno kroz ceo dokument.
 - ✅ 🔵 **[KLIJ]** **Review content-a** — pregleda generisane rečnike i tekstove, daje feedback (npr. "ovaj citat ne valja, zameni")
   - Klijent ima 1-2 dana za review
   - Programer paralelno radi na typing engine (utorak-sreda)
+  - Napomena za sledeći content pass: ponovo kurirati rečnike i tekstove sa novim izvorima srpskog jezika, bez ijekavice i bez stranih reči, uz smislenije vežba-tekstove nego trenutni pool
 
 #### Utorak-sreda: Core typing engine
 - ✅ 🟢 **[PROG]** `lib/typing/scoring.ts` — sve formule (WPM, Raw WPM, ACC, CPM, Consistency, Score)

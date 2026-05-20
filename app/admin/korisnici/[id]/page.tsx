@@ -26,19 +26,20 @@ export default async function KorisnikDetailPage({ params }: Props) {
       .eq('user_id', id)
       .order('created_at', { ascending: false })
       .limit(50),
-    supabase
-      .from('admin_actions')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any).from('admin_actions')
       .select('action, details, created_at, admin_id')
       .eq('target_id', id)
       .order('created_at', { ascending: false })
-      .limit(20),
+      .limit(20) as Promise<{ data: any[] | null }>,
   ])
 
   if (!profileRes.data) notFound()
 
   const profile = profileRes.data as ProfileRow
   const scores = (scoresRes.data ?? []) as Pick<ScoreRow, 'id' | 'wpm' | 'accuracy' | 'script' | 'category' | 'mode' | 'is_flagged' | 'created_at'>[]
-  const auditLog = adminActionsRes.data ?? []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const auditLog = (adminActionsRes.data ?? []) as any[]
 
   const totalTests = scores.length
   const avgWpm = totalTests > 0 ? Math.round(scores.reduce((a, s) => a + s.wpm, 0) / totalTests) : 0
@@ -50,7 +51,7 @@ export default async function KorisnikDetailPage({ params }: Props) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--foreground)]">{profile.username ?? 'Nepoznat'}</h1>
-          <p className="text-sm text-[var(--muted-foreground)]">{profile.email}</p>
+          <p className="text-sm text-[var(--muted-foreground)]">{(profile as any).email}</p>
         </div>
         <div className="flex items-center gap-2">
           {profile.is_admin && (

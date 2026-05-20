@@ -323,13 +323,13 @@ export function useTypingEngine({
     [],
   )
 
-  const reset = useCallback(() => {
+  const reset = useCallback((nextText = text, nextTimerDuration = timerDuration) => {
     if (timerRef.current) {
       clearInterval(timerRef.current)
       timerRef.current = null
     }
-    setTimeLeft(timerDuration)
-    dispatch({ type: 'RESET', text, lazyMode, strictMode })
+    setTimeLeft(nextTimerDuration)
+    dispatch({ type: 'RESET', text: nextText, lazyMode, strictMode })
   }, [text, lazyMode, strictMode, timerDuration])
 
   const liveStats = useCallback((): Partial<ScoringResult> => {
