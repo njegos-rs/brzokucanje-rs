@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { RotateCcw, Volume2, VolumeX } from 'lucide-react'
+import Link from 'next/link'
 import GAME_POOL from '@/lib/words/game-pool.json'
 import { cn } from '@/lib/utils'
 import { PrijavaForma } from '@/components/auth/PrijavaForma'
@@ -933,9 +934,16 @@ export function IgraClient({ canPlay }: Props) {
                         <span className={cn('w-5 text-center font-bold', idx === 0 ? 'text-yellow-500' : idx === 1 ? 'text-gray-400' : idx === 2 ? 'text-amber-600' : 'text-[var(--muted-foreground)]')}>
                           {idx === 0 ? '🏆' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`}
                         </span>
-                        <span className="max-w-[72px] truncate font-medium text-[var(--foreground)]">
-                          {entry.username || 'Nepoznat'}
-                        </span>
+                        {entry.username ? (
+                          <Link
+                            href={`/profil/${entry.username}`}
+                            className="max-w-[72px] truncate font-medium text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
+                          >
+                            {entry.username}
+                          </Link>
+                        ) : (
+                          <span className="max-w-[72px] truncate font-medium text-[var(--muted-foreground)]">Nepoznat</span>
+                        )}
                       </div>
                       <span className="font-mono font-bold text-[var(--accent)]">{entry.max_score?.toLocaleString() ?? 0}</span>
                     </div>
