@@ -181,7 +181,9 @@ export function VezbaClient({ pismo }: Props) {
     strictModeRef.current = v
     setStrictMode(v)
     writeStorage('vezba_strict', v)
-  }, [])
+    reset(undefined, timerDurationRef.current ?? 60, v)
+    setFinished(null)
+  }, [reset])
 
   const changePismo = useCallback((s: Script) => {
     const nextText = makeText(s, contentModeRef.current, levelRef.current)
