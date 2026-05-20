@@ -122,7 +122,7 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
       <div
         onClick={handleDisplayClick}
         className={cn(
-          'relative cursor-text overflow-hidden',
+          'typing-area relative cursor-text overflow-hidden',
           status === 'finished' && 'opacity-30 pointer-events-none',
         )}
         style={{ height: `${LINE_HEIGHT_PX * 3}px` }}

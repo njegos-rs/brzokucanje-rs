@@ -15,6 +15,10 @@ const SCRIPT_LABELS: Record<Script, string> = {
   'latinica-bez-kvacica': 'Latinica bez kvačica',
 }
 
+function scriptToSlug(script: Script): string {
+  return script === 'latinica-bez-kvacica' ? 'easy' : script
+}
+
 const PERIOD_LABELS: Record<Period, string> = {
   daily: 'Dnevna',
   weekly: 'Nedeljna',
@@ -122,7 +126,7 @@ export function LeaderboardContent({ script }: Props) {
         {pismoTabovi.map((p) => (
           <button
             key={p}
-            onClick={() => router.push(`/rang-lista/${p}`)}
+            onClick={() => router.push(`/rang-lista/${scriptToSlug(p)}`)}
             className={cn(
               'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
               p === script

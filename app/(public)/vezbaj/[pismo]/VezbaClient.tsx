@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTypingEngine, type WpmSnapshot, type TestMode, type TestLevel, type TimerDuration, type KeystrokeEntry } from '@/lib/typing/engine'
 import { TypingArea } from '@/components/typing/TypingArea'
+import { LiveStats } from '@/components/typing/LiveStats'
 import { WpmChart } from '@/components/result/WpmChart'
 import { loadWords, loadTexts, buildWordTest, buildPhraseTest, getRandomWordCount } from '@/lib/words/loader'
 import { cn } from '@/lib/utils'
@@ -138,7 +139,7 @@ export function VezbaClient({ pismo }: Props) {
     } catch { /* ignorisi — vežba se ne blokira ako save ne uspe */ }
   }, [])
 
-  const { chars, cursor, status, timeLeft, spaceBlocked, handleKeyDown, reset } = useTypingEngine({
+  const { chars, cursor, status, errors, timeLeft, spaceBlocked, handleKeyDown, reset, liveStats } = useTypingEngine({
     text,
     mode,
     timerDuration: timerDuration ?? 60,
@@ -202,6 +203,8 @@ export function VezbaClient({ pismo }: Props) {
     reset()
     setFinished(null)
   }, [reset])
+
+  const currentStats = liveStats()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -341,6 +344,14 @@ export function VezbaClient({ pismo }: Props) {
         mode={mode}
         spaceBlocked={spaceBlocked}
       />
+
+      {status !== 'finished' && cursor > 0 && (
+        <LiveStats
+          wpm={currentStats.wpm ?? 0}
+          accuracy={currentStats.accuracy ?? 0}
+          errors={errors}
+        />
+      )}
 
       {/* Reset dugme — samo tokom kucanja */}
       {status !== 'idle' && !finished && (

@@ -60,6 +60,12 @@ export function Footer() {
               >
                 Ćirilica
               </Link>
+              <Link
+                href="/rang-lista/easy"
+                className="text-xs text-[var(--muted-foreground)] hover:text-[var(--accent)] transition-colors"
+              >
+                Easy (bez kvačica)
+              </Link>
             </div>
 
             <div className="flex flex-col gap-2">
