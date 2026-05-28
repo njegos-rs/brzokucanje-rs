@@ -45,6 +45,7 @@ export default async function RankPismoPage({ params }: Props) {
     .eq('user_id', user.id)
     .eq('script', script)
     .eq('mode', 'rank')
+    .gt('wpm', 0)
     .gte('created_at', todayStartUtc)
     .limit(1)
     .single()

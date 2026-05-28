@@ -65,6 +65,31 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     if (error.code === '23505') {
+      // Proveri da li je postojeći score napušten (wpm=0) — ako jeste, obrisi ga i pokusaj ponovo
+      const todayBeograd = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Belgrade' })
+      const todayStartUtc = new Date(`${todayBeograd}T00:00:00+02:00`).toISOString()
+
+      const { data: existing } = await supabase
+        .from('scores')
+        .select('id, wpm')
+        .eq('user_id', user.id)
+        .eq('script', script)
+        .eq('category', category)
+        .eq('mode', 'rank')
+        .gte('created_at', todayStartUtc)
+        .single()
+
+      if (existing && existing.wpm === 0) {
+        await supabase.from('scores').delete().eq('id', existing.id)
+        const { data: retry, error: retryError } = await supabase
+          .from('scores')
+          .insert(insert)
+          .select('id')
+          .single()
+        if (retryError) return NextResponse.json({ error: retryError.message }, { status: 500 })
+        return NextResponse.json({ id: retry.id })
+      }
+
       return NextResponse.json(
         { error: 'Već ste iskoristili dnevni pokušaj za ovu kategoriju i pismo.' },
         { status: 409 }
