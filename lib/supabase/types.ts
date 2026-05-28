@@ -136,6 +136,48 @@ export type Database = {
         }
         Relationships: []
       }
+      period_titles: {
+        Row: {
+          active_days: number
+          avg_wpm: number
+          created_at: string
+          id: string
+          period_end: string
+          period_score: number
+          period_start: string
+          period_type: string
+          script: string
+          total_days: number
+          user_id: string
+        }
+        Insert: {
+          active_days: number
+          avg_wpm: number
+          created_at?: string
+          id?: string
+          period_end: string
+          period_score: number
+          period_start: string
+          period_type: string
+          script: string
+          total_days: number
+          user_id: string
+        }
+        Update: {
+          active_days?: number
+          avg_wpm?: number
+          created_at?: string
+          id?: string
+          period_end?: string
+          period_score?: number
+          period_start?: string
+          period_type?: string
+          script?: string
+          total_days?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       personal_bests: {
         Row: {
           achieved_at: string
@@ -542,7 +584,23 @@ export type Database = {
       }
       generate_daily_texts: { Args: { p_date?: string }; Returns: undefined }
       get_db_size_mb: { Args: never; Returns: number }
+      record_completed_period_titles: {
+        Args: { p_reference_date?: string }
+        Returns: undefined
+      }
       record_daily_winners: { Args: { p_date?: string }; Returns: undefined }
+      record_monthly_titles: {
+        Args: { p_reference_date?: string }
+        Returns: undefined
+      }
+      record_weekly_titles: {
+        Args: { p_reference_date?: string }
+        Returns: undefined
+      }
+      record_yearly_titles: {
+        Args: { p_reference_date?: string }
+        Returns: undefined
+      }
       unban_user: {
         Args: { p_admin_id: string; p_user_id: string }
         Returns: undefined

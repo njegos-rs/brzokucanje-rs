@@ -8,12 +8,29 @@ interface Props {
   params: Promise<{ username: string }>
 }
 
+interface CompletedScoreRow {
+  duration_seconds: number | null
+  wpm: number
+  score: number
+}
+
+interface PeriodTitleRow {
+  period_type: 'weekly' | 'monthly' | 'yearly'
+}
+
 interface StatCardProps {
   icon: LucideIcon
   iconClassName: string
   value: string | number
   label: string
   tooltip: string
+}
+
+interface TrophyBreakdownProps {
+  daily: number
+  weekly: number
+  monthly: number
+  yearly: number
 }
 
 function StatCard({ icon: Icon, iconClassName, value, label, tooltip }: StatCardProps) {
@@ -25,6 +42,38 @@ function StatCard({ icon: Icon, iconClassName, value, label, tooltip }: StatCard
       <Icon className={`mx-auto mb-2 h-5 w-5 ${iconClassName}`} />
       <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{value}</p>
       <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">{label}</p>
+    </div>
+  )
+}
+
+function TrophyBreakdownCard({ daily, weekly, monthly, yearly }: TrophyBreakdownProps) {
+  return (
+    <div
+      title="Dnevni pehari dolaze iz završenih dana. Nedeljni, mesečni i godišnji se dodeljuju tek po isteku kompletnog perioda ako korisnik ostane prvi."
+      className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 sm:col-span-2"
+    >
+      <div className="mb-3 flex items-center gap-2">
+        <Trophy className="h-5 w-5 text-yellow-500" />
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">Pehari</p>
+      </div>
+      <div className="grid grid-cols-4 gap-3 text-center">
+        <div>
+          <p className="font-mono text-2xl font-bold text-yellow-500">{daily}</p>
+          <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Dnevni</p>
+        </div>
+        <div>
+          <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{weekly}</p>
+          <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Nedeljni</p>
+        </div>
+        <div>
+          <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{monthly}</p>
+          <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Mesečni</p>
+        </div>
+        <div>
+          <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{yearly}</p>
+          <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Godišnji</p>
+        </div>
+      </div>
     </div>
   )
 }
@@ -46,7 +95,7 @@ export default async function PublicProfilPage({ params }: Props) {
 
   if (!profile || profile.is_banned) notFound()
 
-  const [pbRes, statsRes, winsRes, gamePbRes, recentRes] = await Promise.all([
+  const [pbRes, statsRes, winsRes, gamePbRes, recentRes, titlesRes] = await Promise.all([
     supabase
       .from('personal_bests' as 'scores')
       .select('id, script, category, game_mode, timer_seconds, strict_mode, level, best_wpm, best_accuracy, best_score')
@@ -54,7 +103,7 @@ export default async function PublicProfilPage({ params }: Props) {
       .order('best_score', { ascending: false }),
     supabase
       .from('scores')
-      .select('duration_seconds, wpm, mode')
+      .select('duration_seconds, wpm, score')
       .eq('user_id', profile.id),
     supabase
       .from('wins' as 'scores')
@@ -71,18 +120,28 @@ export default async function PublicProfilPage({ params }: Props) {
       .from('scores')
       .select('wpm, accuracy, created_at, script, category, mode, level, timer_seconds, strict_mode')
       .eq('user_id', profile.id)
+      .gt('wpm', 0)
       .order('created_at', { ascending: false })
       .limit(10),
+    supabase
+      .from('period_titles')
+      .select('period_type')
+      .eq('user_id', profile.id),
   ])
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pbs = (pbRes.data ?? []) as any[]
-  const allScores = statsRes.data ?? []
-  const totalTests = allScores.length
+  const allScores = (statsRes.data ?? []) as CompletedScoreRow[]
+  const completedScores = allScores.filter((score) => score.wpm > 0 && score.score > 0 && (score.duration_seconds ?? 0) > 0)
+  const totalTests = completedScores.length
   const totalMinutes = Math.round(
-    allScores.reduce((a: number, s: { duration_seconds: number | null }) => a + (s.duration_seconds ?? 0), 0) / 60
+    completedScores.reduce((sum, score) => sum + (score.duration_seconds ?? 0), 0) / 60,
   )
-  const totalWins = winsRes.count ?? 0
+  const dailyWins = winsRes.count ?? 0
+  const titles = (titlesRes.data ?? []) as PeriodTitleRow[]
+  const weeklyTitles = titles.filter((title) => title.period_type === 'weekly').length
+  const monthlyTitles = titles.filter((title) => title.period_type === 'monthly').length
+  const yearlyTitles = titles.filter((title) => title.period_type === 'yearly').length
   const gamePb = gamePbRes.data
 
   const rankPbs = pbs.filter((p) => (p.game_mode === 'rank' || !p.game_mode) && p.best_score > 0 && p.best_wpm > 0)
@@ -105,19 +164,18 @@ export default async function PublicProfilPage({ params }: Props) {
       </div>
 
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <StatCard
-          icon={Trophy}
-          iconClassName="text-yellow-500"
-          value={totalWins}
-          label="Dnevne pobede"
-          tooltip="Broj završenih dana u kojima je ovaj korisnik ostao prvi na dnevnoj rank listi."
+        <TrophyBreakdownCard
+          daily={dailyWins}
+          weekly={weeklyTitles}
+          monthly={monthlyTitles}
+          yearly={yearlyTitles}
         />
         <StatCard
           icon={Target}
           iconClassName="text-[var(--muted-foreground)]"
           value={totalTests}
           label="Testova"
-          tooltip="Ukupan broj sačuvanih testova na ovom nalogu, uključujući rank i vežbu."
+          tooltip="Ukupan broj završenih i sačuvanih testova na ovom nalogu, uključujući rank i vežbu."
         />
         <StatCard
           icon={Flame}
@@ -131,7 +189,7 @@ export default async function PublicProfilPage({ params }: Props) {
           iconClassName="text-[var(--muted-foreground)]"
           value={totalMinutes}
           label="Minuta"
-          tooltip="Ukupno vreme provedeno u svim testovima, sabrano iz trajanja svake partije."
+          tooltip="Ukupno vreme provedeno u završenim testovima, sabrano iz trajanja svake partije."
         />
         <StatCard
           icon={Medal}
