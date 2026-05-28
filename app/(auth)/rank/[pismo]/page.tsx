@@ -33,7 +33,11 @@ export default async function RankPismoPage({ params }: Props) {
   if (!user) redirect('/prijava')
 
   const script = pismo as Script
-  const today = new Date().toISOString().slice(0, 10)
+
+  // Koristimo Beograd timezone da se poklopi sa unique indexom u bazi
+  const todayBeograd = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Belgrade' })
+  const today = todayBeograd
+  const todayStartUtc = new Date(`${todayBeograd}T00:00:00+02:00`).toISOString()
 
   const { data: usedScore } = await supabase
     .from('scores')
@@ -41,7 +45,7 @@ export default async function RankPismoPage({ params }: Props) {
     .eq('user_id', user.id)
     .eq('script', script)
     .eq('mode', 'rank')
-    .gte('created_at', `${today}T00:00:00`)
+    .gte('created_at', todayStartUtc)
     .limit(1)
     .single()
 
