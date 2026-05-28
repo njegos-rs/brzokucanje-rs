@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import { RankClient } from './RankClient'
 import { getDailyTextData } from '@/lib/words/daily'
+import { getCurrentDateInAppTimeZone, getDayRangeInAppTimeZone } from '@/lib/date'
 
 type Script = 'latinica' | 'cirilica' | 'latinica-bez-kvacica'
 const VALID_SCRIPTS: Script[] = ['latinica', 'cirilica', 'latinica-bez-kvacica']
@@ -35,9 +36,8 @@ export default async function RankPismoPage({ params }: Props) {
   const script = pismo as Script
 
   // Koristimo Beograd timezone da se poklopi sa unique indexom u bazi
-  const todayBeograd = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Belgrade' })
-  const today = todayBeograd
-  const todayStartUtc = new Date(`${todayBeograd}T00:00:00+02:00`).toISOString()
+  const today = getCurrentDateInAppTimeZone()
+  const { startIso, endIso } = getDayRangeInAppTimeZone()
 
   const { data: usedScore } = await supabase
     .from('scores')
@@ -46,7 +46,8 @@ export default async function RankPismoPage({ params }: Props) {
     .eq('script', script)
     .eq('mode', 'rank')
     .gt('wpm', 0)
-    .gte('created_at', todayStartUtc)
+    .gte('created_at', startIso)
+    .lt('created_at', endIso)
     .limit(1)
     .single()
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
+import { getDayRangeInAppTimeZone } from '@/lib/date'
 
 type ScoreInsert = Database['public']['Tables']['scores']['Insert']
 
@@ -66,8 +67,7 @@ export async function POST(req: NextRequest) {
   if (error) {
     if (error.code === '23505') {
       // Proveri da li je postojeći score napušten (wpm=0) — ako jeste, obrisi ga i pokusaj ponovo
-      const todayBeograd = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Belgrade' })
-      const todayStartUtc = new Date(`${todayBeograd}T00:00:00+02:00`).toISOString()
+      const { startIso, endIso } = getDayRangeInAppTimeZone()
 
       const { data: existing } = await supabase
         .from('scores')
@@ -76,7 +76,8 @@ export async function POST(req: NextRequest) {
         .eq('script', script)
         .eq('category', category)
         .eq('mode', 'rank')
-        .gte('created_at', todayStartUtc)
+        .gte('created_at', startIso)
+        .lt('created_at', endIso)
         .single()
 
       if (existing && existing.wpm === 0) {
