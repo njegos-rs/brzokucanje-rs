@@ -240,6 +240,11 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
       .then(async (r) => {
         const data = await r.json()
         if (data.error) {
+          if (r.status === 409) {
+            playedTodayRef.current = true
+            setPlayedToday(true)
+            fetchLeaderboard(pismo, category)
+          }
           setTextError(data.error)
           return null
         }

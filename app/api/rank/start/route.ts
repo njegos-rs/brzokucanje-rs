@@ -23,7 +23,9 @@ function normalizeTextId(value: unknown): string | null {
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) {
     return NextResponse.json({ error: 'Niste prijavljeni' }, { status: 401 })
@@ -40,6 +42,37 @@ export async function POST(req: NextRequest) {
 
   if (!VALID_CATEGORIES.has(category) || !VALID_SCRIPTS.has(script)) {
     return NextResponse.json({ error: 'Neispravni parametri' }, { status: 400 })
+  }
+
+  const { startIso, endIso } = getDayRangeInAppTimeZone()
+
+  const { data: existingToday, error: existingError } = await supabase
+    .from('scores')
+    .select('id, wpm, score')
+    .eq('user_id', user.id)
+    .eq('script', script)
+    .eq('category', category)
+    .eq('mode', 'rank')
+    .gte('created_at', startIso)
+    .lt('created_at', endIso)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (existingError) {
+    return NextResponse.json({ error: existingError.message }, { status: 500 })
+  }
+
+  if (existingToday) {
+    if (existingToday.wpm > 0 || existingToday.score > 0) {
+      return NextResponse.json(
+        { error: 'Već ste iskoristili dnevni pokušaj za ovu kategoriju i pismo.' },
+        { status: 409 },
+      )
+    }
+
+    // Placeholder pokušaj već postoji za danas; nastavljamo sa njim.
+    return NextResponse.json({ id: existingToday.id })
   }
 
   const insert: ScoreInsert = {
@@ -61,42 +94,37 @@ export async function POST(req: NextRequest) {
     text_id: normalizeTextId(text_id),
   }
 
-  // Ovo kreira pokušaj. Ako pokušaj već postoji za danas, jedinstveni indeks će baciti grešku 23505.
   const { data, error } = await supabase.from('scores').insert(insert).select('id').single()
 
   if (error) {
     if (error.code === '23505') {
-      // Proveri da li je postojeći score napušten (wpm=0) — ako jeste, obrisi ga i pokusaj ponovo
-      const { startIso, endIso } = getDayRangeInAppTimeZone()
-
-      const { data: existing } = await supabase
+      const { data: fallbackExisting, error: fallbackError } = await supabase
         .from('scores')
-        .select('id, wpm')
+        .select('id, wpm, score')
         .eq('user_id', user.id)
         .eq('script', script)
         .eq('category', category)
         .eq('mode', 'rank')
         .gte('created_at', startIso)
         .lt('created_at', endIso)
-        .single()
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
-      if (existing && existing.wpm === 0) {
-        await supabase.from('personal_bests').delete().eq('score_id', existing.id)
-        await supabase.from('scores').delete().eq('id', existing.id)
-        const { data: retry, error: retryError } = await supabase
-          .from('scores')
-          .insert(insert)
-          .select('id')
-          .single()
-        if (retryError) return NextResponse.json({ error: retryError.message }, { status: 500 })
-        return NextResponse.json({ id: retry.id })
+      if (fallbackError) {
+        return NextResponse.json({ error: fallbackError.message }, { status: 500 })
+      }
+
+      if (fallbackExisting && fallbackExisting.wpm === 0 && fallbackExisting.score === 0) {
+        return NextResponse.json({ id: fallbackExisting.id })
       }
 
       return NextResponse.json(
         { error: 'Već ste iskoristili dnevni pokušaj za ovu kategoriju i pismo.' },
-        { status: 409 }
+        { status: 409 },
       )
     }
+
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
