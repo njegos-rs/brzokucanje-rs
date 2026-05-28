@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
 import { getDayRangeInAppTimeZone } from '@/lib/date'
 
@@ -23,6 +23,7 @@ function normalizeTextId(value: unknown): string | null {
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
+  const serviceSupabase = await createServiceClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
 
   const { startIso, endIso } = getDayRangeInAppTimeZone()
 
-  const { data: existingToday, error: existingError } = await supabase
+  const { data: existingToday, error: existingError } = await serviceSupabase
     .from('scores')
     .select('id, wpm, score')
     .eq('user_id', user.id)
@@ -94,11 +95,11 @@ export async function POST(req: NextRequest) {
     text_id: normalizeTextId(text_id),
   }
 
-  const { data, error } = await supabase.from('scores').insert(insert).select('id').single()
+  const { data, error } = await serviceSupabase.from('scores').insert(insert).select('id').single()
 
   if (error) {
     if (error.code === '23505') {
-      const { data: fallbackExisting, error: fallbackError } = await supabase
+      const { data: fallbackExisting, error: fallbackError } = await serviceSupabase
         .from('scores')
         .select('id, wpm, score')
         .eq('user_id', user.id)

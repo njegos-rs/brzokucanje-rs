@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { analyzeKeystrokes, serverSideCheck } from '@/lib/typing/anti-cheat'
 import { calcAll } from '@/lib/typing/scoring'
 import type { KeystrokeEntry } from '@/lib/typing/engine'
@@ -61,6 +61,7 @@ function normalizeAttemptId(value: unknown): string | null {
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
+  const serviceSupabase = await createServiceClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -192,7 +193,7 @@ export async function POST(req: NextRequest) {
   let finalId = attemptId
 
   if (mode === 'rank' && attemptId) {
-    const { data, error } = await supabase
+    const { data, error } = await serviceSupabase
       .from('scores')
       .update(insertData)
       .eq('id', attemptId)
@@ -206,7 +207,7 @@ export async function POST(req: NextRequest) {
       finalId = data.id
     } else {
       // Placeholder nije pronađen — insert kao fallback
-      const { data: inserted, error: insertError } = await supabase
+      const { data: inserted, error: insertError } = await serviceSupabase
         .from('scores')
         .insert(insertData)
         .select('id')
@@ -224,7 +225,7 @@ export async function POST(req: NextRequest) {
       finalId = inserted?.id ?? null
     }
   } else {
-    const { data, error } = await supabase
+    const { data, error } = await serviceSupabase
       .from('scores')
       .insert(insertData)
       .select('id')
@@ -242,7 +243,7 @@ export async function POST(req: NextRequest) {
     finalId = data?.id ?? null
   }
 
-  const { data: pbData } = await supabase
+  const { data: pbData } = await serviceSupabase
     .from('personal_bests')
     .select('best_score')
     .eq('user_id', user.id)

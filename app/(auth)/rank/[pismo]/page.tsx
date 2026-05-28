@@ -1,5 +1,5 @@
 import { redirect, notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import { RankClient } from './RankClient'
 import { getDailyTextData } from '@/lib/words/daily'
@@ -30,6 +30,7 @@ export default async function RankPismoPage({ params }: Props) {
   if (!VALID_SCRIPTS.includes(pismo as Script)) notFound()
 
   const supabase = await createClient()
+  const serviceSupabase = await createServiceClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/prijava')
 
@@ -39,7 +40,7 @@ export default async function RankPismoPage({ params }: Props) {
   const today = getCurrentDateInAppTimeZone()
   const { startIso, endIso } = getDayRangeInAppTimeZone()
 
-  const { data: usedScore } = await supabase
+  const { data: usedScore } = await serviceSupabase
     .from('scores')
     .select('id')
     .eq('user_id', user.id)
