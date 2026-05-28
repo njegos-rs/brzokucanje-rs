@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation'
 import { useTypingEngine, type WpmSnapshot } from '@/lib/typing/engine'
 import { TypingArea } from '@/components/typing/TypingArea'
 import { ResultScreen } from '@/components/result/ResultScreen'
-import { Lock, AlertTriangle, Crown, Medal } from 'lucide-react'
+import { Lock, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ScoringResult } from '@/lib/typing/scoring'
 import type { KeystrokeEntry } from '@/lib/typing/engine'
 import { useSettingsStore } from '@/lib/stores/settings-store'
 import { useKeystrokeSound } from '@/lib/hooks/useKeystrokeSound'
+import { LeaderboardPanel } from '@/components/rank/LeaderboardPanel'
 
 type Script = 'latinica' | 'cirilica' | 'latinica-bez-kvacica'
 type Category = 'reci' | 'recenice'
@@ -19,15 +20,6 @@ const SCRIPT_LABELS: Record<Script, string> = {
   latinica: 'Latinica',
   cirilica: 'Ćirilica',
   'latinica-bez-kvacica': 'Latinica bez kvačica',
-}
-
-
-interface LeaderboardEntry {
-  user_id: string
-  username: string
-  wpm: number
-  accuracy: number
-  score: number
 }
 
 interface FinishedState {
@@ -61,7 +53,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
   const { soundTheme } = useSettingsStore()
   const { play: playKeystroke } = useKeystrokeSound(soundTheme)
   const [dailyText, setDailyText] = useState<{ text_id: string | null; content: string } | null>(
-    initialDailyText.content ? { text_id: initialDailyText.text_id, content: initialDailyText.content } : null
+    initialDailyText.content ? { text_id: initialDailyText.text_id, content: initialDailyText.content } : null,
   )
   const [category, setCategory] = useState<Category | null>(initialDailyText.category === 'recenice' ? 'recenice' : 'reci')
   const [dailyDuration, setDailyDuration] = useState<number>(initialDailyText.duration_seconds)
@@ -73,38 +65,32 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [focusLost, setFocusLost] = useState(false)
+  const [userRankAlready, setUserRankAlready] = useState<number | null>(null)
   const focusLostRef = useRef(false)
   const startLoggedRef = useRef(false)
   const attemptPromiseRef = useRef<Promise<string | null> | null>(null)
   const playedTodayRef = useRef(alreadyPlayed)
 
-  // Za "već odigrano" ekran — leaderboard
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-  const [userRankAlready, setUserRankAlready] = useState<number | null>(null)
-  const [loadingBoard, setLoadingBoard] = useState(false)
-
   const fetchLeaderboard = useCallback(async (script: Script, cat: Category | null) => {
-    setLoadingBoard(true)
     try {
       const catParam = cat ? `&category=${cat}` : ''
       const res = await fetch(`/api/leaderboard?script=${script}&period=daily&limit=25${catParam}`)
       const json = await res.json()
-      const entries: LeaderboardEntry[] = json.data ?? []
-      setLeaderboard(entries)
+      const entries: Array<{ user_id: string }> = json.data ?? []
       const pos = entries.findIndex((e) => e.user_id === userId)
       setUserRankAlready(pos !== -1 ? pos + 1 : null)
-    } catch { /* ignorisi */ }
-    finally { setLoadingBoard(false) }
+    } catch {
+      // ignorisi
+    }
   }, [userId])
 
-  // Kada se promeni pismo (navigacija), sinhronizujemo stanje sa novim propovima sa servera
   useEffect(() => {
     setDailyText(initialDailyText.content ? { text_id: initialDailyText.text_id, content: initialDailyText.content } : null)
     const cat = initialDailyText.category === 'recenice' ? 'recenice' : 'reci'
     setCategory(cat)
     setDailyDuration(initialDailyText.duration_seconds)
     setDailyMode(initialDailyText.mode)
-    
+
     setPlayedToday(alreadyPlayed)
     playedTodayRef.current = alreadyPlayed
     setFinished(null)
@@ -119,7 +105,6 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
     }
   }, [pismo, initialDailyText, alreadyPlayed, fetchLeaderboard])
 
-  // Tab focus tracking — invalidira test
   useEffect(() => {
     const onBlur = () => {
       if (engineRef.current?.status === 'running') {
@@ -131,14 +116,13 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
     return () => window.removeEventListener('blur', onBlur)
   }, [])
 
-  // Blokira Tab restart u RANK modu
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Tab') e.preventDefault() }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') e.preventDefault()
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
-
-
 
   const handleFinish = useCallback(
     async (result: ScoringResult, keystrokes: KeystrokeEntry[], wpmHistory: WpmSnapshot[]) => {
@@ -188,20 +172,21 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
           return
         }
 
-        // Učitaj poziciju na rang listi
         let userRank: number | undefined
         let totalPlayers: number | undefined
         try {
           const catParam = category ? `&category=${category}` : ''
           const rankRes = await fetch(`/api/leaderboard?script=${pismo}&period=daily&limit=1000${catParam}`)
           const rankJson = await rankRes.json()
-          const entries: LeaderboardEntry[] = rankJson.data ?? []
+          const entries: Array<{ user_id: string }> = rankJson.data ?? []
           const pos = entries.findIndex((e) => e.user_id === userId)
           if (pos !== -1) {
             userRank = pos + 1
             totalPlayers = entries.length
           }
-        } catch { /* ignorisi */ }
+        } catch {
+          // ignorisi
+        }
 
         playedTodayRef.current = true
         setPlayedToday(true)
@@ -213,7 +198,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
         setSubmitting(false)
       }
     },
-    [category, pismo, dailyText, userId]
+    [category, pismo, dailyText, userId],
   )
 
   const engineRef = useRef<ReturnType<typeof useTypingEngine> | null>(null)
@@ -228,34 +213,32 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
 
   const { chars, cursor, status, handleKeyDown } = engine
 
-  // Prati početak kucanja i kreira 0-score pokušaj u bazi da spreči restartovanje
   useEffect(() => {
     if (status === 'running' && !startLoggedRef.current) {
       startLoggedRef.current = true
       attemptPromiseRef.current = fetch('/api/rank/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, script: pismo, text_id: dailyText?.text_id })
+        body: JSON.stringify({ category, script: pismo, text_id: dailyText?.text_id }),
       })
-      .then(async (r) => {
-        const data = await r.json()
-        if (data.error) {
-          if (r.status === 409) {
-            playedTodayRef.current = true
-            setPlayedToday(true)
-            fetchLeaderboard(pismo, category)
+        .then(async (r) => {
+          const data = await r.json()
+          if (data.error) {
+            if (r.status === 409) {
+              playedTodayRef.current = true
+              setPlayedToday(true)
+              fetchLeaderboard(pismo, category)
+            }
+            setTextError(data.error)
+            return null
           }
-          setTextError(data.error)
+          if (data.id) return data.id
           return null
-        }
-        if (data.id) return data.id
-        return null
-      })
-      .catch(() => null)
+        })
+        .catch(() => null)
     }
-  }, [status, category, pismo, dailyText])
+  }, [status, category, pismo, dailyText, fetchLeaderboard])
 
-  // Anti-cheat: blokira paste
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => e.preventDefault()
     document.addEventListener('paste', onPaste)
@@ -264,17 +247,16 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
 
   const pismoTabovi: Script[] = ['latinica', 'cirilica', 'latinica-bez-kvacica']
 
-  // Ekran nakon završetka
   if (finished) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-8">
+      <div className="mx-auto max-w-4xl px-4 py-8">
         {submitError && (
           <div className="mb-4 rounded-md border border-[var(--incorrect)]/30 bg-[var(--incorrect)]/10 px-3 py-2 text-sm text-[var(--incorrect)]">
             {submitError}
           </div>
         )}
         {focusLost && (
-          <div className="mb-4 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
+          <div className="mb-4 flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-600 dark:text-amber-400">
             <AlertTriangle className="h-4 w-4 flex-shrink-0" />
             Test je poništen — izgubili ste fokus prozora. Rezultat nije evidentiran.
           </div>
@@ -283,18 +265,10 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
         {finished.userRank && finished.totalPlayers && !focusLost && (
           <div className="mb-6 rounded-lg border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-5 py-4 text-center">
             <p className="text-sm text-[var(--muted-foreground)]">Tvoja pozicija danas</p>
-            <p className="mt-1 font-mono text-3xl font-bold text-[var(--accent)]">
-              #{finished.userRank}
-            </p>
+            <p className="mt-1 font-mono text-3xl font-bold text-[var(--accent)]">#{finished.userRank}</p>
             <p className="text-sm text-[var(--muted-foreground)]">
-              od {finished.totalPlayers} {finished.totalPlayers === 1 ? 'igrača' : 'igrača'}
+              od {finished.totalPlayers} igrača
             </p>
-            <button
-              onClick={() => router.push(`/rang-lista/${pismo}`)}
-              className="mt-3 text-sm text-[var(--accent)] hover:opacity-80 transition-opacity"
-            >
-              Pogledaj rank listu →
-            </button>
           </div>
         )}
 
@@ -303,17 +277,27 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
           wpmHistory={finished.wpmHistory}
           isNewPb={finished.isNewPb}
           onNext={() => router.push(`/rang-lista/${pismo}`)}
-          nextLabel="Vidi rank listu"
+          nextLabel="Otvori celu rank listu"
         />
+
+        {!focusLost && (
+          <div className="mt-8">
+            <LeaderboardPanel
+              script={pismo}
+              currentUserId={userId}
+              navigationBase="/rank"
+              showScriptTabs
+              titlePrefix="rank lista"
+            />
+          </div>
+        )}
       </div>
     )
   }
 
-  // Ekran "već odigrano danas"
   if (playedToday && !finished) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-8">
-        {/* Pismo tabovi */}
+      <div className="mx-auto max-w-4xl px-4 py-8">
         <div className="mb-6 flex gap-2 flex-wrap">
           {pismoTabovi.map((p) => (
             <button
@@ -338,77 +322,23 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
             Probaj sutra — svaki dan novi tekst i nova kategorija.
           </p>
           {userRankAlready && (
-            <p className="mt-3 font-mono text-2xl font-bold text-[var(--accent)]">
-              #{userRankAlready} danas
-            </p>
+            <p className="mt-3 font-mono text-2xl font-bold text-[var(--accent)]">#{userRankAlready} danas</p>
           )}
         </div>
 
-        {/* Mini leaderboard */}
-        {loadingBoard ? (
-          <div className="py-8 text-center text-sm text-[var(--muted-foreground)]">Učitavam rank listu…</div>
-        ) : leaderboard.length === 0 ? (
-          <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-8 text-center">
-            <p className="text-sm font-medium text-[var(--foreground)]">Dnevna rank lista — {SCRIPT_LABELS[pismo]}</p>
-            <p className="mt-2 text-sm text-[var(--muted-foreground)]">Još niko nije odigrao rank test danas. Budi prvi!</p>
-          </div>
-        ) : (
-          <div className="rounded-lg border border-[var(--border)] bg-[var(--card)]">
-            <div className="px-4 py-3 border-b border-[var(--border)]">
-              <p className="text-sm font-medium text-[var(--foreground)]">Dnevna rank lista — {SCRIPT_LABELS[pismo]}</p>
-            </div>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--border)]">
-                  <th className="px-4 py-2 text-left text-xs font-medium text-[var(--muted-foreground)]">#</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-[var(--muted-foreground)]">Korisnik</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-[var(--muted-foreground)]">WPM</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-[var(--muted-foreground)]">Tačnost</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaderboard.map((entry, i) => {
-                  const rank = i + 1
-                  const isMe = entry.user_id === userId
-                  return (
-                    <tr
-                      key={entry.user_id + i}
-                      className={cn(
-                        'border-b border-[var(--border)] last:border-0 transition-colors',
-                        isMe ? 'bg-[var(--accent)]/10' : 'hover:bg-[var(--muted)]/30',
-                      )}
-                    >
-                      <td className="px-4 py-2.5 font-mono">
-                        {rank === 1 ? <Crown className="h-4 w-4 text-[var(--accent)]" />
-                          : rank === 2 ? <Medal className="h-4 w-4 text-zinc-400" />
-                          : rank === 3 ? <Medal className="h-4 w-4 text-amber-700" />
-                          : <span className="text-[var(--muted-foreground)]">{rank}.</span>}
-                      </td>
-                      <td className="px-4 py-2.5 font-medium text-[var(--foreground)]">
-                        {entry.username}
-                        {isMe && <span className="ml-2 text-xs text-[var(--accent)]">(ti)</span>}
-                      </td>
-                      <td className="px-4 py-2.5 text-right font-mono font-bold text-[var(--accent)]">
-                        {Math.round(entry.wpm)}
-                      </td>
-                      <td className="px-4 py-2.5 text-right font-mono text-[var(--muted-foreground)]">
-                        {Math.round(entry.accuracy)}%
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <LeaderboardPanel
+          script={pismo}
+          currentUserId={userId}
+          navigationBase="/rank"
+          showScriptTabs={false}
+          titlePrefix="rank lista"
+        />
       </div>
     )
   }
 
-  // Glavni ekran kucanja
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      {/* Pismo tabovi */}
       <div className="mb-6 flex gap-2 flex-wrap">
         {pismoTabovi.map((p) => (
           <button
@@ -456,7 +386,10 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
             chars={chars}
             cursor={cursor}
             status={status}
-            onKeyDown={(e) => { playKeystroke(); handleKeyDown(e) }}
+            onKeyDown={(e) => {
+              playKeystroke()
+              handleKeyDown(e)
+            }}
           />
           <div className="mt-4">
             <p className="text-xs text-[var(--muted-foreground)]">
