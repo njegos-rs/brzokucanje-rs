@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
@@ -26,6 +26,22 @@ function ResetContent() {
   const [done, setDone] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
 
+  const sessionRef = useRef<{ access_token: string; refresh_token: string } | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    // Sačuvaj sesiju pa odmah odjavi — token zadržavamo samo za updateUser
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        sessionRef.current = {
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        }
+        supabase.auth.signOut()
+      }
+    })
+  }, [])
+
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ResetInput>({
     resolver: zodResolver(resetSchema),
   })
@@ -33,12 +49,17 @@ function ResetContent() {
   const onSubmit = async (data: ResetInput) => {
     setServerError(null)
     const supabase = createClient()
+    if (!sessionRef.current) {
+      setServerError('Sesija je istekla. Zatražite novi link za reset.')
+      return
+    }
+    // Ponovo postavi sesiju samo za updateUser
+    await supabase.auth.setSession(sessionRef.current)
     const { error } = await supabase.auth.updateUser({ password: data.password })
     if (error) {
       setServerError(error.message)
       return
     }
-    // Odjavi korisnika nakon reseta — mora da se prijavi sa novom lozinkom
     await supabase.auth.signOut()
     setDone(true)
     setTimeout(() => router.push('/prijava'), 2000)
