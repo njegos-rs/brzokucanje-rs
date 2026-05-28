@@ -80,6 +80,7 @@ export async function POST(req: NextRequest) {
         .single()
 
       if (existing && existing.wpm === 0) {
+        await supabase.from('personal_bests').delete().eq('score_id', existing.id)
         await supabase.from('scores').delete().eq('id', existing.id)
         const { data: retry, error: retryError } = await supabase
           .from('scores')
