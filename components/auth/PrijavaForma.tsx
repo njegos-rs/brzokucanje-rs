@@ -89,7 +89,7 @@ export function PrijavaForma({ redirectTo = '/' }: Props) {
   const onForgotPassword = async (data: ForgotPasswordInput) => {
     const supabase = createClient()
     await supabase.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/reset-lozinke`,
+      redirectTo: `${window.location.origin}/auth/reset-callback`,
     })
     setForgotSent(true)
   }
