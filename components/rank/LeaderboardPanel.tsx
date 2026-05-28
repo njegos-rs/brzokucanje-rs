@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -54,6 +55,7 @@ interface Props {
   showScriptTabs?: boolean
   titlePrefix?: string
   compact?: boolean
+  onStateChange?: (state: { period: LeaderboardPeriod; currentUserRank: number | null }) => void
 }
 
 function formatDay(date: Date): string {
@@ -61,21 +63,25 @@ function formatDay(date: Date): string {
 }
 
 function getIsoWeekInfo(now: Date) {
-  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const day = date.getDay() || 7
-  const monday = new Date(date)
-  monday.setDate(date.getDate() - day + 1)
-  const thursday = new Date(monday)
-  thursday.setDate(monday.getDate() + 3)
-  const firstThursday = new Date(thursday.getFullYear(), 0, 4)
-  const firstThursdayDay = firstThursday.getDay() || 7
-  const firstWeekMonday = new Date(firstThursday)
-  firstWeekMonday.setDate(firstThursday.getDate() - firstThursdayDay + 1)
-  const weekNum = Math.floor((monday.getTime() - firstWeekMonday.getTime()) / (7 * 86400000)) + 1
-  const sunday = new Date(monday)
-  sunday.setDate(monday.getDate() + 6)
+  const current = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
+  const day = current.getUTCDay() || 7
 
-  return { weekNum, monday, sunday }
+  const mondayUtc = new Date(current)
+  mondayUtc.setUTCDate(current.getUTCDate() - day + 1)
+
+  const sundayUtc = new Date(mondayUtc)
+  sundayUtc.setUTCDate(mondayUtc.getUTCDate() + 6)
+
+  const isoAnchor = new Date(current)
+  isoAnchor.setUTCDate(current.getUTCDate() + 4 - day)
+  const isoYearStart = new Date(Date.UTC(isoAnchor.getUTCFullYear(), 0, 1))
+  const weekNum = Math.ceil((((isoAnchor.getTime() - isoYearStart.getTime()) / 86400000) + 1) / 7)
+
+  return {
+    weekNum,
+    monday: new Date(mondayUtc.getUTCFullYear(), mondayUtc.getUTCMonth(), mondayUtc.getUTCDate()),
+    sunday: new Date(sundayUtc.getUTCFullYear(), sundayUtc.getUTCMonth(), sundayUtc.getUTCDate()),
+  }
 }
 
 function getPeriodSub(period: LeaderboardPeriod): string {
@@ -117,6 +123,7 @@ export function LeaderboardPanel({
   showScriptTabs = true,
   titlePrefix = 'rank lista',
   compact = false,
+  onStateChange,
 }: Props) {
   const router = useRouter()
   const [period, setPeriod] = useState<LeaderboardPeriod>(initialPeriod)
@@ -139,6 +146,7 @@ export function LeaderboardPanel({
   useEffect(() => {
     setLoading(true)
     setError(null)
+
     const catParam = period === 'daily' && dailyCategory ? `&category=${dailyCategory}` : ''
     fetch(`/api/leaderboard?script=${script}&period=${period}&limit=25${catParam}`)
       .then((r) => r.json())
@@ -152,13 +160,21 @@ export function LeaderboardPanel({
       })
   }, [script, period, dailyCategory])
 
+  useEffect(() => {
+    const currentUserRank = currentUserId
+      ? entries.findIndex((entry) => entry.user_id === currentUserId) + 1 || null
+      : null
+
+    onStateChange?.({ period, currentUserRank })
+  }, [currentUserId, entries, onStateChange, period])
+
   const pismoTabovi: LeaderboardScript[] = ['latinica', 'cirilica', 'latinica-bez-kvacica']
   const title = getPanelTitle(titlePrefix, period, script)
 
   return (
     <div>
       {showScriptTabs && (
-        <div className="mb-4 flex gap-2 flex-wrap">
+        <div className="mb-4 flex flex-wrap gap-2">
           {pismoTabovi.map((p) => (
             <button
               key={p}
@@ -176,7 +192,7 @@ export function LeaderboardPanel({
         </div>
       )}
 
-      <div className="mb-2 flex gap-2 flex-wrap">
+      <div className="mb-2 flex flex-wrap gap-2">
         {(Object.keys(PERIOD_LABELS) as LeaderboardPeriod[]).map((p) => (
           <button
             key={p}
@@ -193,9 +209,7 @@ export function LeaderboardPanel({
         ))}
       </div>
 
-      <p className="mb-5 text-[11px] font-mono text-[var(--muted-foreground)]">
-        {getPeriodSub(period)}
-      </p>
+      <p className="mb-5 text-[11px] font-mono text-[var(--muted-foreground)]">{getPeriodSub(period)}</p>
 
       {loading && (
         <div className="py-12 text-center text-sm text-[var(--muted-foreground)]">Učitavam…</div>
@@ -244,7 +258,7 @@ export function LeaderboardPanel({
                           : <span className="text-[var(--muted-foreground)]">{rank}.</span>}
                       </td>
                       <td className="px-4 py-3">
-                        <Link href={`/profil/${entry.username}`} className="font-medium text-[var(--foreground)] hover:text-[var(--accent)] transition-colors">
+                        <Link href={`/profil/${entry.username}`} className="font-medium text-[var(--foreground)] transition-colors hover:text-[var(--accent)]">
                           {entry.username}
                         </Link>
                         {isMe && <span className="ml-2 text-xs text-[var(--accent)]">(ti)</span>}
@@ -270,7 +284,6 @@ export function LeaderboardPanel({
                   <th className="px-4 py-3 text-right text-xs font-medium text-[var(--muted-foreground)]">Prosek WPM</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-[var(--muted-foreground)]">Tačnost</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-[var(--muted-foreground)]">Dani</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-[var(--muted-foreground)]">Period skor</th>
                 </tr>
               </thead>
               <tbody>
@@ -292,7 +305,7 @@ export function LeaderboardPanel({
                           : <span className="text-[var(--muted-foreground)]">{rank}.</span>}
                       </td>
                       <td className="px-4 py-3">
-                        <Link href={`/profil/${entry.username}`} className="font-medium text-[var(--foreground)] hover:text-[var(--accent)] transition-colors">
+                        <Link href={`/profil/${entry.username}`} className="font-medium text-[var(--foreground)] transition-colors hover:text-[var(--accent)]">
                           {entry.username}
                         </Link>
                         {isMe && <span className="ml-2 text-xs text-[var(--accent)]">(ti)</span>}
@@ -303,7 +316,6 @@ export function LeaderboardPanel({
                         <span className="text-[var(--foreground)]">{entry.active_days ?? 0}</span>
                         <span className="text-[var(--muted-foreground)]">/{entry.total_days ?? 0}</span>
                       </td>
-                      <td className="px-4 py-3 text-right font-mono font-semibold text-[var(--foreground)]">{Math.round(entry.period_score ?? 0)}</td>
                     </tr>
                   )
                 })}

@@ -1,11 +1,32 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { Flame, Trophy, Target, Clock, Medal } from 'lucide-react'
+import { Flame, Trophy, Target, Clock, Medal, type LucideIcon } from 'lucide-react'
 import { PublicProfilTabs } from './PublicProfilTabs'
 
 interface Props {
   params: Promise<{ username: string }>
+}
+
+interface StatCardProps {
+  icon: LucideIcon
+  iconClassName: string
+  value: string | number
+  label: string
+  tooltip: string
+}
+
+function StatCard({ icon: Icon, iconClassName, value, label, tooltip }: StatCardProps) {
+  return (
+    <div
+      title={tooltip}
+      className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-center"
+    >
+      <Icon className={`mx-auto mb-2 h-5 w-5 ${iconClassName}`} />
+      <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{value}</p>
+      <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">{label}</p>
+    </div>
+  )
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -25,7 +46,6 @@ export default async function PublicProfilPage({ params }: Props) {
 
   if (!profile || profile.is_banned) notFound()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [pbRes, statsRes, winsRes, gamePbRes, recentRes] = await Promise.all([
     supabase
       .from('personal_bests' as 'scores')
@@ -56,7 +76,7 @@ export default async function PublicProfilPage({ params }: Props) {
   ])
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pbs = ((pbRes.data ?? []) as any[])
+  const pbs = (pbRes.data ?? []) as any[]
   const allScores = statsRes.data ?? []
   const totalTests = allScores.length
   const totalMinutes = Math.round(
@@ -65,14 +85,13 @@ export default async function PublicProfilPage({ params }: Props) {
   const totalWins = winsRes.count ?? 0
   const gamePb = gamePbRes.data
 
-  const rankPbs = pbs.filter((p) => (p.game_mode === 'rank' || !p.game_mode) && p.best_wpm > 0)
-  const vezbaPbs = pbs.filter((p) => p.game_mode === 'vezba' && p.best_wpm > 0)
+  const rankPbs = pbs.filter((p) => (p.game_mode === 'rank' || !p.game_mode) && p.best_score > 0 && p.best_wpm > 0)
+  const vezbaPbs = pbs.filter((p) => p.game_mode === 'vezba' && p.best_score > 0 && p.best_wpm > 0)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recentScores = (recentRes.data ?? []) as any[]
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      {/* Header */}
       <div className="mb-8 flex items-center gap-4">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent)]/15 text-2xl font-bold text-[var(--accent)]">
           {(profile.username ?? 'U').charAt(0).toUpperCase()}
@@ -85,36 +104,44 @@ export default async function PublicProfilPage({ params }: Props) {
         </div>
       </div>
 
-      {/* KPI kartice */}
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-center">
-          <Trophy className="mx-auto mb-2 h-5 w-5 text-yellow-500" />
-          <p className="font-mono text-2xl font-bold text-yellow-500">{totalWins}</p>
-          <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Pobeda #1</p>
-        </div>
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-center">
-          <Target className="mx-auto mb-2 h-5 w-5 text-[var(--muted-foreground)]" />
-          <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{totalTests}</p>
-          <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Testova</p>
-        </div>
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-center">
-          <Flame className="mx-auto mb-2 h-5 w-5 text-orange-500" />
-          <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{profile.current_streak ?? 0}</p>
-          <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Streak dana</p>
-        </div>
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-center">
-          <Clock className="mx-auto mb-2 h-5 w-5 text-[var(--muted-foreground)]" />
-          <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{totalMinutes}</p>
-          <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Minuta</p>
-        </div>
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 text-center">
-          <Medal className="mx-auto mb-2 h-5 w-5 text-[var(--accent)]" />
-          <p className="font-mono text-2xl font-bold text-[var(--accent)]">{gamePb ? gamePb.score.toLocaleString() : '—'}</p>
-          <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Igrica skor</p>
-        </div>
+        <StatCard
+          icon={Trophy}
+          iconClassName="text-yellow-500"
+          value={totalWins}
+          label="Dnevne pobede"
+          tooltip="Broj završenih dana u kojima je ovaj korisnik ostao prvi na dnevnoj rank listi."
+        />
+        <StatCard
+          icon={Target}
+          iconClassName="text-[var(--muted-foreground)]"
+          value={totalTests}
+          label="Testova"
+          tooltip="Ukupan broj sačuvanih testova na ovom nalogu, uključujući rank i vežbu."
+        />
+        <StatCard
+          icon={Flame}
+          iconClassName="text-orange-500"
+          value={profile.current_streak ?? 0}
+          label="Streak dana"
+          tooltip="Koliko dana zaredom je korisnik imao makar jedan važeći rank test."
+        />
+        <StatCard
+          icon={Clock}
+          iconClassName="text-[var(--muted-foreground)]"
+          value={totalMinutes}
+          label="Minuta"
+          tooltip="Ukupno vreme provedeno u svim testovima, sabrano iz trajanja svake partije."
+        />
+        <StatCard
+          icon={Medal}
+          iconClassName="text-[var(--accent)]"
+          value={gamePb ? gamePb.score.toLocaleString() : '—'}
+          label="Igrica skor"
+          tooltip="Najbolji postignuti skor u igrici."
+        />
       </div>
 
-      {/* Tabovi */}
       {(rankPbs.length > 0 || vezbaPbs.length > 0 || recentScores.length > 0 || gamePb) ? (
         <PublicProfilTabs rankPbs={rankPbs} vezbaPbs={vezbaPbs} recentScores={recentScores} gamePb={gamePb ?? null} />
       ) : (

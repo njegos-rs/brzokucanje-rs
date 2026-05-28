@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
@@ -11,7 +12,7 @@ import type { ScoringResult } from '@/lib/typing/scoring'
 import type { KeystrokeEntry } from '@/lib/typing/engine'
 import { useSettingsStore } from '@/lib/stores/settings-store'
 import { useKeystrokeSound } from '@/lib/hooks/useKeystrokeSound'
-import { LeaderboardPanel } from '@/components/rank/LeaderboardPanel'
+import { LeaderboardPanel, type LeaderboardPeriod } from '@/components/rank/LeaderboardPanel'
 
 type Script = 'latinica' | 'cirilica' | 'latinica-bez-kvacica'
 type Category = 'reci' | 'recenice'
@@ -20,6 +21,13 @@ const SCRIPT_LABELS: Record<Script, string> = {
   latinica: 'Latinica',
   cirilica: 'Ćirilica',
   'latinica-bez-kvacica': 'Latinica bez kvačica',
+}
+
+const PERIOD_RANK_LABELS: Record<LeaderboardPeriod, string> = {
+  daily: 'danas',
+  weekly: 'nedeljno',
+  monthly: 'mesečno',
+  yearly: 'godišnje',
 }
 
 interface FinishedState {
@@ -66,10 +74,13 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [focusLost, setFocusLost] = useState(false)
   const [userRankAlready, setUserRankAlready] = useState<number | null>(null)
+  const [selectedPeriod, setSelectedPeriod] = useState<LeaderboardPeriod>('daily')
+  const [selectedPeriodRank, setSelectedPeriodRank] = useState<number | null>(null)
   const focusLostRef = useRef(false)
   const startLoggedRef = useRef(false)
   const attemptPromiseRef = useRef<Promise<string | null> | null>(null)
   const playedTodayRef = useRef(alreadyPlayed)
+  const selectedLeaderboardRank = selectedPeriod === 'daily' ? userRankAlready : selectedPeriodRank
 
   const fetchLeaderboard = useCallback(async (script: Script, cat: Category | null) => {
     try {
@@ -80,7 +91,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
       const pos = entries.findIndex((e) => e.user_id === userId)
       setUserRankAlready(pos !== -1 ? pos + 1 : null)
     } catch {
-      // ignorisi
+      // ignore
     }
   }, [userId])
 
@@ -99,22 +110,13 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
     startLoggedRef.current = false
     attemptPromiseRef.current = null
     setTextError(null)
+    setSelectedPeriod('daily')
+    setSelectedPeriodRank(null)
 
     if (alreadyPlayed) {
       fetchLeaderboard(pismo, cat)
     }
   }, [pismo, initialDailyText, alreadyPlayed, fetchLeaderboard])
-
-  useEffect(() => {
-    const onBlur = () => {
-      if (engineRef.current?.status === 'running') {
-        focusLostRef.current = true
-        setFocusLost(true)
-      }
-    }
-    window.addEventListener('blur', onBlur)
-    return () => window.removeEventListener('blur', onBlur)
-  }, [])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -174,6 +176,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
 
         let userRank: number | undefined
         let totalPlayers: number | undefined
+
         try {
           const catParam = category ? `&category=${category}` : ''
           const rankRes = await fetch(`/api/leaderboard?script=${pismo}&period=daily&limit=1000${catParam}`)
@@ -185,11 +188,14 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
             totalPlayers = entries.length
           }
         } catch {
-          // ignorisi
+          // ignore
         }
 
         playedTodayRef.current = true
         setPlayedToday(true)
+        setUserRankAlready(userRank ?? null)
+        setSelectedPeriod('daily')
+        setSelectedPeriodRank(userRank ?? null)
         setFinished({ result, wpmHistory, keystrokes, scoreId: json.id, isNewPb: json.is_new_pb, userRank, totalPlayers })
       } catch {
         setSubmitError('Mrežna greška. Rezultat nije sačuvan.')
@@ -201,7 +207,6 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
     [category, pismo, dailyText, userId],
   )
 
-  const engineRef = useRef<ReturnType<typeof useTypingEngine> | null>(null)
   const engine = useTypingEngine({
     text: dailyText?.content ?? '',
     lazyMode: false,
@@ -209,9 +214,18 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
     mode: dailyMode === 'reci' ? 'vreme' : 'tekst',
     timerDuration: dailyDuration as import('@/lib/typing/engine').TimerDuration,
   })
-  engineRef.current = engine
-
   const { chars, cursor, status, handleKeyDown } = engine
+
+  useEffect(() => {
+    const onBlur = () => {
+      if (status === 'running') {
+        focusLostRef.current = true
+        setFocusLost(true)
+      }
+    }
+    window.addEventListener('blur', onBlur)
+    return () => window.removeEventListener('blur', onBlur)
+  }, [status])
 
   useEffect(() => {
     if (status === 'running' && !startLoggedRef.current) {
@@ -288,6 +302,10 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
               navigationBase="/rank"
               showScriptTabs
               titlePrefix="rank lista"
+              onStateChange={({ period, currentUserRank }) => {
+                setSelectedPeriod(period)
+                setSelectedPeriodRank(currentUserRank)
+              }}
             />
           </div>
         )}
@@ -298,7 +316,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
   if (playedToday && !finished) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
-        <div className="mb-6 flex gap-2 flex-wrap">
+        <div className="mb-6 flex flex-wrap gap-2">
           {pismoTabovi.map((p) => (
             <button
               key={p}
@@ -321,8 +339,10 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">
             Probaj sutra — svaki dan novi tekst i nova kategorija.
           </p>
-          {userRankAlready && (
-            <p className="mt-3 font-mono text-2xl font-bold text-[var(--accent)]">#{userRankAlready} danas</p>
+          {selectedLeaderboardRank && (
+            <p className="mt-3 font-mono text-2xl font-bold text-[var(--accent)]">
+              #{selectedLeaderboardRank} {PERIOD_RANK_LABELS[selectedPeriod]}
+            </p>
           )}
         </div>
 
@@ -332,6 +352,10 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
           navigationBase="/rank"
           showScriptTabs={false}
           titlePrefix="rank lista"
+          onStateChange={({ period, currentUserRank }) => {
+            setSelectedPeriod(period)
+            setSelectedPeriodRank(currentUserRank)
+          }}
         />
       </div>
     )
@@ -339,7 +363,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6 flex gap-2 flex-wrap">
+      <div className="mb-6 flex flex-wrap gap-2">
         {pismoTabovi.map((p) => (
           <button
             key={p}
@@ -393,7 +417,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
           />
           <div className="mt-4">
             <p className="text-xs text-[var(--muted-foreground)]">
-              Paste je onemogućen &nbsp;·&nbsp; Restart nije dozvoljen u RANK modu
+              Paste je onemogućen · Restart nije dozvoljen u RANK modu
             </p>
           </div>
           {submitting && (
