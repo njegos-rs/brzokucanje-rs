@@ -4,10 +4,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { sr } from 'date-fns/locale'
-import { Flame, Trophy, Target, Clock, Medal, type LucideIcon } from 'lucide-react'
+import { Flame, Target, Clock, Medal, type LucideIcon } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
 import { LogoutButton } from './LogoutButton'
 import { ProfilTabs } from './ProfilTabs'
+import { TrophyStatCard } from '@/components/profile/TrophyStatCard'
 
 interface PbRow {
   id: string
@@ -40,13 +41,6 @@ interface StatCardProps {
   tooltip: string
 }
 
-interface TrophyBreakdownProps {
-  daily: number
-  weekly: number
-  monthly: number
-  yearly: number
-}
-
 function StatCard({ icon: Icon, iconClassName, value, label, tooltip }: StatCardProps) {
   return (
     <div
@@ -56,38 +50,6 @@ function StatCard({ icon: Icon, iconClassName, value, label, tooltip }: StatCard
       <Icon className={`mx-auto mb-2 h-5 w-5 ${iconClassName}`} />
       <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{value}</p>
       <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">{label}</p>
-    </div>
-  )
-}
-
-function TrophyBreakdownCard({ daily, weekly, monthly, yearly }: TrophyBreakdownProps) {
-  return (
-    <div
-      title="Dnevni pehari dolaze iz završenih dana. Nedeljni, mesečni i godišnji se dodeljuju tek po isteku kompletnog perioda ako ostaneš prvi."
-      className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 sm:col-span-2"
-    >
-      <div className="mb-3 flex items-center gap-2">
-        <Trophy className="h-5 w-5 text-yellow-500" />
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">Pehari</p>
-      </div>
-      <div className="grid grid-cols-4 gap-3 text-center">
-        <div>
-          <p className="font-mono text-2xl font-bold text-yellow-500">{daily}</p>
-          <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Dnevni</p>
-        </div>
-        <div>
-          <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{weekly}</p>
-          <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Nedeljni</p>
-        </div>
-        <div>
-          <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{monthly}</p>
-          <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Mesečni</p>
-        </div>
-        <div>
-          <p className="font-mono text-2xl font-bold text-[var(--foreground)]">{yearly}</p>
-          <p className="mt-1 text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">Godišnji</p>
-        </div>
-      </div>
     </div>
   )
 }
@@ -182,7 +144,7 @@ export default async function ProfilPage() {
       </div>
 
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <TrophyBreakdownCard
+        <TrophyStatCard
           daily={dailyWins}
           weekly={weeklyTitles}
           monthly={monthlyTitles}
