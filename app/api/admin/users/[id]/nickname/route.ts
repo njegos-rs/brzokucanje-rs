@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/auth/admin'
 import { containsProfanity, getProfanityListFromDb } from '@/lib/validators/profanity'
 
@@ -10,7 +10,7 @@ function normalizeNickname(value: unknown) {
 }
 
 export async function PATCH(req: Request, ctx: Ctx) {
-  const { user: admin, error } = await requireAdmin()
+  const { error } = await requireAdmin()
   if (error) return error
 
   const { id } = await ctx.params
@@ -37,49 +37,21 @@ export async function PATCH(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: 'Nedozvoljeno ime' }, { status: 400 })
   }
 
-  const supabase = await createServiceClient()
-
-  const { data: target } = await supabase
-    .from('profiles')
-    .select('id, username')
-    .eq('id', id)
-    .maybeSingle()
-
-  if (!target) {
-    return NextResponse.json({ error: 'Korisnik nije pronađen' }, { status: 404 })
-  }
-
-  const { data: taken, error: uniquenessError } = await supabase
-    .from('profiles')
-    .select('id')
-    .ilike('username', username)
-    .neq('id', id)
-    .limit(1)
-
-  if (uniquenessError) {
-    return NextResponse.json({ error: 'Provera imena trenutno nije dostupna' }, { status: 503 })
-  }
-
-  if (taken && taken.length > 0) {
-    return NextResponse.json({ error: 'Ovo ime je zauzeto' }, { status: 409 })
-  }
-
-  const { error: updateError } = await supabase
-    .from('profiles')
-    .update({ username, updated_at: new Date().toISOString() })
-    .eq('id', id)
+  const supabase = await createAdminClient()
+  const { data: savedUsername, error: updateError } = await supabase.rpc(
+    'admin_change_username' as never,
+    { p_user_id: id, p_username: username } as never,
+  )
 
   if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 })
+    const message = updateError.message || 'Promena username-a nije uspela'
+    const status = message.includes('zauzeto') ? 409 : message.includes('pronadjen') ? 404 : 500
+    return NextResponse.json({ error: message }, { status })
   }
 
-  await supabase.from('admin_actions').insert({
-    admin_id: admin!.id,
-    action: 'change_username',
-    target_type: 'user',
-    target_id: id,
-    details: { old_username: target.username, new_username: username },
-  })
+  if (savedUsername !== username) {
+    return NextResponse.json({ error: 'Baza nije potvrdila promenu username-a' }, { status: 500 })
+  }
 
-  return NextResponse.json({ success: true, username })
+  return NextResponse.json({ success: true, username: savedUsername })
 }
