@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Crown, Medal } from 'lucide-react'
+import { CircleHelp, Crown, Laptop, Medal, Smartphone, Tablet } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export type LeaderboardScript = 'latinica' | 'cirilica' | 'latinica-bez-kvacica'
@@ -48,6 +48,21 @@ interface PeriodEntry {
 
 type Entry = DailyEntry | PeriodEntry
 
+function DeviceIcon({ deviceType }: { deviceType: NonNullable<DailyEntry['device_type']> }) {
+  const config = {
+    mobile: { Icon: Smartphone, label: 'Mobilni uređaj', className: 'text-sky-600' },
+    tablet: { Icon: Tablet, label: 'Tablet', className: 'text-violet-600' },
+    desktop: { Icon: Laptop, label: 'Računar', className: 'text-emerald-600' },
+    unknown: { Icon: CircleHelp, label: 'Nepoznat uređaj', className: 'text-[var(--muted-foreground)]' },
+  }[deviceType]
+  const Icon = config.Icon
+
+  return (
+    <span className={cn('ml-2 inline-flex items-center align-middle', config.className)} title={config.label} aria-label={config.label}>
+      <Icon className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
+    </span>
+  )
+}
 interface Props {
   script: LeaderboardScript
   initialPeriod?: LeaderboardPeriod
@@ -262,7 +277,7 @@ export function LeaderboardPanel({
                         <Link href={`/profil/${entry.username}`} className="font-medium text-[var(--foreground)] transition-colors hover:text-[var(--accent)]">
                           {entry.username}
                         </Link>
-                        {entry.device_type && <span className="ml-2 text-[10px] text-[var(--muted-foreground)]">{entry.device_type === 'mobile' ? '📱' : entry.device_type === 'tablet' ? '▣' : entry.device_type === 'desktop' ? '🖥' : '?'}</span>}
+                        {entry.device_type && <DeviceIcon deviceType={entry.device_type} />}
                         {isMe && <span className="ml-2 text-xs text-[var(--accent)]">(ti)</span>}
                       </td>
                       {!compact && (
@@ -310,7 +325,7 @@ export function LeaderboardPanel({
                         <Link href={`/profil/${entry.username}`} className="font-medium text-[var(--foreground)] transition-colors hover:text-[var(--accent)]">
                           {entry.username}
                         </Link>
-                        {entry.device_type && <span className="ml-2 text-[10px] text-[var(--muted-foreground)]">{entry.device_type === 'mobile' ? '📱' : entry.device_type === 'tablet' ? '▣' : entry.device_type === 'desktop' ? '🖥' : '?'}</span>}
+                        {entry.device_type && <DeviceIcon deviceType={entry.device_type} />}
                         {isMe && <span className="ml-2 text-xs text-[var(--accent)]">(ti)</span>}
                       </td>
                       <td className="px-4 py-3 text-right font-mono font-bold text-[var(--accent)]">{Math.round(entry.avg_wpm ?? 0)}</td>

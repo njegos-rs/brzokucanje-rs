@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { RotateCcw, Volume2, VolumeX } from 'lucide-react'
+import { RotateCcw, Volume2, VolumeX, X } from 'lucide-react'
 import Link from 'next/link'
 import GAME_POOL from '@/lib/words/game-pool.json'
 import { cn } from '@/lib/utils'
@@ -235,6 +235,7 @@ export function IgraClient({ canPlay = true }: Props) {
   const [wordsDestroyed, setWordsDestroyed] = useState(0)
   const [shake, setShake] = useState(0)
   const [mobileGameHeight, setMobileGameHeight] = useState<number | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
 
   const [leaderboard, setLeaderboard] = useState<LeaderRow[]>([])
   const [currentUserRank, setCurrentUserRank] = useState<CurrentUser | null>(null)
@@ -243,6 +244,14 @@ export function IgraClient({ canPlay = true }: Props) {
 
   useEffect(() => {
     checkHasNickname().then(setNicknameReady)
+  }, [])
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 639px)')
+    const update = () => setIsMobile(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
   }, [])
 
   useEffect(() => {
@@ -291,6 +300,7 @@ export function IgraClient({ canPlay = true }: Props) {
   const audio = useAudio(soundOn && canPlay)
 
   const currentLevel = LEVEL_CONFIG[levelIdx]
+  const isMobilePlaying = isMobile && status === 'playing'
 
   const resetGame = useCallback((nextStatus: GameStatus = 'ready') => {
     ids.current = { enemy: 10, shot: 1, burst: 1, fragment: 1, float: 1 }
@@ -316,6 +326,11 @@ export function IgraClient({ canPlay = true }: Props) {
     setShake(0)
     setStatus(nextStatus)
   }, [])
+
+  const exitMobileGame = useCallback(() => {
+    mobileInputRef.current?.blur()
+    resetGame('ready')
+  }, [resetGame])
 
   const startGame = useCallback(() => {
     if (!canPlay) return
@@ -346,7 +361,7 @@ export function IgraClient({ canPlay = true }: Props) {
     const updateMobileViewport = () => {
       fullViewportHeightRef.current = Math.max(fullViewportHeightRef.current, window.innerHeight, viewport.height)
       const keyboardOpen = fullViewportHeightRef.current - viewport.height > 120
-      setMobileGameHeight(keyboardOpen ? Math.max(220, Math.floor(viewport.height - 92)) : null)
+      setMobileGameHeight(keyboardOpen ? Math.max(240, Math.floor(viewport.height)) : null)
     }
 
     updateMobileViewport()
@@ -357,6 +372,17 @@ export function IgraClient({ canPlay = true }: Props) {
       viewport.removeEventListener('scroll', updateMobileViewport)
     }
   }, [])
+  useEffect(() => {
+    document.documentElement.classList.toggle('mobile-game-active', isMobilePlaying)
+    if (!isMobilePlaying) mobileInputRef.current?.blur()
+    return () => document.documentElement.classList.remove('mobile-game-active')
+  }, [isMobilePlaying])
+
+  useEffect(() => {
+    if (!isMobile || !nicknameReady || status !== 'ready') return
+    mobileInputRef.current?.focus()
+  }, [isMobile, nicknameReady, status])
+
   // Preview animation
   useEffect(() => {
     if (canPlay) return
@@ -668,11 +694,11 @@ export function IgraClient({ canPlay = true }: Props) {
   const shakeY = shake > 0 ? shake : 0
 
   return (
-    <div className="bg-[var(--background)] px-4 pt-3 pb-4">
-      <div className="mx-auto flex max-w-7xl flex-col gap-3">
+    <div className={cn("bg-[var(--background)] px-4 pb-4 pt-3", isMobilePlaying && "fixed inset-0 z-[60] overflow-hidden p-0")}>
+      <div className={cn("mx-auto flex max-w-7xl flex-col gap-3", isMobilePlaying && "h-full max-w-none gap-0")}>
 
         {/* Header */}
-        <div className={cn("flex items-center justify-between", mobileGameHeight !== null && "hidden sm:flex")}>
+        <div className={cn("flex items-center justify-between", isMobilePlaying && "hidden sm:flex")}>
           <div>
             <h1 className="text-xl font-bold text-[var(--foreground)]">Svemirsko kucanje</h1>
           </div>
@@ -702,23 +728,36 @@ export function IgraClient({ canPlay = true }: Props) {
         )}
 
         {/* Main layout */}
-        <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:items-start">
+        <div className={cn("flex flex-col items-stretch gap-4 lg:flex-row lg:items-start", isMobilePlaying && "h-full gap-0")}>
 
           {/* Game area */}
-          <div className="flex-1 min-w-0">
+          <div className={cn("min-w-0 flex-1", isMobilePlaying && "h-full")}>
           <div
             ref={gameAreaRef}
             tabIndex={0}
             onKeyDown={handleKeyDown}
             onClick={() => window.matchMedia('(max-width: 639px)').matches && mobileInputRef.current?.focus()}
-            className="relative w-full overflow-hidden rounded-lg border border-[var(--border)] outline-none"
+            className={cn("relative w-full overflow-hidden rounded-lg border border-[var(--border)] outline-none", isMobilePlaying && "rounded-none border-0")}
             style={{
-              height: mobileGameHeight ? `${mobileGameHeight}px` : 'min(560px, calc(100svh - 10rem))',
+              height: isMobilePlaying ? (mobileGameHeight ? `${mobileGameHeight}px` : '100dvh') : 'min(560px, calc(100svh - 10rem))',
               background: `radial-gradient(circle at 50% 18%, ${bgGlowColor}, transparent 28%), linear-gradient(180deg, var(--card), var(--background))`,
               transition: 'background 1.5s ease',
               transform: `translate(${shakeX}px, ${shakeY}px)`,
             }}
           >
+            {isMobilePlaying && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  exitMobileGame()
+                }}
+                className="absolute right-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-30 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white shadow-lg backdrop-blur"
+                aria-label="Izađi iz igre"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            )}
             {/* Dot grid */}
             <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle,rgba(128,128,128,0.35)_1px,transparent_1px)] [background-size:42px_42px]" />
             {/* Bottom fade */}
@@ -902,7 +941,7 @@ export function IgraClient({ canPlay = true }: Props) {
                 </div>
               )}
           </div>
-            <div className="sticky bottom-2 z-20 mt-2 sm:hidden">
+            <div className="pointer-events-none fixed bottom-0 right-0 h-8 w-8 overflow-hidden opacity-0 sm:hidden">
               <input
                 ref={mobileInputRef}
                 type="text"
@@ -918,15 +957,14 @@ export function IgraClient({ canPlay = true }: Props) {
                   handleMobileInput(event.target.value)
                   event.target.value = ''
                 }}
-                onFocus={() => window.setTimeout(() => gameAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120)}
-                className="h-12 w-full rounded-lg border border-[var(--accent)]/60 bg-[var(--card)] px-3 font-mono text-base text-[var(--foreground)] outline-none shadow-lg focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                className="h-8 w-8 border-0 bg-transparent p-0 text-base outline-none"
                 aria-label="Unos slova za igru"
               />
             </div>
           </div>{/* end game wrapper */}
 
           {/* Right column: stats + leaderboard */}
-          <div className={cn("w-full shrink-0 flex-col gap-3 lg:flex lg:w-56", mobileGameHeight !== null ? "hidden" : "flex")}>
+          <div className={cn("w-full shrink-0 flex-col gap-3 lg:flex lg:w-56", isMobilePlaying ? "hidden" : "flex")}>
 
             <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
               <div className="grid grid-cols-2 gap-x-3 gap-y-3 text-sm">

@@ -12,6 +12,8 @@ interface Props {
   timeLeft?: number
   mode?: 'reci' | 'vreme' | 'tekst'
   spaceBlocked?: boolean
+  mobileImmersive?: boolean
+  onFocusChange?: (focused: boolean) => void
 }
 
 interface WordGroup {
@@ -40,7 +42,7 @@ function groupIntoWords(chars: CharEntry[]): WordGroup[] {
 // Visina jednog reda u px — mora da odgovara line-height u CSS-u
 const LINE_HEIGHT_PX = 52
 
-export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, spaceBlocked }: Props) {
+export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, spaceBlocked, mobileImmersive = false, onFocusChange }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const cursorSpanRef = useRef<HTMLSpanElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
@@ -60,7 +62,7 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
   }, [onKeyDown, spaceBlocked])
 
   useEffect(() => {
-    inputRef.current?.focus()
+    if (!window.matchMedia('(max-width: 639px)').matches) inputRef.current?.focus()
     setCurrentWord('')
     if (status === 'idle') setOffsetY(0)
   }, [status])
@@ -114,10 +116,11 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
 
   const handleInputFocus = useCallback(() => {
     setFocused(true)
+    onFocusChange?.(true)
     if (window.matchMedia('(max-width: 639px)').matches) {
       window.setTimeout(() => containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150)
     }
-  }, [])
+  }, [onFocusChange])
 
   useEffect(() => {
     if (!focused || !window.visualViewport) return
@@ -154,7 +157,7 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
   const wordGroups = groupIntoWords(chars)
 
   return (
-    <div ref={containerRef} className="flex w-full scroll-mb-28 flex-col gap-3">
+    <div ref={containerRef} className={cn("flex w-full scroll-mb-28 flex-col gap-3", mobileImmersive && "h-[100dvh] items-center justify-center gap-5")}>
 
       {/* Timer */}
       {mode === 'vreme' && timeLeft !== undefined && (
@@ -187,7 +190,7 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
         ) : (
           <div
             ref={innerRef}
-            className="font-mono text-2xl md:text-3xl tracking-wide flex flex-wrap transition-transform duration-150"
+            className={cn("flex flex-wrap font-mono text-2xl tracking-wide transition-transform duration-150 md:text-3xl", mobileImmersive && "w-full justify-center text-center")}
             style={{
               lineHeight: `${LINE_HEIGHT_PX}px`,
               transform: `translateY(-${offsetY}px)`,
@@ -239,7 +242,7 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
       </div>
 
       {/* Progress bar */}
-      {mode !== 'vreme' && chars.length > 0 && (
+      {!mobileImmersive && mode !== 'vreme' && chars.length > 0 && (
         <div className="h-[2px] w-full rounded-full bg-[var(--border)] overflow-hidden">
           <div
             className={cn(
@@ -259,15 +262,15 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
         onChange={(event) => setCurrentWord(event.target.value)}
         onBeforeInput={handleBeforeInput}
         onFocus={handleInputFocus}
-        onBlur={() => setFocused(false)}
+        onBlur={() => { setFocused(false); onFocusChange?.(false) }}
         onPaste={(e) => e.preventDefault()}
         onCopy={(e) => e.preventDefault()}
         onCut={(e) => e.preventDefault()}
         onAnimationEnd={() => setShaking(false)}
         disabled={status === 'finished'}
-        className="h-12 w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 font-mono text-base text-[var(--foreground)] outline-none placeholder:font-sans placeholder:text-sm placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 sm:absolute sm:-left-[9999px] sm:h-px sm:w-px sm:opacity-0"
+        className={cn("font-mono text-base outline-none", mobileImmersive ? "fixed bottom-0 right-0 h-8 w-8 border-0 bg-transparent p-0 opacity-0" : "h-12 w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 text-[var(--foreground)] placeholder:font-sans placeholder:text-sm placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 sm:absolute sm:-left-[9999px] sm:h-px sm:w-px sm:opacity-0")}
         inputMode="text"
-        enterKeyHint="next"
+        enterKeyHint={mobileImmersive ? "done" : "next"}
         placeholder="Dodirni ovde i kucaj…"
         autoComplete="off"
         autoCorrect="off"

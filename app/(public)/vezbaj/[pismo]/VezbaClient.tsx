@@ -75,6 +75,7 @@ export function VezbaClient({ pismo }: Props) {
   const [timerDuration, setTimerDuration] = useState<TimerDuration | null>(() => readStorage('vezba_timer', null))
   const [strictMode, setStrictMode] = useState<boolean>(() => readStorage('vezba_strict', false))
   const [finished, setFinished] = useState<FinishedState | null>(null)
+  const [mobileTypingActive, setMobileTypingActive] = useState(false)
   const [text, setText] = useState('')
   const poolRef = useRef<PoolData | null>(null)
   const pismoRef = useRef(pismo)
@@ -96,6 +97,11 @@ export function VezbaClient({ pismo }: Props) {
       if (!hasNick) setShowNicknameModal(true)
     })
   }, [])
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('mobile-typing-active', mobileTypingActive)
+    return () => document.documentElement.classList.remove('mobile-typing-active')
+  }, [mobileTypingActive])
 
   // Wordlist se učitava samo za izabrano pismo, nivo i tip sadržaja.
   useEffect(() => {
@@ -179,6 +185,10 @@ export function VezbaClient({ pismo }: Props) {
     onNeedMoreText: getMoreText,
   })
 
+  useEffect(() => {
+    if (status === 'finished') setMobileTypingActive(false)
+  }, [status])
+
   const changeContentMode = useCallback((m: 'reci' | 'tekst') => {
     if (m === contentModeRef.current && timerDurationRef.current === null) return
     contentModeRef.current = m
@@ -245,12 +255,12 @@ export function VezbaClient({ pismo }: Props) {
   }, [handleReset])
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-3 py-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-4 sm:py-12 lg:py-24">
+    <div className={cn("mx-auto w-full max-w-2xl px-3 py-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-4 sm:py-12 lg:py-24", mobileTypingActive && "fixed inset-0 z-[60] flex max-w-none items-center justify-center overflow-hidden bg-[var(--background)] px-3 py-0")}>
       {showNicknameModal && (
         <NicknameModal onNicknameSet={() => setShowNicknameModal(false)} />
       )}
       {/* Kontrolna traka */}
-      <div className="mb-3 flex flex-col gap-2 sm:mb-5 sm:gap-2.5">
+      <div className={cn("mb-3 flex flex-col gap-2 sm:mb-5 sm:gap-2.5", mobileTypingActive && "hidden")}>
 
         {/* Red 1: Pisma levo + Težina desno */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -376,9 +386,13 @@ export function VezbaClient({ pismo }: Props) {
         timeLeft={timeLeft}
         mode={mode}
         spaceBlocked={spaceBlocked}
+        mobileImmersive={mobileTypingActive}
+        onFocusChange={(focused) => {
+          if (window.matchMedia('(max-width: 639px)').matches) setMobileTypingActive(focused)
+        }}
       />
 
-      {status !== 'finished' && cursor > 0 && (
+      {!mobileTypingActive && status !== 'finished' && cursor > 0 && (
         <LiveStats
           wpm={currentStats.wpm ?? 0}
           accuracy={currentStats.accuracy ?? 0}
@@ -387,7 +401,7 @@ export function VezbaClient({ pismo }: Props) {
       )}
 
       {/* Reset dugme — samo tokom kucanja */}
-      {status !== 'idle' && !finished && (
+      {!mobileTypingActive && status !== 'idle' && !finished && (
         <div className="mt-5 flex justify-center">
           <button
             onClick={handleReset}

@@ -134,3 +134,28 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--muted-foreground);
 }
+@media (max-width: 639px) {
+  html.mobile-game-active,
+  html.mobile-game-active body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  html.mobile-game-active [data-site-header] {
+    display: none;
+  }
+}
+
+@media (max-width: 639px) {
+  html.mobile-typing-active,
+  html.mobile-typing-active body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  html.mobile-typing-active [data-site-header] {
+    display: none;
+  }
+}
