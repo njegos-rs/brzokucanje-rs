@@ -74,6 +74,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
   const [finished, setFinished] = useState<FinishedState | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [mobileTypingActive, setMobileTypingActive] = useState(false)
   const [focusLost, setFocusLost] = useState(false)
   const [userRankAlready, setUserRankAlready] = useState<number | null>(null)
   const [selectedPeriod, setSelectedPeriod] = useState<LeaderboardPeriod>('daily')
@@ -266,6 +267,15 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
     return () => document.removeEventListener('paste', onPaste)
   }, [])
 
+  useEffect(() => {
+    document.documentElement.classList.toggle('mobile-typing-active', mobileTypingActive)
+    return () => document.documentElement.classList.remove('mobile-typing-active')
+  }, [mobileTypingActive])
+
+  useEffect(() => {
+    if (status === 'finished') setMobileTypingActive(false)
+  }, [status])
+
   const pismoTabovi: Script[] = ['latinica', 'cirilica', 'latinica-bez-kvacica']
 
   if (!nicknameReady) {
@@ -280,7 +290,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
             {submitError}
           </div>
         )}
-        {focusLost && (
+        {focusLost && !mobileTypingActive && (
           <div className="mb-4 flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-600 dark:text-amber-400">
             <AlertTriangle className="h-4 w-4 flex-shrink-0" />
             Test je poništen — izgubili ste fokus prozora. Rezultat nije evidentiran.
@@ -374,8 +384,8 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-3 py-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-4 sm:py-12">
-      <div className="mb-4 flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:mb-6 sm:flex-wrap sm:overflow-visible sm:pb-0">
+    <div className={cn("mx-auto max-w-2xl px-3 py-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-4 sm:py-12", mobileTypingActive && "fixed inset-0 z-[60] flex max-w-none items-center justify-center overflow-hidden bg-[var(--background)] px-3 py-0")}>
+      <div className={cn("mb-4 flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:mb-6 sm:flex-wrap sm:overflow-visible sm:pb-0", mobileTypingActive && "hidden")}>
         {pismoTabovi.map((p) => (
           <button
             key={p}
@@ -392,7 +402,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
         ))}
       </div>
 
-      <div className="mb-4">
+      <div className={cn("mb-4", mobileTypingActive && "hidden")}>
         <p className="text-sm text-[var(--muted-foreground)]">
           Jedan pokušaj dnevno. Rezultati idu na rank listu.
         </p>
@@ -403,13 +413,13 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
           Učitavam dnevni tekst…
         </div>
       )}
-      {textError && (
+      {textError && !mobileTypingActive && (
         <div className="rounded-md border border-[var(--incorrect)]/30 bg-[var(--incorrect)]/10 px-3 py-4 text-center text-sm text-[var(--incorrect)]">
           {textError}
         </div>
       )}
 
-      {focusLost && (
+      {focusLost && !mobileTypingActive && (
         <div className="mb-4 flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-600 dark:text-amber-400">
           <AlertTriangle className="h-4 w-4 flex-shrink-0" />
           Izgubili ste fokus — test je poništen. Rezultat neće biti evidentiran.
@@ -425,6 +435,10 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
             timeLeft={timeLeft}
             mode={dailyMode === 'reci' ? 'vreme' : 'tekst'}
             spaceBlocked={spaceBlocked}
+            mobileImmersive={mobileTypingActive}
+            onFocusChange={(focused) => {
+              if (window.matchMedia('(max-width: 639px)').matches) setMobileTypingActive(focused)
+            }}
             onKeyDown={(e) => {
               playKeystroke()
               handleKeyDown(e)
