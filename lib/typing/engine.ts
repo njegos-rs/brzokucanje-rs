@@ -301,7 +301,7 @@ export function useTypingEngine({
     }
 
     onFinishRef.current?.(result, state.keystrokes, wpmHistory)
-  }, [state.status])
+  }, [state])
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -363,3 +363,5 @@ export function useTypingEngine({
     keystrokes: state.keystrokes,
   }
 }
+
+

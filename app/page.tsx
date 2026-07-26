@@ -2,16 +2,12 @@ import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { TypewriterTitle } from '@/components/TypewriterTitle'
-import { createClient } from '@/lib/supabase/server'
 
-export default async function HomePage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
+export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-[100dvh] flex-col overflow-hidden">
       <Header />
-      <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
+      <main className="min-h-0 flex flex-1 flex-col items-center justify-center overflow-hidden px-6 py-8">
         <div className="w-full max-w-4xl">
 
           {/* Hero */}
@@ -77,7 +73,7 @@ export default async function HomePage() {
               </p>
               <div className="mt-auto flex flex-col gap-2">
                 <span className="inline-flex w-fit items-center gap-1.5 rounded-md bg-[var(--accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--accent)]">
-                  🔒 Prijava potrebna
+                  ▶ Igraj odmah
                 </span>
                 <p className="text-xs text-[var(--muted-foreground)]/60">
                   Jedan pokušaj dnevno po pismu.
@@ -87,7 +83,7 @@ export default async function HomePage() {
 
             {/* Igra */}
             <Link
-              href={user ? '/igra' : '/registracija'}
+              href="/igra"
               className="group flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-7 transition-all hover:border-[var(--accent)]/70 hover:shadow-lg hover:-translate-y-0.5"
             >
               <div className="flex items-center gap-3">
@@ -133,15 +129,9 @@ export default async function HomePage() {
               </div>
 
               <div className="mt-auto">
-                {user ? (
-                  <span className="inline-flex w-fit items-center gap-1.5 rounded-md bg-[var(--accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--accent)]">
-                    ▶ Igraj odmah
-                  </span>
-                ) : (
-                  <span className="inline-flex w-fit items-center gap-1.5 rounded-md bg-[var(--accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--accent)]">
-                    🔒 Registracija potrebna
-                  </span>
-                )}
+                <span className="inline-flex w-fit items-center gap-1.5 rounded-md bg-[var(--accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--accent)]">
+                  ▶ Igraj odmah
+                </span>
               </div>
             </Link>
 
@@ -164,3 +154,4 @@ export default async function HomePage() {
     </div>
   )
 }
+

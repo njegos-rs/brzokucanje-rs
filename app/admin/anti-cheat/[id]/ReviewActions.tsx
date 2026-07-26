@@ -4,8 +4,15 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ShieldCheck, ShieldX, Ban, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import type { Database } from '@/lib/supabase/types'
 
+type ReviewDb = {
+  from: (table: string) => {
+    update: (values: Record<string, unknown>) => {
+      eq: (column: string, value: string) => Promise<{ error: Error | null }>
+    }
+    insert: (values: Record<string, unknown>) => Promise<{ error: Error | null }>
+  }
+}
 interface Props {
   scoreId: string
   userId: string
@@ -28,7 +35,7 @@ export function ReviewActions({ scoreId, userId, username, isReviewed, decision 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Niste prijavljeni')
 
-      const { error: err } = await (supabase as any)
+      const { error: err } = await (supabase as unknown as ReviewDb)
         .from('scores')
         .update({
           flag_reviewed: true,
@@ -39,7 +46,7 @@ export function ReviewActions({ scoreId, userId, username, isReviewed, decision 
 
       if (err) throw err
 
-      await (supabase as any).from('admin_actions').insert({
+      await (supabase as unknown as ReviewDb).from('admin_actions').insert({
         admin_id: user.id,
         action: `anticheat_${reviewDecision}`,
         target_type: 'score',
@@ -75,7 +82,7 @@ export function ReviewActions({ scoreId, userId, username, isReviewed, decision 
       if (err) throw err
 
       // Automatski reject score
-      await (supabase as any).from('scores').update({
+      await (supabase as unknown as ReviewDb).from('scores').update({
         flag_reviewed: true,
         review_decision: 'rejected',
         reviewed_by: user.id,
@@ -142,3 +149,5 @@ export function ReviewActions({ scoreId, userId, username, isReviewed, decision 
     </div>
   )
 }
+
+

@@ -16,6 +16,8 @@ const STATIC_ROUTES = [
   { url: '/rang-lista/easy', priority: 0.7, changeFrequency: 'daily' },
   { url: '/registracija', priority: 0.6, changeFrequency: 'monthly' },
   { url: '/prijava', priority: 0.5, changeFrequency: 'monthly' },
+  { url: '/o-nama', priority: 0.7, changeFrequency: 'monthly' },
+  { url: '/kako-kucati-brzo', priority: 0.8, changeFrequency: 'weekly' },
 ] as const
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -24,6 +26,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { data: profiles } = await supabase
     .from('profiles')
     .select('username, updated_at')
+    .not('username', 'is', null)
+    .neq('username', '')
     .order('updated_at', { ascending: false })
     .limit(500)
 

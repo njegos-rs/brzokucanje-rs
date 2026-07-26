@@ -66,6 +66,11 @@ html {
   font-family: var(--font-inter);
 }
 
+html, body {
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -76,6 +81,8 @@ body {
 /* Typing area — onemogućava selekciju teksta */
 .typing-area {
   user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none;
 }
 
@@ -100,6 +107,16 @@ body {
   0%   { opacity: 0.9; }
   50%  { opacity: 0.4; }
   100% { opacity: 0; }
+}
+
+@media (max-width: 640px) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  button, a {
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 /* Scrollbar styling */

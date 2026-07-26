@@ -26,30 +26,9 @@ export async function updateSession(request: NextRequest) {
     },
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  await supabase.auth.getUser()
 
-  // Zaštita (auth) ruta — redirect na /prijava ako nije ulogovan
-  const isAuthRoute =
-    request.nextUrl.pathname.startsWith('/rank') ||
-    request.nextUrl.pathname.startsWith('/profil') ||
-    request.nextUrl.pathname.startsWith('/podesavanja')
-
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
-
-  if (isAuthRoute && !user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/prijava'
-    url.searchParams.set('redirect', request.nextUrl.pathname)
-    return NextResponse.redirect(url)
-  }
-
-  if (isAdminRoute && !user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/prijava'
-    return NextResponse.redirect(url)
-  }
-
+  // /admin stranica sama pruža login formu kada korisnik nije prijavljen ili nije admin
   return supabaseResponse
 }
+

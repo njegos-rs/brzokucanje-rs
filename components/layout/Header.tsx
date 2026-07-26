@@ -8,7 +8,9 @@ import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/components/ThemeProvider'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
+import { ensureAnonymousSession } from '@/lib/auth/anonymous'
+import { NicknameModal } from '@/components/auth/NicknameModal'
+import { AdminLogoutButton } from '@/components/admin/AdminLogoutButton'
 
 const NAV_LINKS = [
   { href: '/vezbaj/latinica', label: 'Vežbaj' },
@@ -21,35 +23,58 @@ export function Header() {
   const pathname = usePathname()
   const { theme, toggle: toggleTheme } = useTheme()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [user, setUser] = useState<SupabaseUser | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [username, setUsername] = useState<string | null>(null)
   const [profileLoaded, setProfileLoaded] = useState(false)
+  const [showNicknameModal, setShowNicknameModal] = useState(false)
 
   useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [mobileOpen])
+
+  useEffect(() => {
+    // Proveri odmah localStorage
+    if (typeof window !== 'undefined') {
+      const localNick = localStorage.getItem('brzokucanje_nickname')
+      if (localNick) setUsername(localNick)
+    }
+
     const supabase = createClient()
 
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user ?? null)
-      if (data.user) {
-        supabase
-          .from('profiles')
-          .select('username, is_admin')
-          .eq('id', data.user.id)
-          .single()
-          .then(({ data: profile }) => {
-            const p = profile as { username: string; is_admin: boolean } | null
-            setIsAdmin(p?.is_admin ?? false)
-            setUsername(p?.username ?? data.user!.email?.split('@')[0] ?? null)
-            setProfileLoaded(true)
-          })
-      } else {
+    const init = async () => {
+      try {
+        // Osiguraj da anonimna sesija postoji (ako je Supabase dostupan)
+        await ensureAnonymousSession()
+
+        const { data } = await supabase.auth.getUser()
+
+        if (data?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username, is_admin')
+            .eq('id', data.user.id)
+            .single()
+
+          const p = profile as { username: string | null; is_admin: boolean } | null
+          setIsAdmin(p?.is_admin ?? false)
+          if (p?.username) {
+            setUsername(p.username)
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('brzokucanje_nickname', p.username)
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[Header] Session init suppressed error:', err)
+      } finally {
         setProfileLoaded(true)
       }
-    })
+    }
+
+    init()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
       if (!session?.user) { setIsAdmin(false); setUsername(null) }
     })
 
@@ -58,6 +83,17 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-[var(--border)] bg-[var(--background)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--background)]/60">
+      {showNicknameModal && (
+        <NicknameModal
+          onNicknameSet={(newNick) => {
+            setUsername(newNick)
+            setShowNicknameModal(false)
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('brzokucanje_nickname', newNick)
+            }
+          }}
+        />
+      )}
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
         {/* Logo */}
         <Link
@@ -65,7 +101,7 @@ export function Header() {
           className="flex items-center gap-2 font-mono text-base font-semibold text-[var(--accent)] hover:opacity-80 transition-opacity"
         >
           <Image src="/logo.svg" alt="brzokucanje.rs logo" width={28} height={28} aria-hidden="true" />
-          <span>brzokucanje.rs</span>
+          <span className="hidden sm:inline">brzokucanje.rs</span>
         </Link>
 
         {/* Desktop nav */}
@@ -86,7 +122,7 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Desktop auth */}
+        {/* Desktop user area */}
         <div className="hidden md:flex items-center gap-3">
           <button
             onClick={toggleTheme}
@@ -96,8 +132,8 @@ export function Header() {
             {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           </button>
           {!profileLoaded ? (
-            <div className="h-8 w-32 rounded-md bg-[var(--muted)] animate-pulse" aria-hidden="true" />
-          ) : user ? (
+            <div className="h-8 w-24 rounded-md bg-[var(--muted)] animate-pulse" aria-hidden="true" />
+          ) : (
             <div className="flex items-center gap-1.5">
               <Link
                 href="/podesavanja"
@@ -106,44 +142,42 @@ export function Header() {
               >
                 <Settings className="h-4 w-4" />
               </Link>
-              <Link
-                href="/profil"
-                className="flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
-              >
-                <User className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-                <span>{username}</span>
-              </Link>
-              {isAdmin && (
+              {username ? (
                 <Link
-                  href="/admin/pregled"
-                  className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-[var(--accent)] hover:bg-[var(--muted)] transition-colors"
+                  href="/profil"
+                  className="flex items-center gap-2 rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
                 >
-                  <Shield className="h-3.5 w-3.5" />
-                  Admin
+                  <User className="h-3.5 w-3.5 text-[var(--accent)]" />
+                  <span>{username}</span>
                 </Link>
+              ) : (
+                <button
+                  onClick={() => setShowNicknameModal(true)}
+                  className="flex items-center gap-1.5 rounded-md border border-dashed border-[var(--accent)]/60 bg-[var(--accent)]/10 px-3 py-1.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent)]/20 transition-colors"
+                >
+                  <User className="h-3.5 w-3.5" />
+                  <span>Postavi ime</span>
+                </button>
+              )}
+              {isAdmin && (
+                <div className="flex items-center gap-1.5">
+                  <Link
+                    href="/admin/pregled"
+                    className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-[var(--accent)] hover:bg-[var(--muted)] transition-colors"
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                    Admin
+                  </Link>
+                  <AdminLogoutButton className="w-auto" buttonClassName="w-auto inline-flex px-2 py-1 text-xs" />
+                </div>
               )}
             </div>
-          ) : (
-            <>
-              <Link
-                href="/prijava"
-                className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
-              >
-                Prijava
-              </Link>
-              <Link
-                href="/registracija"
-                className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-[var(--accent-foreground)] hover:opacity-90 transition-opacity"
-              >
-                Registracija
-              </Link>
-            </>
           )}
         </div>
 
         {/* Mobile menu toggle */}
         <button
-          className="md:hidden p-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+          className="md:hidden min-h-11 min-w-11 p-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
           onClick={() => setMobileOpen((v) => !v)}
           aria-label={mobileOpen ? 'Zatvori meni' : 'Otvori meni'}
           aria-expanded={mobileOpen}
@@ -162,7 +196,7 @@ export function Header() {
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
-                  'text-sm py-2 transition-colors hover:text-[var(--accent)]',
+                  'min-h-11 flex items-center text-sm transition-colors hover:text-[var(--accent)]',
                   pathname.startsWith(link.href.split('/').slice(0, 2).join('/'))
                     ? 'text-[var(--accent)] font-medium'
                     : 'text-[var(--muted-foreground)]',
@@ -172,50 +206,34 @@ export function Header() {
               </Link>
             ))}
             <hr className="border-[var(--border)]" />
-            {user ? (
-              <>
+            {username && (
+              <Link
+                href="/profil"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 py-2 text-sm text-[var(--foreground)]"
+              >
+                <User className="h-4 w-4" />
+                {username}
+              </Link>
+            )}
+            <Link
+              href="/podesavanja"
+              onClick={() => setMobileOpen(false)}
+              className="py-2 text-sm text-[var(--muted-foreground)]"
+            >
+              Podešavanja
+            </Link>
+            {isAdmin && (
+              <div className="space-y-1">
                 <Link
-                  href="/profil"
+                  href="/admin/pregled"
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2 py-2 text-sm text-[var(--foreground)]"
+                  className="block py-2 text-sm text-[var(--accent)]"
                 >
-                  <User className="h-4 w-4" />
-                  {username ?? user.email?.split('@')[0]}
+                  Admin panel
                 </Link>
-                <Link
-                  href="/podesavanja"
-                  onClick={() => setMobileOpen(false)}
-                  className="py-2 text-sm text-[var(--muted-foreground)]"
-                >
-                  Podešavanja
-                </Link>
-                {isAdmin && (
-                  <Link
-                    href="/admin/pregled"
-                    onClick={() => setMobileOpen(false)}
-                    className="py-2 text-sm text-[var(--accent)]"
-                  >
-                    Admin panel
-                  </Link>
-                )}
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/prijava"
-                  onClick={() => setMobileOpen(false)}
-                  className="text-sm py-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
-                >
-                  Prijava
-                </Link>
-                <Link
-                  href="/registracija"
-                  onClick={() => setMobileOpen(false)}
-                  className="text-sm py-2 text-[var(--accent)] font-medium"
-                >
-                  Registracija
-                </Link>
-              </>
+                <AdminLogoutButton onLoggedOut={() => setMobileOpen(false)} />
+              </div>
             )}
           </nav>
         </div>
@@ -223,3 +241,7 @@ export function Header() {
     </header>
   )
 }
+
+
+
+

@@ -6,7 +6,6 @@ import { formatDistanceToNow } from 'date-fns'
 import { sr } from 'date-fns/locale'
 import { Flame, Target, Clock, Medal, type LucideIcon } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
-import { LogoutButton } from './LogoutButton'
 import { ProfilTabs } from './ProfilTabs'
 import { TrophyStatCard } from '@/components/profile/TrophyStatCard'
 
@@ -59,7 +58,9 @@ export const metadata: Metadata = { title: 'Profil' }
 export default async function ProfilPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/prijava')
+
+  // Ako nema sesije uopšte (čak ni anonimne), redirect na glavnu
+  if (!user) redirect('/')
 
   const [profileRes, pbRes, scoresRes, winsRes, statsRes, titlesRes] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
@@ -99,6 +100,8 @@ export default async function ProfilPage() {
 
   type Profile = Database['public']['Tables']['profiles']['Row']
   const profile = profileRes.data as Profile | null
+  if (!profile?.username?.trim()) redirect('/')
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pbs = ((pbRes.data ?? []) as any[]) as PbRow[]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -123,23 +126,29 @@ export default async function ProfilPage() {
     .filter((p) => p.game_mode === 'vezba' && p.best_score > 0 && p.best_wpm > 0)
     .sort((a, b) => b.best_score - a.best_score)
 
+  const displayName = profile.username
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
       <div className="mb-8">
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent)]/15 text-2xl font-bold text-[var(--accent)]">
-            {(profile?.username ?? user.email ?? 'K')[0].toUpperCase()}
+            {displayName[0].toUpperCase()}
           </div>
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-[var(--foreground)]">
-              {profile?.username ?? user.email?.split('@')[0]}
+              {displayName}
             </h1>
             <p className="text-sm text-[var(--muted-foreground)]">
               Član{' '}
               {formatDistanceToNow(new Date(user.created_at), { addSuffix: true, locale: sr })}
             </p>
+            {!profile?.username && (
+              <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                Odigraj partiju da postaviš ime koje će se prikazivati na rang listi.
+              </p>
+            )}
           </div>
-          <LogoutButton />
         </div>
       </div>
 

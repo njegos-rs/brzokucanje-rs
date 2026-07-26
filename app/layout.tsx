@@ -3,6 +3,7 @@ import Script from 'next/script'
 import { Toaster } from 'react-hot-toast'
 import { CookieConsent } from '@/components/CookieConsent'
 import { ThemeProvider } from '@/components/ThemeProvider'
+import { VisitTracker } from '@/components/analytics/VisitTracker'
 import { getSiteUrl } from '@/lib/site'
 import './globals.css'
 
@@ -87,6 +88,7 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <ThemeProvider>
         {children}
+        <VisitTracker />
         {/* Plausible Analytics — tracks only on brzokucanje.rs (no-op on localhost) */}
         <Script
           defer

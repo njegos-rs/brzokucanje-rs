@@ -1,23 +1,6 @@
-import { test, expect, type Page } from '@playwright/test'
+﻿import { test, expect } from '@playwright/test'
 
-// Helper: mock authenticated Supabase session
-async function mockAuthSession(page: Page) {
-  // Intercept Supabase session check
-  await page.route('**/auth/v1/user', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'test-user-id',
-        email: 'test@test.com',
-        aud: 'authenticated',
-        user_metadata: { username: 'testkorisnik' },
-      }),
-    })
-  })
-}
-
-test.describe('RANK — pristup i zaštita', () => {
+test.describe('RANK â€” pristup i zaÅ¡tita', () => {
   test('neautentifikovani korisnik se preusmjerava sa /rank', async ({ page }) => {
     // Bez mock sessiona, middleware treba da redirectuje
     await page.route('**/auth/v1/user', async (route) => {
@@ -38,13 +21,13 @@ test.describe('RANK — pristup i zaštita', () => {
     const pisma = ['latinica', 'cirilica', 'easy']
     for (const pismo of pisma) {
       const response = await page.goto(`/rang-lista/${pismo}`)
-      // Rang lista je javna — treba 200
+      // Rang lista je javna â€” treba 200
       expect(response?.status()).toBe(200)
     }
   })
 })
 
-test.describe('RANK — daily limit', () => {
+test.describe('RANK â€” daily limit', () => {
   test('prikazuje poruku kad je daily limit dostignut', async ({ page }) => {
     // Mock: Supabase vraca da vec postoji score za danas
     await page.route('**/rest/v1/daily_texts*', async (route) => {
@@ -57,14 +40,14 @@ test.describe('RANK — daily limit', () => {
           script: 'latinica',
           category: 'reci',
           text_id: 'txt1',
-          text: { content_lat: 'test tekst za kucanje danas', content_cyr: 'тест текст', content_easy: 'test tekst' },
+          text: { content_lat: 'test tekst za kucanje danas', content_cyr: 'Ñ‚ÐµÑÑ‚ Ñ‚ÐµÐºÑÑ‚', content_easy: 'test tekst' },
         }]),
       })
     })
 
     await page.route('**/rest/v1/scores*', async (route) => {
       if (route.request().method() === 'GET') {
-        // Korisnik već ima score za danas — daily limit dostignut
+        // Korisnik veÄ‡ ima score za danas â€” daily limit dostignut
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -91,12 +74,12 @@ test.describe('RANK — daily limit', () => {
 
     await page.goto('/rank/latinica')
     // Treba da se pojavi poruka o dnevnom limitu
-    await expect(page.getByText(/dnevni|pokušaj|iskoristio/i)).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText(/dnevni|pokuÅ¡aj|iskoristio/i)).toBeVisible({ timeout: 5000 })
   })
 })
 
-test.describe('RANK — submit rezultata', () => {
-  test('POST /api/score vraća 200 sa validnim podacima', async ({ page }) => {
+test.describe('RANK â€” submit rezultata', () => {
+  test('POST /api/score vraÄ‡a 200 sa validnim podacima', async ({ page }) => {
     let submitResponse: { status: number; body: unknown } | null = null
 
     await page.route('**/api/score', async (route) => {
@@ -144,7 +127,7 @@ test.describe('RANK — submit rezultata', () => {
         daily_text_id: 'dt1',
         category: 'reci',
         script: 'latinica',
-        wpm: 300, // Previsoko — anti-cheat
+        wpm: 300, // Previsoko â€” anti-cheat
         raw_wpm: 310,
         accuracy: 99,
         consistency: 95,
@@ -161,3 +144,6 @@ test.describe('RANK — submit rezultata', () => {
     expect([400, 401]).toContain(response.status())
   })
 })
+
+
+

@@ -1,6 +1,6 @@
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
+import { PrijavaForma } from '@/components/auth/PrijavaForma'
 import type { Database } from '@/lib/supabase/types'
 
 export default async function AdminLayout({
@@ -8,20 +8,38 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  let user = null
+  let isAdmin = false
 
-  if (!user) redirect('/prijava')
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase.auth.getUser()
+    user = data.user
 
-  const { data: profileData } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single()
+    if (user) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single()
 
-  type ProfileRow = Pick<Database['public']['Tables']['profiles']['Row'], 'is_admin'>
-  const profile = profileData as ProfileRow | null
-  if (!profile?.is_admin) redirect('/')
+      type ProfileRow = Pick<Database['public']['Tables']['profiles']['Row'], 'is_admin'>
+      const profile = profileData as ProfileRow | null
+      isAdmin = !!profile?.is_admin
+    }
+  } catch {
+    isAdmin = false
+  }
+
+  if (!user || !isAdmin) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--background)] px-4 py-12">
+        <div className="w-full max-w-md rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-xl">
+          <PrijavaForma redirectTo="/admin/pregled" />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen">

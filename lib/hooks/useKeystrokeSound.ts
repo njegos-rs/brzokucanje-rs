@@ -50,12 +50,11 @@ export function useKeystrokeSound(theme: SoundTheme) {
   // Očisti preostale preview zvukove ako korisnik napusti stranicu
   useEffect(() => {
     return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
       previewNodesRef.current.forEach(node => {
         try {
           node.stop()
           node.disconnect()
-        } catch (e) {
+        } catch {
           // Ignoriši ako je već završen
         }
       })
@@ -100,7 +99,7 @@ export function useKeystrokeSound(theme: SoundTheme) {
       try {
         node.stop()
         node.disconnect()
-      } catch (e) {
+      } catch {
         // Ignoriši ako je već završen
       }
     })
@@ -137,3 +136,7 @@ export function useKeystrokeSound(theme: SoundTheme) {
 
   return { play, playPreview }
 }
+
+
+
+

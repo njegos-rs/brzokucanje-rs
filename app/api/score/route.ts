@@ -4,6 +4,7 @@ import { analyzeKeystrokes, serverSideCheck } from '@/lib/typing/anti-cheat'
 import { calcAll } from '@/lib/typing/scoring'
 import type { KeystrokeEntry } from '@/lib/typing/engine'
 import type { Database } from '@/lib/supabase/types'
+import { detectDevice } from '@/lib/device/server'
 
 type ScoreInsert = Database['public']['Tables']['scores']['Insert']
 
@@ -97,6 +98,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Neispravni parametri' }, { status: 400 })
   }
 
+  if (mode === 'rank') {
+    const { data: profile } = await serviceSupabase
+      .from('profiles')
+      .select('username')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (!profile?.username?.trim()) {
+      return NextResponse.json({ error: 'Prvo izaberite svoje ime' }, { status: 403 })
+    }
+  }
+
   if (
     !isFiniteNumber(duration_seconds) ||
     duration_seconds <= 0 ||
@@ -167,8 +180,12 @@ export async function POST(req: NextRequest) {
   const allFlags = [...acFlags.flags, ...srFlags]
   const isFlagged = allFlags.length > 0
 
+  const device = detectDevice(req)
+
   const insertData = {
     user_id: user.id,
+    device_type: device.device_type,
+    device_confidence: device.device_confidence,
     category: category as ScoreInsert['category'],
     script: script as ScoreInsert['script'],
     mode: mode as ScoreInsert['mode'],
@@ -263,5 +280,6 @@ export async function POST(req: NextRequest) {
     is_flagged: isFlagged,
     flags: allFlags,
     is_new_pb: isNewPb,
+    device_type: device.device_type,
   })
 }

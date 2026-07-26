@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { detectDevice } from '@/lib/device/server'
 
 function isSafeNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value)
@@ -9,6 +10,16 @@ export async function POST(req: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (!profile?.username?.trim()) {
+    return NextResponse.json({ error: 'Prvo izaberite svoje ime' }, { status: 403 })
+  }
 
   let body: { score: unknown; level: unknown; words_destroyed: unknown; elapsed_seconds: unknown }
   try { body = await req.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
@@ -39,8 +50,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Out of range' }, { status: 422 })
   }
 
+  const device = detectDevice(req)
+
   const { error } = await supabase.from('game_scores').insert({
     user_id: user.id,
+    device_type: device.device_type,
+    device_confidence: device.device_confidence,
     score,
     level,
     words_destroyed,
@@ -69,12 +84,14 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to fetch leaderboard' }, { status: 500 })
   }
 
+  const leaderboard = (data ?? []).filter((entry) => entry.username?.trim())
+
   const { data: { user } } = await supabase.auth.getUser()
   let userRank: number | null = null
   let userScore: number | null = null
 
   if (user) {
-    const top = data ?? []
+    const top = leaderboard
     const inTop10 = top.findIndex((d) => d.user_id === user.id)
     if (inTop10 !== -1) {
       userRank = inTop10 + 1
@@ -82,11 +99,11 @@ export async function GET() {
     } else {
       const { data: ownEntry } = await supabase
         .from('game_leaderboard')
-        .select('user_id, max_score')
+        .select('user_id, username, max_score')
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (ownEntry) {
+      if (ownEntry?.username?.trim()) {
         userScore = ownEntry.max_score
 
         const { count } = await supabase
@@ -100,7 +117,7 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    leaderboard: data ?? [],
+    leaderboard,
     currentUser: user ? { rank: userRank, score: userScore, userId: user.id } : null,
   })
 }

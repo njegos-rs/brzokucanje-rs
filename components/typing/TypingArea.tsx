@@ -49,15 +49,18 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
   const [currentWord, setCurrentWord] = useState('')
   const [offsetY, setOffsetY] = useState(0)
   const onKeyDownRef = useRef(onKeyDown)
-  onKeyDownRef.current = onKeyDown
   const spaceBlockedRef = useRef(spaceBlocked)
-  spaceBlockedRef.current = spaceBlocked
+
+  useEffect(() => {
+    onKeyDownRef.current = onKeyDown
+    spaceBlockedRef.current = spaceBlocked
+  }, [onKeyDown, spaceBlocked])
 
   useEffect(() => {
     inputRef.current?.focus()
     setCurrentWord('')
-    setOffsetY(0)
-  }, [status, chars])
+    if (status === 'idle') setOffsetY(0)
+  }, [status])
 
   useEffect(() => {
     const el = inputRef.current
@@ -83,17 +86,23 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
     return () => el.removeEventListener('keydown', handler)
   }, [])
 
-  // Pomeri unutrašnji div tako da aktivan red uvek bude drugi od vrha
+  // Aktivni red uvek ostaje u sredini trorednog prikaza.
+  // getBoundingClientRect je pouzdaniji od offsetTop za karaktere u flex-wrap redovima.
   useEffect(() => {
-    const cursorEl = cursorSpanRef.current
-    const innerEl = innerRef.current
-    if (!cursorEl || !innerEl) return
+    const frame = requestAnimationFrame(() => {
+      const cursorEl = cursorSpanRef.current
+      const innerEl = innerRef.current
+      if (!cursorEl || !innerEl) return
 
-    const cursorTop = cursorEl.offsetTop
-    // Ciljana pozicija: kursor treba biti na drugom redu (1 * LINE_HEIGHT_PX od vrha)
-    const targetOffset = cursorTop - LINE_HEIGHT_PX
-    setOffsetY(Math.max(0, targetOffset))
-  }, [cursor])
+      const innerTop = innerEl.getBoundingClientRect().top
+      const cursorTop = cursorEl.getBoundingClientRect().top
+      const row = Math.max(0, Math.round((cursorTop - innerTop) / LINE_HEIGHT_PX))
+      const targetOffset = Math.max(0, (row - 1) * LINE_HEIGHT_PX)
+      setOffsetY((previous) => previous === targetOffset ? previous : targetOffset)
+    })
+
+    return () => cancelAnimationFrame(frame)
+  }, [cursor, chars.length])
 
   const handleDisplayClick = useCallback(() => {
     inputRef.current?.focus()
@@ -123,6 +132,7 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
         onClick={handleDisplayClick}
         className={cn(
           'typing-area relative cursor-text overflow-hidden',
+          shaking && 'shake',
           status === 'finished' && 'opacity-30 pointer-events-none',
         )}
         style={{ height: `${LINE_HEIGHT_PX * 3}px` }}
@@ -212,7 +222,9 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
         onCut={(e) => e.preventDefault()}
         onAnimationEnd={() => setShaking(false)}
         disabled={status === 'finished'}
-        className="sr-only"
+        className="absolute -left-[9999px] h-px w-px opacity-0"
+        inputMode="text"
+        enterKeyHint="next"
         placeholder=""
         autoComplete="off"
         autoCorrect="off"
@@ -223,3 +235,4 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
     </div>
   )
 }
+

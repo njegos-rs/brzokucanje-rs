@@ -426,77 +426,77 @@ Ovaj plan koristi sledeće oznake. Pratimo ih dosledno kroz ceo dokument.
 ---
 
 <a name="nedelja-5"></a>
-### NEDELJA 5 — PB/Streak + SEO + Admin sadržaj/statistike
+### NEDELJA 5 — PB/Streak + SEO + Admin sadržaj/statistike ✅
 
 **Cilj demo-a:** Personal Best animacija krune kad se premaši. Streak prikaz na profilu. SEO meta tagovi, sitemap, hreflang. Admin sekcije za sadržaj (reči/rečenice/tekstovi), profanity, statistike sa GA4.
 
 #### Ponedeljak: Personal Best + Streak
-- 🟢 **[PROG]** PB tracking već automatski preko trigger-a `update_pb_and_streak` (Migracija 003)
-- 🟢 **[PROG]** UI: animacija krune (👑 Lucide Crown ikona + framer-motion bounce) na result screen-u kad je novi PB
-- 🟢 **[PROG]** PB linija na grafu — horizontalna referentna linija sa labelom "PB: 84 WPM"
-- 🟢 **[PROG]** Streak prikaz na `/profil` — Flame ikona + "Streak: 7 dana"
-- 🟢 **[PROG]** Notifikacije (react-hot-toast):
+- ✅ 🟢 **[PROG]** PB tracking već automatski preko trigger-a `update_pb_and_streak` (Migracija 003)
+- ✅ 🟢 **[PROG]** UI: animacija krune (👑 Lucide Crown ikona + framer-motion bounce) na result screen-u kad je novi PB
+- ✅ 🟢 **[PROG]** PB linija na grafu — horizontalna referentna linija sa labelom "PB: 84 WPM"
+- ✅ 🟢 **[PROG]** Streak prikaz na `/profil` — Flame ikona + "Streak: 7 dana"
+- ✅ 🟢 **[PROG]** Notifikacije (react-hot-toast):
   - "Premašio si PB! 84 WPM"
   - "Streak: 7 dana zaredom!"
-- 🟢 **[PROG]** Reset streak logika — ako prošlo > 24h od poslednjeg testa, streak = 0 (već u trigger-u)
+- ✅ 🟢 **[PROG]** Reset streak logika — ako prošlo > 24h od poslednjeg testa, streak = 0 (već u trigger-u)
 
 #### Utorak: SEO
-- 🟢 **[PROG]** Meta tagovi po stranici (title, description, OG image) — generisani u `layout.tsx` i `page.tsx`
-- 🟢 **[PROG]** `next-sitemap` paket — auto-generisan `sitemap.xml` (sve javne stranice + dinamički profili)
-- 🟢 **[PROG]** `robots.txt` sa pravilima
-- 🟢 **[PROG]** **hreflang tagovi** — `sr-Cyrl` i `sr-Latn` za ćiriličnu/latiničnu verziju (vežba i rang lista)
-- 🟢 **[PROG]** **Schema.org JSON-LD** za WebApplication tip + Person tip (profili)
-- 🟢 **[PROG]** Canonical URL na svakoj stranici
-- 🟢 **[PROG]** Optimizacija slika — WebP format, lazy loading, Next.js `<Image>` komponenta
-- 🟢 **[PROG]** **Lighthouse audit** + popravke do **90+ score na sve 4 kategorije** (Performance, Accessibility, Best Practices, SEO)
-- 🟢 **[PROG]** SEO landing pages: `/o-nama`, `/kako-kucati-brzo` (blog-stil za long-tail keywords)
+- ✅ 🟢 **[PROG]** Meta tagovi po stranici (title, description, OG image) — generisani u `layout.tsx` i `page.tsx`
+- ✅ 🟢 **[PROG]** `next-sitemap` paket — auto-generisan `sitemap.xml` (sve javne stranice + dinamički profili)
+- ✅ 🟢 **[PROG]** `robots.txt` sa pravilima
+- ✅ 🟢 **[PROG]** **hreflang tagovi** — `sr-Cyrl` i `sr-Latn` za ćiriličnu/latiničnu verziju (vežba i rang lista)
+- ✅ 🟢 **[PROG]** **Schema.org JSON-LD** za WebApplication tip + Person tip (profili)
+- ✅ 🟢 **[PROG]** Canonical URL na svakoj stranici
+- ✅ 🟢 **[PROG]** Optimizacija slika — WebP format, lazy loading, Next.js `<Image>` komponenta
+- ✅ 🟢 **[PROG]** **Lighthouse audit** + popravke do **90+ score na sve 4 kategorije** (Performance, Accessibility, Best Practices, SEO)
+- ✅ 🟢 **[PROG]** SEO landing pages: `/o-nama`, `/kako-kucati-brzo` (blog-stil za long-tail keywords)
 
 #### Sreda: Admin Sadržaj + Profanity
-- 🟢 **[PROG]** **Admin Sadržaj** — `/admin/sadrzaj`:
+- ✅ 🟢 **[PROG]** **Admin Sadržaj** — `/admin/sadrzaj`:
   - KPI kartice: ukupno reči (po pismu/težini), rečenica, tekstova
   - Brzi linkovi: Reči, Rečenice, Tekstovi, Dodaj novo
-- 🟢 **[PROG]** `/admin/sadrzaj/reci` — TanStack Table (filter pismo/težina, search, bulk import iz CSV/JSON, bulk edit)
-- 🟢 **[PROG]** `/admin/sadrzaj/recenice` — tabela + forma (auto-transliteracija, validacija 8-15 reči)
-- 🟢 **[PROG]** `/admin/sadrzaj/tekstovi` — tabela + forma (live preview u 3 pisma, validacija 50-250 reči, izvor URL)
-- 🟢 **[PROG]** **Dnevni tekstovi** prikaz — narednih 30 dana zakazanih (iz `daily_texts`):
+- ✅ 🟢 **[PROG]** `/admin/sadrzaj/reci` — TanStack Table (filter pismo/težina, search, bulk import iz CSV/JSON, bulk edit)
+- ✅ 🟢 **[PROG]** `/admin/sadrzaj/recenice` — tabela + forma (auto-transliteracija, validacija 8-15 reči)
+- ✅ 🟢 **[PROG]** `/admin/sadrzaj/tekstovi` — tabela + forma (live preview u 3 pisma, validacija 50-250 reči, izvor URL)
+- ✅ 🟢 **[PROG]** **Dnevni tekstovi** prikaz — narednih 30 dana zakazanih (iz `daily_texts`):
   - Klijent može: force-regenerate, zakazati specifičan tekst za određeni dan
-- 🟢 **[PROG]** **Admin Profanity** — `/admin/profanity`:
+- ✅ 🟢 **[PROG]** **Admin Profanity** — `/admin/profanity`:
   - Tabela `profanity_words` (Migracija 007 — vidi ispod)
   - Bulk dodavanje (textarea), bulk import CSV, export JSON
   - Search + filter po kategoriji (psovka/uvreda/spam/drugo)
-- 🟢 **[PROG]** **Migracija 007:** `profanity_words` tabela (iz Admin dodatka 8.2)
-- 🟢 **[PROG]** Refactor `lib/validators/profanity.ts` da čita iz baze umesto hardcoded liste
-- 🟢 **[PROG]** Audit log za sve content akcije (`add_text`, `edit_text`, `delete_text`, `add_profanity`, `remove_profanity`)
+- ✅ 🟢 **[PROG]** **Migracija 007:** `profanity_words` tabela (iz Admin dodatka 8.2)
+- ✅ 🟢 **[PROG]** Refactor `lib/validators/profanity.ts` da čita iz baze umesto hardcoded liste
+- ✅ 🟢 **[PROG]** Audit log za sve content akcije (`add_text`, `edit_text`, `delete_text`, `add_profanity`, `remove_profanity`)
 
 #### Četvrtak: Admin Statistike + GA4
-- 🔵 **[KLIJ]** **GA4 setup:**
+- ✅ 🔵 **[KLIJ]** **GA4 setup:**
   1. Kreirati GA4 property za brzokucanje.rs (analytics.google.com)
   2. Dobiti **Measurement ID** (`G-XXXXXXXXXX`) — predaje programeru
   3. Kreirati **Service Account** u Google Cloud Console (console.cloud.google.com → IAM → Service Accounts → Create)
   4. Dati Service Account-u **"Viewer" pristup** u GA4 (Admin → Property Access Management → Add user → email service account-a → role: Viewer)
   5. Download **JSON key fajl** za Service Account → predaje programeru preko sigurnog kanala
-- 🟢 **[PROG]** Instalira `@google-analytics/data` paket
-- 🟢 **[PROG]** GA4 tracking u Next.js (`gtag` u root layout-u, prati page views automatski)
-- 🟢 **[PROG]** `lib/admin/ga4.ts` — server-side klijent za GA4 Data API
-- 🟢 **[PROG]** **Admin Statistike** — `/admin/statistike` sa 5 tabova:
+- ✅ 🟢 **[PROG]** Instalira `@google-analytics/data` paket
+- ✅ 🟢 **[PROG]** GA4 tracking u Next.js (`gtag` u root layout-u, prati page views automatski)
+- ✅ 🟢 **[PROG]** `lib/admin/ga4.ts` — server-side klijent za GA4 Data API
+- ✅ 🟢 **[PROG]** **Admin Statistike** — `/admin/statistike` sa 5 tabova:
   1. **Aktivnost** — testovi/dan (linijski 90d), novi korisnici/dan, distribucija pisma (bar), distribucija kategorija (bar), heatmap aktivnosti po satu/danu
   2. **Engagement** — D1/D7/D30 retention, cohort analysis, DAU/WAU/MAU, DAU/MAU ratio (sticky factor), prosečno testova po useru, streak distribucija
   3. **Performanse** — prosečan WPM kroz vreme, WPM histogram, accuracy distribucija, Top 10 svih vremena, najveći skokovi
   4. **Sadržaj** — najkucanije rečenice, najteži/najlakši tekstovi, reči koje se najviše greše, distribucija dužine testova
   5. **Saobraćaj (GA4)** — sessions, page views, bounce rate, top sources, top countries, device breakdown
-- 🟢 **[PROG]** **Admin Newsletter (placeholder)** — `/admin/newsletter` sa porukom "Dolazi u v2.0", subscriber count
-- 🟢 **[PROG]** **Admin Audit log** — `/admin/audit` sa TanStack Table (filter admin/akcija/period, export CSV)
+- ✅ 🟢 **[PROG]** **Admin Newsletter (placeholder)** — `/admin/newsletter` sa porukom "Dolazi u v2.0", subscriber count
+- ✅ 🟢 **[PROG]** **Admin Audit log** — `/admin/audit` sa TanStack Table (filter admin/akcija/period, export CSV)
 
 #### Petak: Mobilna optimizacija
-- 🟢 **[PROG]** Test na realnim uređajima (iOS Safari, Chrome Android)
+- ✅ 🟢 **[PROG]** Test na realnim uređajima (iOS Safari, Chrome Android)
   - Programer testira na svom mobilu, BrowserStack/responsively.app za ostale
-- 🟢 **[PROG]** Touch targets minimum 44x44px (Apple HIG)
-- 🟢 **[PROG]** Responsive layout: 375px (mobile), 768px (tablet), 1024px (small laptop), 1440px (desktop)
-- 🟢 **[PROG]** Mobile typing UX:
+- ✅ 🟢 **[PROG]** Touch targets minimum 44x44px (Apple HIG)
+- ✅ 🟢 **[PROG]** Responsive layout: 375px (mobile), 768px (tablet), 1024px (small laptop), 1440px (desktop)
+- ✅ 🟢 **[PROG]** Mobile typing UX:
   - Mobilna tastatura — testirati da `inputmode="text"` radi
   - Visina typing area — ne sme da je preklopi virtuelna tastatura
   - Touch-friendly action dugmad
-- 🟢 **[PROG]** Admin mobile responsive — sidebar collapse u hamburger, tabele → kartice
+- ✅ 🟢 **[PROG]** Admin mobile responsive — sidebar collapse u hamburger, tabele → kartice
 
 #### Demo 5 (Petak veče)
 - 🟠 **[OBA]** Demo poziv 60 min
@@ -509,7 +509,7 @@ Ovaj plan koristi sledeće oznake. Pratimo ih dosledno kroz ceo dokument.
 ---
 
 <a name="nedelja-6"></a>
-### NEDELJA 6 — Polish, testovi, launch
+### NEDELJA 6 — Polish, testovi, launch ✅
 
 **Cilj demo-a:** MVP spreman za launch. Sve E2E testove prolazi. Domen povezan (ako je klijent kupio). Politika privatnosti, cookie consent, analytics aktivni.
 
@@ -521,10 +521,10 @@ Ovaj plan koristi sledeće oznake. Pratimo ih dosledno kroz ceo dokument.
   - `leaderboard.spec.ts` — prikaz top 10, filtriranje
   - `typing-flow.spec.ts` — pun typing test od start do result
   - `admin-flow.spec.ts` — admin login, ban user, approve flagged score
-- 🟢 **[PROG]** Manualno cross-browser testiranje:
+- ✅ 🟢 **[PROG]** Manualno cross-browser testiranje:
   - Chrome, Firefox, Safari, Edge na Windows/macOS
   - iOS Safari, Chrome Android
-- 🟢 **[PROG]** Bug fixing iz testova
+- ✅ 🟢 **[PROG]** Bug fixing iz testova
 - ✅ 🟢 **[PROG]** **Pen test osnovni** (iz briefa sekcija 13.4):
   - XSS u username, profanity, content forme
   - SQL injection — Supabase RLS i prepared statements bi trebalo da pokrivaju, ali verifikujemo
@@ -538,7 +538,7 @@ Ovaj plan koristi sledeće oznake. Pratimo ih dosledno kroz ceo dokument.
   - Cookies politika
 - ✅ 🟢 **[PROG]** Stranica `/uslovi-koriscenja` — fer use, anti-cheat pravila, ban-ovi, intelektualna svojina (Vikiizvor citati public domain)
 - ✅ 🟢 **[PROG]** **Cookie consent banner** (GDPR) — accept all / only necessary / customize
-- 🟢 **[PROG]** **Plausible analytics setup** (privacy-friendly za main sajt) — registracija + script tag
+- ✅ 🟢 **[PROG]** **Plausible analytics setup** (privacy-friendly za main sajt) — registracija + script tag
   - 🔵 **[KLIJ]** Kreira Plausible nalog (besplatno za 30 dana, ~$9/mesec posle) — daje programeru pristup
 - ✅ 🟢 **[PROG]** Brand assets:
   - Logo `brzokucanje.rs` (Canva ili Figma — placeholder ako klijent nema preferencije)
@@ -547,31 +547,31 @@ Ovaj plan koristi sledeće oznake. Pratimo ih dosledno kroz ceo dokument.
   - 🔵 **[KLIJ]** **Review brand assets** — odobrava ili daje feedback
 
 #### Četvrtak: Domen i SSL
-- 🔵 **[KLIJ]** **Kupiti domen `brzokucanje.rs`** preko RNIDS registrara (mCloud ili Loopia)
+- ✅ 🔵 **[KLIJ]** **Kupiti domen `brzokucanje.rs`** preko RNIDS registrara (mCloud ili Loopia)
   - Cena: ~25-35€/godina
   - Klijent prosleđuje DNS pristup programeru ili sam menja DNS
-- 🟢 **[PROG]** Vercel: Add domen `brzokucanje.rs` u projektu
-- 🔵 **[KLIJ]** ili 🟢 **[PROG]** Postaviti DNS rekorde:
+- ✅ 🟢 **[PROG]** Vercel: Add domen `brzokucanje.rs` u projektu
+- ✅ 🔵 **[KLIJ]** ili 🟢 **[PROG]** Postaviti DNS rekorde:
   - A record: `76.76.21.21` (Vercel IP)
   - CNAME `www`: `cname.vercel-dns.com`
-- 🟢 **[PROG]** Verifikuje SSL sertifikat aktivan (auto-issue od Vercel-a kroz Let's Encrypt)
-- 🟢 **[PROG]** Update svih hardcoded URL-ova (OG tags, sitemap, canonical) na `https://brzokucanje.rs`
-- 🟢 **[PROG]** Update Supabase Auth redirect URL-ova (email verifikacija, password reset) na production domen
+- ✅ 🟢 **[PROG]** Verifikuje SSL sertifikat aktivan (auto-issue od Vercel-a kroz Let's Encrypt)
+- ✅ 🟢 **[PROG]** Update svih hardcoded URL-ova (OG tags, sitemap, canonical) na `https://brzokucanje.rs`
+- ✅ 🟢 **[PROG]** Update Supabase Auth redirect URL-ova (email verifikacija, password reset) na production domen
 
 #### Petak: Final smoke test + launch
-- 🟢 **[PROG]** Production smoke test checklist:
-  - [ ] Registracija → email stiže → verifikacija → login
-  - [ ] Forgot password → email stiže → reset radi
-  - [ ] VEŽBA test prolazi end-to-end (sva 3 pisma, sve 3 kategorije)
-  - [ ] RANK test → score se čuva → pojavi na rang listi
-  - [ ] Daily limit blokira drugi pokušaj
-  - [ ] Anti-cheat flaguje (test sa simuliranim bot keystroke-om)
-  - [ ] Admin: ban user → user ne može u RANK
-  - [ ] Admin: approve flagged score → vraća se na rang listu
-  - [ ] Admin: dodaje novi tekst → koristi se u RANK-u sledeći dan
-  - [ ] Mobile flow (iPhone/Android)
-  - [ ] Lighthouse production 90+
-  - [ ] SSL aktivan, redirect HTTP→HTTPS
+- ✅ 🟢 **[PROG]** Production smoke test checklist:
+  - [x] Registracija → email stiže → verifikacija → login
+  - [x] Forgot password → email stiže → reset radi
+  - [x] VEŽBA test prolazi end-to-end (sva 3 pisma, sve 3 kategorije)
+  - [x] RANK test → score se čuva → pojavi na rang listi
+  - [x] Daily limit blokira drugi pokušaj
+  - [x] Anti-cheat flaguje (test sa simuliranim bot keystroke-om)
+  - [x] Admin: ban user → user ne može u RANK
+  - [x] Admin: approve flagged score → vraća se na rang listu
+  - [x] Admin: dodaje novi tekst → koristi se u RANK-u sledeći dan
+  - [x] Mobile flow (iPhone/Android)
+  - [x] Lighthouse production 90+
+  - [x] SSL aktivan, redirect HTTP→HTTPS
 - ✅ 🟢 **[PROG]** Final dokumentacija:
   - README.md sa setup uputstvom
   - CONTRIBUTING.md sa pravilima
@@ -579,10 +579,10 @@ Ovaj plan koristi sledeće oznake. Pratimo ih dosledno kroz ceo dokument.
   - `docs/maintenance.md` — kako dodati novi tekst, novu reč, kako ban-ovati korisnika
   - `docs/moderation.md` — kako pregledati flagovane rezultate, anti-cheat pravila
   - `.env.example` finalno
-- 🔵 **[KLIJ]** **Final review** — klijent prolazi smoke test sa svoje strane
-- 🔵 **[KLIJ]** **GO/NO-GO odluka za launch**
-- 🟠 **[OBA]** Launch! 🚀
-- 🟢 **[PROG]** Predaja credentials klijentu:
+- ✅ 🔵 **[KLIJ]** **Final review** — klijent prolazi smoke test sa svoje strane
+- ✅ 🔵 **[KLIJ]** **GO/NO-GO odluka za launch**
+- ✅ 🟠 **[OBA]** Launch! 🚀
+- ✅ 🟢 **[PROG]** Predaja credentials klijentu:
   - Supabase admin pristup (već dat u Nedelji 1)
   - Vercel pristup (već dat)
   - GitHub repo ownership (klijent već owner)

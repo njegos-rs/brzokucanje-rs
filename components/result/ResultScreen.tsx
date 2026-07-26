@@ -1,21 +1,27 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { ChevronRight, Crown, RotateCcw } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { WpmChart } from './WpmChart'
+import { NicknameModal } from '@/components/auth/NicknameModal'
+import { checkHasNickname } from '@/lib/auth/anonymous'
 import type { ScoringResult } from '@/lib/typing/scoring'
 import type { WpmSnapshot } from '@/lib/typing/engine'
 import { cn } from '@/lib/utils'
+
+type DeviceType = 'mobile' | 'tablet' | 'desktop' | 'unknown'
 
 interface Props {
   result: ScoringResult
   wpmHistory: WpmSnapshot[]
   isNewPb?: boolean
+  pbWpm?: number
   onRetry?: () => void
   onNext: () => void
   nextLabel?: string
+  deviceType?: DeviceType
   testMeta?: {
     script: string
     difficulty?: string
@@ -45,7 +51,10 @@ function StatCell({
   )
 }
 
-export function ResultScreen({ result, wpmHistory, isNewPb, onRetry, onNext, nextLabel = 'Sledeći test', testMeta }: Props) {
+export function ResultScreen({ result, wpmHistory, isNewPb, pbWpm, onRetry, onNext, nextLabel = 'Sledeći test', deviceType, testMeta }: Props) {
+  const [showNicknameModal, setShowNicknameModal] = useState(false)
+  const [nicknameChecked, setNicknameChecked] = useState(false)
+
   useEffect(() => {
     if (isNewPb) {
       toast(`Novi lični rekord! Skor ${Math.round(result.score)}`, {
@@ -53,6 +62,22 @@ export function ResultScreen({ result, wpmHistory, isNewPb, onRetry, onNext, nex
       })
     }
   }, [isNewPb, result.score])
+
+  // Proveri da li korisnik ima nickname — ako ne, prikaži modal
+  useEffect(() => {
+    checkHasNickname().then((hasNickname) => {
+      if (!hasNickname) {
+        setShowNicknameModal(true)
+      }
+      setNicknameChecked(true)
+    })
+  }, [])
+
+  const handleNicknameSet = () => {
+    setShowNicknameModal(false)
+    // Osveži stranicu da header prikaže novo ime
+    window.location.reload()
+  }
 
   const roundedScore = Math.round(result.score)
   const roundedWpm = Math.round(result.wpm)
@@ -62,7 +87,17 @@ export function ResultScreen({ result, wpmHistory, isNewPb, onRetry, onNext, nex
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 animate-in fade-in duration-300">
+      {/* Nickname Modal — prikazuje se posle prve partije ako korisnik nema ime */}
+      {showNicknameModal && nicknameChecked && (
+        <NicknameModal onNicknameSet={handleNicknameSet} />
+      )}
+
       <div className="mb-8">
+        {deviceType && (
+          <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--muted)] px-2.5 py-1 text-xs text-[var(--muted-foreground)]">
+            {deviceType === 'mobile' ? '📱 Mobilni uređaj' : deviceType === 'tablet' ? '▣ Tablet' : deviceType === 'desktop' ? '🖥 Računar' : '? Nepoznato'}
+          </span>
+        )}
         <p className="mb-2 text-xs font-medium uppercase tracking-widest text-[var(--muted-foreground)]">Rezultat za rang</p>
         <div className="flex flex-wrap items-end gap-5 md:gap-8">
           <div>
@@ -114,7 +149,7 @@ export function ResultScreen({ result, wpmHistory, isNewPb, onRetry, onNext, nex
 
       {wpmHistory.length > 1 && (
         <div className="mb-6 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
-          <WpmChart data={wpmHistory} finalWpm={roundedWpm} rawWpm={roundedRaw} />
+          <WpmChart data={wpmHistory} finalWpm={roundedWpm} rawWpm={roundedRaw} pbWpm={pbWpm} />
         </div>
       )}
 

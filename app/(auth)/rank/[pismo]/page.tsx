@@ -1,4 +1,4 @@
-import { redirect, notFound } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import { RankClient } from './RankClient'
@@ -29,40 +29,47 @@ export default async function RankPismoPage({ params }: Props) {
 
   if (!VALID_SCRIPTS.includes(pismo as Script)) notFound()
 
-  const supabase = await createClient()
-  const serviceSupabase = await createServiceClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/prijava')
-
   const script = pismo as Script
-
-  // Koristimo Beograd timezone da se poklopi sa unique indexom u bazi
   const today = getCurrentDateInAppTimeZone()
-  const { startIso, endIso } = getDayRangeInAppTimeZone()
-
-  const { data: usedScore } = await serviceSupabase
-    .from('scores')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('script', script)
-    .eq('mode', 'rank')
-    .gt('wpm', 0)
-    .gte('created_at', startIso)
-    .lt('created_at', endIso)
-    .limit(1)
-    .single()
-
-  const alreadyPlayed = !!usedScore
-
-  // Učitavamo dnevni tekst odmah na serveru da sprečimo treperenje i odlaganje
   const initialDailyText = getDailyTextData(script, today)
+
+  let alreadyPlayed = false
+  let userId = 'anonymous'
+
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (user) {
+      userId = user.id
+      const serviceSupabase = await createServiceClient()
+      const { startIso, endIso } = getDayRangeInAppTimeZone()
+
+      const { data: usedScore } = await serviceSupabase
+        .from('scores')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('script', script)
+        .eq('mode', 'rank')
+        .gt('wpm', 0)
+        .gte('created_at', startIso)
+        .lt('created_at', endIso)
+        .limit(1)
+        .maybeSingle()
+
+      alreadyPlayed = !!usedScore
+    }
+  } catch {
+    alreadyPlayed = false
+  }
 
   return (
     <RankClient
       pismo={script}
-      userId={user.id}
+      userId={userId}
       alreadyPlayed={alreadyPlayed}
       initialDailyText={initialDailyText}
     />
   )
 }
+

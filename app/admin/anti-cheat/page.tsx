@@ -2,12 +2,10 @@ import type { Metadata } from 'next'
 import { createServiceClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { ShieldAlert, ShieldCheck, ShieldX } from 'lucide-react'
-import type { Database } from '@/lib/supabase/types'
 
 export const metadata: Metadata = { title: 'Admin — Anti-cheat' }
 
 // flag_reviewed and review_decision are not yet in generated types (pending migration)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type FlaggedScore = {
   id: string
   user_id: string
@@ -32,7 +30,7 @@ export default async function AdminAntiCheatPage() {
     .order('created_at', { ascending: false })
     .limit(100)
 
-  const scoreRows = (rawData ?? []) as any[]
+  const scoreRows = (rawData ?? []) as unknown as FlaggedScore[]
 
   type Row = FlaggedScore & { profiles: { username: string | null } | null }
   const userIds = Array.from(new Set(scoreRows.map((score) => score.user_id as string)))
@@ -142,3 +140,5 @@ function FlaggedTable({ scores }: { scores: (FlaggedScore & { profiles: { userna
     </div>
   )
 }
+
+

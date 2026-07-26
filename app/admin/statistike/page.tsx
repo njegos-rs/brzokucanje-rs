@@ -21,6 +21,8 @@ export default async function AdminStatistikePage() {
     supabase
       .from('profiles')
       .select('created_at')
+      .not('username', 'is', null)
+      .neq('username', '')
       .gte('created_at', `${from}T00:00:00`)
       .order('created_at', { ascending: true }),
     supabase

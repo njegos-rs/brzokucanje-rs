@@ -8,6 +8,7 @@ import type { Database } from '@/lib/supabase/types'
 import { analyzeKeystrokes } from '@/lib/typing/anti-cheat'
 
 type ScoreRow = Database['public']['Tables']['scores']['Row']
+type ReviewFields = { flag_reviewed?: boolean | null; review_decision?: string | null }
 
 export const metadata: Metadata = { title: 'Admin — Anti-cheat pregled' }
 
@@ -33,7 +34,7 @@ export default async function AntiCheatDetailPage({ params }: Props) {
     .eq('id', data.user_id)
     .maybeSingle()
 
-  const score: ScoreRow & { profiles: { username: string | null } | null } = {
+  const score: ScoreRow & ReviewFields & { profiles: { username: string | null } | null } = {
     ...data,
     profiles: profile,
   }
@@ -109,9 +110,11 @@ export default async function AntiCheatDetailPage({ params }: Props) {
         scoreId={id}
         userId={score.user_id}
         username={score.profiles?.username ?? 'Nepoznat'}
-        isReviewed={(score as any).flag_reviewed ?? false}
-        decision={(score as any).review_decision}
+        isReviewed={score.flag_reviewed ?? false}
+        decision={score.review_decision ?? null}
       />
     </div>
   )
 }
+
+

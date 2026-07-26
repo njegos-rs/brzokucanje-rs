@@ -1,5 +1,4 @@
 'use client'
-/* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -32,6 +31,7 @@ interface DailyEntry {
   raw_wpm?: number
   accuracy: number
   score: number
+  device_type?: 'mobile' | 'tablet' | 'desktop' | 'unknown'
 }
 
 interface PeriodEntry {
@@ -43,6 +43,7 @@ interface PeriodEntry {
   total_days: number
   period_score: number
   period_rank: number
+  device_type?: 'mobile' | 'tablet' | 'desktop' | 'unknown'
 }
 
 type Entry = DailyEntry | PeriodEntry
@@ -261,6 +262,7 @@ export function LeaderboardPanel({
                         <Link href={`/profil/${entry.username}`} className="font-medium text-[var(--foreground)] transition-colors hover:text-[var(--accent)]">
                           {entry.username}
                         </Link>
+                        {entry.device_type && <span className="ml-2 text-[10px] text-[var(--muted-foreground)]">{entry.device_type === 'mobile' ? '📱' : entry.device_type === 'tablet' ? '▣' : entry.device_type === 'desktop' ? '🖥' : '?'}</span>}
                         {isMe && <span className="ml-2 text-xs text-[var(--accent)]">(ti)</span>}
                       </td>
                       {!compact && (
@@ -308,6 +310,7 @@ export function LeaderboardPanel({
                         <Link href={`/profil/${entry.username}`} className="font-medium text-[var(--foreground)] transition-colors hover:text-[var(--accent)]">
                           {entry.username}
                         </Link>
+                        {entry.device_type && <span className="ml-2 text-[10px] text-[var(--muted-foreground)]">{entry.device_type === 'mobile' ? '📱' : entry.device_type === 'tablet' ? '▣' : entry.device_type === 'desktop' ? '🖥' : '?'}</span>}
                         {isMe && <span className="ml-2 text-xs text-[var(--accent)]">(ti)</span>}
                       </td>
                       <td className="px-4 py-3 text-right font-mono font-bold text-[var(--accent)]">{Math.round(entry.avg_wpm ?? 0)}</td>
@@ -327,3 +330,6 @@ export function LeaderboardPanel({
     </div>
   )
 }
+
+
+

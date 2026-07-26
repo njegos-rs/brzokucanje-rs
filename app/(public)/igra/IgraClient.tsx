@@ -5,7 +5,8 @@ import { RotateCcw, Volume2, VolumeX } from 'lucide-react'
 import Link from 'next/link'
 import GAME_POOL from '@/lib/words/game-pool.json'
 import { cn } from '@/lib/utils'
-import { PrijavaForma } from '@/components/auth/PrijavaForma'
+import { NicknameModal } from '@/components/auth/NicknameModal'
+import { checkHasNickname } from '@/lib/auth/anonymous'
 
 type GameStatus = 'preview' | 'ready' | 'playing' | 'gameover'
 
@@ -213,21 +214,13 @@ function useAudio(enabled: boolean) {
   }
 }
 
-function AuthGate() {
-  return (
-    <div className="w-full max-w-sm rounded-xl border border-[var(--border)] bg-[var(--card)] p-7 shadow-xl backdrop-blur-sm">
-      <PrijavaForma redirectTo="/igra" />
-    </div>
-  )
-}
-
 interface LeaderRow { username: string | null; user_id: string; max_score: number }
 interface CurrentUser { rank: number | null; score: number | null; userId: string }
 
-export function IgraClient({ canPlay }: Props) {
+export function IgraClient({ canPlay = true }: Props) {
   const [status, setStatus] = useState<GameStatus>(canPlay ? 'ready' : 'preview')
   const [soundOn, setSoundOn] = useState(true)
-  const [enemies, setEnemies] = useState<Enemy[]>(() => makePreviewEnemies())
+  const [enemies, setEnemies] = useState<Enemy[]>(() => canPlay ? [] : makePreviewEnemies())
   const [shots, setShots] = useState<Shot[]>([])
   const [bursts, setBursts] = useState<Burst[]>([])
   const [fragments, setFragments] = useState<Fragment[]>([])
@@ -244,6 +237,12 @@ export function IgraClient({ canPlay }: Props) {
 
   const [leaderboard, setLeaderboard] = useState<LeaderRow[]>([])
   const [currentUserRank, setCurrentUserRank] = useState<CurrentUser | null>(null)
+  const [showNicknameModal, setShowNicknameModal] = useState(false)
+  const [nicknameReady, setNicknameReady] = useState(false)
+
+  useEffect(() => {
+    checkHasNickname().then(setNicknameReady)
+  }, [])
 
   useEffect(() => {
     fetch('/api/game-score')
@@ -266,6 +265,11 @@ export function IgraClient({ canPlay }: Props) {
       const data = await res.json()
       if (data.leaderboard) setLeaderboard(data.leaderboard)
       if (data.currentUser) setCurrentUserRank(data.currentUser)
+
+      const hasNick = await checkHasNickname()
+      if (!hasNick) {
+        setShowNicknameModal(true)
+      }
     } catch (e) {
       console.error('Failed to submit score', e)
     }
@@ -311,6 +315,10 @@ export function IgraClient({ canPlay }: Props) {
 
   const startGame = useCallback(() => {
     if (!canPlay) return
+    if (!nicknameReady) {
+      setShowNicknameModal(true)
+      return
+    }
     resetGame('playing')
     const cfg = LEVEL_CONFIG[0]
     const initial: Enemy[] = []
@@ -319,15 +327,9 @@ export function IgraClient({ canPlay }: Props) {
     }
     setEnemies(initial)
     gameAreaRef.current?.focus()
-  }, [canPlay, resetGame])
+  }, [canPlay, nicknameReady, resetGame])
 
-  useEffect(() => {
-    if (!canPlay) {
-      setStatus('preview')
-      setEnemies(makePreviewEnemies())
-      setTargetId(1)
-    }
-  }, [canPlay])
+
 
   // Preview animation
   useEffect(() => {
@@ -614,8 +616,6 @@ export function IgraClient({ canPlay }: Props) {
     })
   }, [audio, canPlay, startGame, status, targetId, streak])
 
-  const previewOverlay = !canPlay
-
   // Level-based background accent glow (subtly shifts with level)
   const bgIntensity = Math.min(levelIdx / 9, 1)
   const bgR = 204
@@ -625,8 +625,8 @@ export function IgraClient({ canPlay }: Props) {
   const bgGlowColor = `rgba(${bgR}, ${bgG}, ${bgB}, ${bgA})`
 
   // Screen shake offset
-  const shakeX = shake > 0 ? (Math.random() - 0.5) * shake * 6 : 0
-  const shakeY = shake > 0 ? (Math.random() - 0.5) * shake * 6 : 0
+  const shakeX = shake > 0 ? shake * 2 : 0
+  const shakeY = shake > 0 ? shake : 0
 
   return (
     <div className="bg-[var(--background)] px-4 pt-3 pb-4">
@@ -641,7 +641,7 @@ export function IgraClient({ canPlay }: Props) {
             <button
               type="button"
               onClick={() => setSoundOn((value) => !value)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--border)] text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-[var(--border)] text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
               aria-label={soundOn ? 'Isključi zvuk' : 'Uključi zvuk'}
             >
               {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
@@ -658,8 +658,12 @@ export function IgraClient({ canPlay }: Props) {
           </div>
         </div>
 
+        {showNicknameModal && (
+          <NicknameModal onNicknameSet={() => { setNicknameReady(true); setShowNicknameModal(false) }} />
+        )}
+
         {/* Main layout */}
-        <div className="flex gap-4 items-start">
+        <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:items-start">
 
           {/* Game area */}
           <div className="flex-1 min-w-0">
@@ -669,7 +673,7 @@ export function IgraClient({ canPlay }: Props) {
             onKeyDown={handleKeyDown}
             className="relative w-full overflow-hidden rounded-lg border border-[var(--border)] outline-none"
             style={{
-              height: 'min(560px, calc(100vh - 9rem))',
+              height: 'min(560px, calc(100svh - 10rem))',
               background: `radial-gradient(circle at 50% 18%, ${bgGlowColor}, transparent 28%), linear-gradient(180deg, var(--card), var(--background))`,
               transition: 'background 1.5s ease',
               transform: `translate(${shakeX}px, ${shakeY}px)`,
@@ -814,14 +818,8 @@ export function IgraClient({ canPlay }: Props) {
             )}
 
             {status !== 'playing' && (
-              <div className={cn(
-                'absolute inset-0 flex items-center justify-center',
-                previewOverlay ? 'bg-[var(--background)]/18' : 'bg-[var(--background)]/70',
-              )}>
-                {previewOverlay ? (
-                  <AuthGate />
-                ) : (
-                  <div className="w-full max-w-sm rounded-lg border border-[var(--border)] bg-[var(--card)] p-5 text-center shadow-lg">
+              <div className="absolute inset-0 flex items-center justify-center bg-[var(--background)]/70">
+                <div className="w-full max-w-sm rounded-lg border border-[var(--border)] bg-[var(--card)] p-5 text-center shadow-lg">
                     {status === 'gameover' ? (
                       <>
                         <h2 className="text-lg font-semibold text-[var(--foreground)]">Kraj igre</h2>
@@ -861,14 +859,13 @@ export function IgraClient({ canPlay }: Props) {
                       </>
                     )}
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              )}
           </div>
           </div>{/* end game wrapper */}
 
           {/* Right column: stats + leaderboard */}
-          <div className="flex w-56 shrink-0 flex-col gap-3">
+          <div className="flex w-full shrink-0 flex-col gap-3 lg:w-56">
 
             <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
               <div className="grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
@@ -970,3 +967,17 @@ export function IgraClient({ canPlay }: Props) {
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

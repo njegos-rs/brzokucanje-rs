@@ -1,5 +1,4 @@
 'use client'
-/* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
@@ -13,6 +12,8 @@ import type { KeystrokeEntry } from '@/lib/typing/engine'
 import { useSettingsStore } from '@/lib/stores/settings-store'
 import { useKeystrokeSound } from '@/lib/hooks/useKeystrokeSound'
 import { LeaderboardPanel, type LeaderboardPeriod } from '@/components/rank/LeaderboardPanel'
+import { NicknameModal } from '@/components/auth/NicknameModal'
+import { checkHasNickname } from '@/lib/auth/anonymous'
 
 type Script = 'latinica' | 'cirilica' | 'latinica-bez-kvacica'
 type Category = 'reci' | 'recenice'
@@ -38,6 +39,7 @@ interface FinishedState {
   isNewPb?: boolean
   userRank?: number
   totalPlayers?: number
+  deviceType?: 'mobile' | 'tablet' | 'desktop' | 'unknown'
 }
 
 interface InitialDailyText {
@@ -76,11 +78,16 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
   const [userRankAlready, setUserRankAlready] = useState<number | null>(null)
   const [selectedPeriod, setSelectedPeriod] = useState<LeaderboardPeriod>('daily')
   const [selectedPeriodRank, setSelectedPeriodRank] = useState<number | null>(null)
+  const [nicknameReady, setNicknameReady] = useState(false)
   const focusLostRef = useRef(false)
   const startLoggedRef = useRef(false)
   const attemptPromiseRef = useRef<Promise<string | null> | null>(null)
   const playedTodayRef = useRef(alreadyPlayed)
   const selectedLeaderboardRank = selectedPeriod === 'daily' ? userRankAlready : selectedPeriodRank
+
+  useEffect(() => {
+    checkHasNickname().then(setNicknameReady)
+  }, [])
 
   const fetchLeaderboard = useCallback(async (script: Script, cat: Category | null) => {
     try {
@@ -179,7 +186,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
 
         try {
           const catParam = category ? `&category=${category}` : ''
-          const rankRes = await fetch(`/api/leaderboard?script=${pismo}&period=daily&limit=1000${catParam}`)
+          const rankRes = await fetch(`/api/leaderboard?script=${pismo}&period=daily&limit=100${catParam}`)
           const rankJson = await rankRes.json()
           const entries: Array<{ user_id: string }> = rankJson.data ?? []
           const pos = entries.findIndex((e) => e.user_id === userId)
@@ -196,7 +203,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
         setUserRankAlready(userRank ?? null)
         setSelectedPeriod('daily')
         setSelectedPeriodRank(userRank ?? null)
-        setFinished({ result, wpmHistory, keystrokes, scoreId: json.id, isNewPb: json.is_new_pb, userRank, totalPlayers })
+        setFinished({ result, wpmHistory, keystrokes, scoreId: json.id, isNewPb: json.is_new_pb, userRank, totalPlayers, deviceType: json.device_type })
       } catch {
         setSubmitError('Mrežna greška. Rezultat nije sačuvan.')
         setFinished({ result, wpmHistory, keystrokes })
@@ -261,6 +268,10 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
 
   const pismoTabovi: Script[] = ['latinica', 'cirilica', 'latinica-bez-kvacica']
 
+  if (!nicknameReady) {
+    return <NicknameModal onNicknameSet={() => setNicknameReady(true)} />
+  }
+
   if (finished) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
@@ -290,6 +301,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
           result={finished.result}
           wpmHistory={finished.wpmHistory}
           isNewPb={finished.isNewPb}
+          deviceType={finished.deviceType}
           onNext={() => router.push(`/rang-lista/${pismo}`)}
           nextLabel="Otvori celu rank listu"
         />
@@ -430,3 +442,8 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
     </div>
   )
 }
+
+
+
+
+

@@ -6,12 +6,15 @@ import { useTypingEngine, type WpmSnapshot, type TestMode, type TestLevel, type 
 import { TypingArea } from '@/components/typing/TypingArea'
 import { LiveStats } from '@/components/typing/LiveStats'
 import { WpmChart } from '@/components/result/WpmChart'
-import { loadWords, loadTexts, buildWordTest, buildPhraseTest, getRandomWordCount } from '@/lib/words/loader'
+import { buildWordTest, buildPhraseTest, getRandomWordCount } from '@/lib/words/generator'
+import { fetchWordPool } from '@/lib/words/client'
 import { cn } from '@/lib/utils'
 import { RotateCcw, ChevronRight } from 'lucide-react'
 import type { ScoringResult } from '@/lib/typing/scoring'
 import { useSettingsStore } from '@/lib/stores/settings-store'
 import { useKeystrokeSound } from '@/lib/hooks/useKeystrokeSound'
+import { NicknameModal } from '@/components/auth/NicknameModal'
+import { checkHasNickname } from '@/lib/auth/anonymous'
 
 type Script = 'latinica' | 'cirilica' | 'easy'
 
@@ -41,18 +44,16 @@ const LEVEL_LABELS: Record<TestLevel, string> = {
 interface FinishedState {
   result: ScoringResult
   wpmHistory: WpmSnapshot[]
+  deviceType?: 'mobile' | 'tablet' | 'desktop' | 'unknown'
 }
 
-function makeText(pismo: Script, contentMode: 'reci' | 'tekst', level: TestLevel, timerActive = false): string {
-  if (contentMode === 'tekst') {
-    const texts = loadTexts(pismo, level)
-    return buildPhraseTest(texts, timerActive ? 12 : 4, level)
-  }
+type PoolData = { words: string[]; texts: string[] }
 
-  if (timerActive) {
-    return buildWordTest(loadWords(pismo, level), 80, level)
+function makeText(contentMode: 'reci' | 'tekst', level: TestLevel, pool: PoolData, timerActive = false): string {
+  if (contentMode === 'tekst') {
+    return buildPhraseTest(pool.texts, timerActive ? 12 : 4, level)
   }
-  return buildWordTest(loadWords(pismo, level), getRandomWordCount(level), level)
+  return buildWordTest(pool.words, timerActive ? 80 : getRandomWordCount(level), level)
 }
 
 function readStorage<T>(key: string, fallback: T): T {
@@ -75,6 +76,7 @@ export function VezbaClient({ pismo }: Props) {
   const [strictMode, setStrictMode] = useState<boolean>(() => readStorage('vezba_strict', false))
   const [finished, setFinished] = useState<FinishedState | null>(null)
   const [text, setText] = useState('')
+  const poolRef = useRef<PoolData | null>(null)
   const pismoRef = useRef(pismo)
   const contentModeRef = useRef<'reci' | 'tekst'>(readStorage('vezba_content_mode', 'reci'))
   const levelRef = useRef<TestLevel>(readStorage('vezba_level', 'easy'))
@@ -87,23 +89,47 @@ export function VezbaClient({ pismo }: Props) {
   // Derived: engine mode
   const mode: TestMode = timerDuration !== null ? 'vreme' : contentMode
 
-  // Generišemo tekst tek na klijentu
+  const [showNicknameModal, setShowNicknameModal] = useState(false)
+
   useEffect(() => {
-    setText(makeText(pismoRef.current, contentModeRef.current, levelRef.current))
+    checkHasNickname().then((hasNick) => {
+      if (!hasNick) setShowNicknameModal(true)
+    })
   }, [])
 
-  // Kad se promeni pismo (navigacija), regeneriši — ali sačuvaj mode/level
+  // Wordlist se učitava samo za izabrano pismo, nivo i tip sadržaja.
   useEffect(() => {
-    if (pismo !== pismoRef.current) {
-      pismoRef.current = pismo
-      const newText = makeText(pismo, contentModeRef.current, levelRef.current)
-      setText(newText)
-      setFinished(null)
-    }
-  }, [pismo])
+    const controller = new AbortController()
+    const kind = contentMode === 'tekst' ? 'texts' : 'words'
+    pismoRef.current = pismo
+    contentModeRef.current = contentMode
+    levelRef.current = level
+    poolRef.current = null
+    setText('')
+    setFinished(null)
+
+    fetchWordPool(pismo, level, kind, controller.signal)
+      .then((values) => {
+        if (controller.signal.aborted) return
+        const nextPool: PoolData = kind === 'texts' ? { words: [], texts: values } : { words: values, texts: [] }
+        poolRef.current = nextPool
+        setText(makeText(contentMode, level, nextPool, timerDurationRef.current !== null))
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        setText('')
+      })
+
+    return () => controller.abort()
+  }, [pismo, contentMode, level])
 
   const getMoreText = useCallback(() => {
-    return buildWordTest(loadWords(pismoRef.current, levelRef.current), 40, levelRef.current)
+    const pool = poolRef.current
+    if (!pool) return null
+    if (contentModeRef.current === 'tekst') {
+      return buildPhraseTest(pool.texts, 4, levelRef.current)
+    }
+    return buildWordTest(pool.words, 40, levelRef.current)
   }, [])
 
   const handleFinish = useCallback(async (result: ScoringResult, keystrokes: KeystrokeEntry[], wpmHistory: WpmSnapshot[]) => {
@@ -119,7 +145,7 @@ export function VezbaClient({ pismo }: Props) {
     const scriptMap: Record<Script, string> = { latinica: 'latinica', cirilica: 'cirilica', easy: 'latinica-bez-kvacica' }
 
     try {
-      await fetch('/api/score', {
+      const response = await fetch('/api/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -136,6 +162,10 @@ export function VezbaClient({ pismo }: Props) {
           level: levelRef.current,
         }),
       })
+      const saved = await response.json().catch(() => ({}))
+      if (saved.device_type) {
+        setFinished((current) => current ? { ...current, deviceType: saved.device_type } : current)
+      }
     } catch { /* ignorisi — vežba se ne blokira ako save ne uspe */ }
   }, [])
 
@@ -150,31 +180,33 @@ export function VezbaClient({ pismo }: Props) {
   })
 
   const changeContentMode = useCallback((m: 'reci' | 'tekst') => {
-    const nextText = makeText(pismoRef.current, m, levelRef.current)
+    if (m === contentModeRef.current && timerDurationRef.current === null) return
     contentModeRef.current = m
     setContentMode(m)
     writeStorage('vezba_content_mode', m)
-    setText(nextText)
-    reset(nextText, timerDurationRef.current ?? 60)
+    reset('', timerDurationRef.current ?? 60)
     setFinished(null)
   }, [reset])
 
   const changeLevel = useCallback((l: TestLevel) => {
-    const nextText = makeText(pismoRef.current, contentModeRef.current, l)
+    if (l === levelRef.current) return
     levelRef.current = l
     setLevel(l)
     writeStorage('vezba_level', l)
-    setText(nextText)
-    reset(nextText, timerDurationRef.current ?? 60)
+    reset('', timerDurationRef.current ?? 60)
     setFinished(null)
   }, [reset])
 
   const changeTimerDuration = useCallback((t: TimerDuration | null) => {
+    if (t === timerDurationRef.current) return // Ne resetuj ako je trajanje već izabrano
     const nextTimerDuration = t ?? 60
     timerDurationRef.current = t
     setTimerDuration(t)
     writeStorage('vezba_timer', t)
-    reset(undefined, nextTimerDuration)
+    const pool = poolRef.current
+    const nextText = pool ? makeText(contentModeRef.current, levelRef.current, pool, t !== null) : ''
+    setText(nextText)
+    reset(nextText, nextTimerDuration)
     setFinished(null)
   }, [reset])
 
@@ -187,15 +219,13 @@ export function VezbaClient({ pismo }: Props) {
   }, [reset])
 
   const changePismo = useCallback((s: Script) => {
-    const nextText = makeText(s, contentModeRef.current, levelRef.current)
     pismoRef.current = s
-    setText(nextText)
-    reset(nextText, timerDurationRef.current ?? 60)
     router.push(`/vezbaj/${s}`)
-  }, [reset, router])
+  }, [router])
 
   const handleNewTest = useCallback(() => {
-    setText(makeText(pismoRef.current, contentModeRef.current, levelRef.current))
+    const pool = poolRef.current
+    if (pool) setText(makeText(contentModeRef.current, levelRef.current, pool, timerDurationRef.current !== null))
     setFinished(null)
   }, [])
 
@@ -215,13 +245,16 @@ export function VezbaClient({ pismo }: Props) {
   }, [handleReset])
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-24">
+    <div className="mx-auto w-full max-w-2xl px-3 py-6 sm:px-4 sm:py-12 lg:py-24">
+      {showNicknameModal && (
+        <NicknameModal onNicknameSet={() => setShowNicknameModal(false)} />
+      )}
       {/* Kontrolna traka */}
       <div className="mb-5 flex flex-col gap-2.5">
 
         {/* Red 1: Pisma levo + Težina desno */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex rounded-lg border border-[var(--border)] overflow-hidden">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex w-full overflow-x-auto rounded-lg border border-[var(--border)] sm:w-auto">
             {(Object.keys(SCRIPT_LABELS) as Script[]).map((s) => (
               <button
                 key={s}
@@ -237,7 +270,7 @@ export function VezbaClient({ pismo }: Props) {
               </button>
             ))}
           </div>
-          <div className="flex rounded-lg border border-[var(--border)] overflow-hidden">
+          <div className="flex w-full overflow-x-auto rounded-lg border border-[var(--border)] sm:w-auto">
             {(Object.keys(LEVEL_LABELS) as TestLevel[]).map((l) => (
               <button
                 key={l}
@@ -256,8 +289,8 @@ export function VezbaClient({ pismo }: Props) {
         </div>
 
         {/* Red 2: Reči/Tekst levo + opcije desno poravnate sa Easy */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex rounded-lg border border-[var(--border)] overflow-hidden">
+        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex w-full overflow-x-auto rounded-lg border border-[var(--border)] sm:w-auto">
             {(Object.keys(MODE_LABELS) as Array<'reci' | 'tekst'>).map((m) => (
               <button
                 key={m}
@@ -273,7 +306,7 @@ export function VezbaClient({ pismo }: Props) {
               </button>
             ))}
           </div>
-          <div className="flex flex-col items-start gap-1.5 min-w-[260px]">
+          <div className="flex flex-col items-start gap-1.5 sm:min-w-[260px]">
             {/* 100% tačnost */}
             <div className="flex items-center gap-2">
               <button
@@ -369,9 +402,14 @@ export function VezbaClient({ pismo }: Props) {
       {/* Rezultati — pojavljuju se odmah ispod typing areae */}
       {finished && (
         <div className="mt-6 animate-in fade-in duration-300">
+          {finished.deviceType && (
+            <span className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--muted)] px-2.5 py-1 text-xs text-[var(--muted-foreground)]">
+              {finished.deviceType === 'mobile' ? '📱 Mobilni uređaj' : finished.deviceType === 'tablet' ? '▣ Tablet' : finished.deviceType === 'desktop' ? '🖥 Računar' : '? Nepoznato'}
+            </span>
+          )}
 
           {/* Dugmad odmah ispod — vidljiva bez skrolanja */}
-          <div className="flex gap-3 mb-8">
+          <div className="flex flex-col gap-2 mb-8 sm:flex-row">
             <button
               onClick={handleReset}
               className="flex items-center gap-2 rounded-md border border-[var(--border)] px-4 py-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
@@ -389,7 +427,7 @@ export function VezbaClient({ pismo }: Props) {
           </div>
 
           {/* Glavni brojevi */}
-          <div className="flex items-end gap-6 mb-6">
+          <div className="grid grid-cols-3 items-end gap-3 mb-6 sm:flex sm:gap-6">
             <div>
               <p className="font-mono text-5xl font-bold text-[var(--accent)] leading-none">
                 {Math.round(finished.result.score)}
@@ -443,3 +481,7 @@ export function VezbaClient({ pismo }: Props) {
     </div>
   )
 }
+
+
+
+

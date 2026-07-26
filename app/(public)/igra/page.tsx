@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
 import { IgraClient } from './IgraClient'
 
 export const metadata: Metadata = {
@@ -8,10 +7,6 @@ export const metadata: Metadata = {
 }
 
 export default async function IgraPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  return <IgraClient canPlay={!!user} />
+  return <IgraClient canPlay={true} />
 }
+

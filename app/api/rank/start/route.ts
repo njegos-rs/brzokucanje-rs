@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/types'
 import { getDayRangeInAppTimeZone } from '@/lib/date'
+import { detectDevice } from '@/lib/device/server'
 
 type ScoreInsert = Database['public']['Tables']['scores']['Insert']
 
@@ -30,6 +31,16 @@ export async function POST(req: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: 'Niste prijavljeni' }, { status: 401 })
+  }
+
+  const { data: profile } = await serviceSupabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (!profile?.username?.trim()) {
+    return NextResponse.json({ error: 'Prvo izaberite svoje ime' }, { status: 403 })
   }
 
   let body: StartPayload
@@ -76,8 +87,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ id: existingToday.id })
   }
 
+  const device = detectDevice(req)
+
   const insert: ScoreInsert = {
     user_id: user.id,
+    device_type: device.device_type,
+    device_confidence: device.device_confidence,
     category: category as ScoreInsert['category'],
     script: script as ScoreInsert['script'],
     mode: 'rank',

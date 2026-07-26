@@ -18,6 +18,7 @@ interface Props {
   data: WpmSnapshot[]
   finalWpm: number
   rawWpm: number
+  pbWpm?: number
 }
 
 interface TooltipPayload {
@@ -44,12 +45,12 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   )
 }
 
-export function WpmChart({ data, finalWpm, rawWpm }: Props) {
+export function WpmChart({ data, finalWpm, rawWpm, pbWpm }: Props) {
   const [showRaw, setShowRaw] = useState(true)
 
   const accentColor = 'var(--accent)'
   const rawColor = '#737378'
-  const maxWpm = Math.max(...data.map((d) => Math.max(d.wpm, d.rawWpm)), finalWpm, rawWpm, 10)
+  const maxWpm = Math.max(...data.map((d) => Math.max(d.wpm, d.rawWpm)), finalWpm, rawWpm, pbWpm ?? 0, 10)
   const totalErrors = data.at(-1)?.errors ?? 0
 
   return (
@@ -93,6 +94,16 @@ export function WpmChart({ data, finalWpm, rawWpm }: Props) {
           />
           <Tooltip content={<CustomTooltip />} />
           <ReferenceLine yAxisId="wpm" y={finalWpm} stroke={accentColor} strokeDasharray="4 2" strokeOpacity={0.4} />
+          {pbWpm && pbWpm > 0 && (
+            <ReferenceLine
+              yAxisId="wpm"
+              y={pbWpm}
+              stroke={accentColor}
+              strokeDasharray="2 2"
+              strokeOpacity={0.8}
+              label={{ value: `PB: ${pbWpm} WPM`, fill: 'var(--accent)', fontSize: 10, position: 'insideTopRight' }}
+            />
+          )}
           <Line
             yAxisId="wpm"
             type="monotone"

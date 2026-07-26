@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -41,6 +71,36 @@ export type Database = {
           id?: string
           target_id?: string
           target_type?: string
+        }
+        Relationships: []
+      }
+      site_visits: {
+        Row: {
+          created_at: string
+          id: string
+          path: string
+          referrer: string | null
+          user_agent: string | null
+          user_id: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          path: string
+          referrer?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          path?: string
+          referrer?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
         }
         Relationships: []
       }
@@ -82,6 +142,8 @@ export type Database = {
       game_scores: {
         Row: {
           created_at: string
+          device_confidence: string
+          device_type: string
           elapsed_seconds: number
           id: string
           level: number
@@ -91,6 +153,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          device_confidence?: string
+          device_type?: string
           elapsed_seconds?: number
           id?: string
           level: number
@@ -100,6 +164,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          device_confidence?: string
+          device_type?: string
           elapsed_seconds?: number
           id?: string
           level?: number
@@ -273,8 +339,10 @@ export type Database = {
           created_at: string
           current_streak: number
           daily_limit_override: number | null
+          device_id: string | null
           id: string
           is_admin: boolean
+          is_anonymous: boolean
           is_banned: boolean
           last_active_date: string | null
           longest_streak: number
@@ -288,8 +356,10 @@ export type Database = {
           created_at?: string
           current_streak?: number
           daily_limit_override?: number | null
+          device_id?: string | null
           id: string
           is_admin?: boolean
+          is_anonymous?: boolean
           is_banned?: boolean
           last_active_date?: string | null
           longest_streak?: number
@@ -303,8 +373,10 @@ export type Database = {
           created_at?: string
           current_streak?: number
           daily_limit_override?: number | null
+          device_id?: string | null
           id?: string
           is_admin?: boolean
+          is_anonymous?: boolean
           is_banned?: boolean
           last_active_date?: string | null
           longest_streak?: number
@@ -316,6 +388,8 @@ export type Database = {
       scores: {
         Row: {
           accuracy: number
+          device_confidence: string
+          device_type: string
           category: string
           consistency: number
           correct_chars: number
@@ -348,6 +422,8 @@ export type Database = {
         Insert: {
           accuracy: number
           category: string
+          device_confidence?: string
+          device_type?: string
           consistency: number
           correct_chars: number
           created_at?: string
@@ -379,6 +455,8 @@ export type Database = {
         Update: {
           accuracy?: number
           category?: string
+          device_confidence?: string
+          device_type?: string
           consistency?: number
           correct_chars?: number
           created_at?: string

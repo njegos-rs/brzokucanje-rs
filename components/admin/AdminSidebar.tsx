@@ -4,15 +4,15 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
-  LayoutDashboard, Users, FileText, ShieldAlert, BarChart3,
+  LayoutDashboard, Users, ShieldAlert, BarChart3,
   MessageSquareWarning, Mail, ClipboardList, Keyboard, Menu, X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { AdminLogoutButton } from '@/components/admin/AdminLogoutButton'
 
 const LINKS = [
   { href: '/admin/pregled', label: 'Pregled', icon: LayoutDashboard },
   { href: '/admin/korisnici', label: 'Korisnici', icon: Users },
-  { href: '/admin/sadrzaj', label: 'Sadržaj', icon: FileText },
   { href: '/admin/anti-cheat', label: 'Anti-cheat', icon: ShieldAlert },
   { href: '/admin/statistike', label: 'Statistike', icon: BarChart3 },
   { href: '/admin/profanity', label: 'Profanity', icon: MessageSquareWarning },
@@ -20,17 +20,19 @@ const LINKS = [
   { href: '/admin/audit', label: 'Audit log', icon: ClipboardList },
 ]
 
-export function AdminSidebar() {
-  const pathname = usePathname()
-  const [mobileOpen, setMobileOpen] = useState(false)
+interface NavLinksProps {
+  pathname: string
+  onNavigate: () => void
+}
 
-  const NavLinks = () => (
+function NavLinks({ pathname, onNavigate }: NavLinksProps) {
+  return (
     <>
       {LINKS.map(({ href, label, icon: Icon }) => (
         <Link
           key={href}
           href={href}
-          onClick={() => setMobileOpen(false)}
+          onClick={onNavigate}
           className={cn(
             'flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors',
             pathname === href || pathname.startsWith(href + '/')
@@ -44,6 +46,11 @@ export function AdminSidebar() {
       ))}
     </>
   )
+}
+
+export function AdminSidebar() {
+  const pathname = usePathname()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
     <>
@@ -54,9 +61,10 @@ export function AdminSidebar() {
           <span className="font-mono text-sm font-semibold text-[var(--accent)]">Admin</span>
         </div>
         <nav className="flex-1 py-4">
-          <NavLinks />
+          <NavLinks pathname={pathname} onNavigate={() => setMobileOpen(false)} />
         </nav>
-        <div className="border-t border-[var(--border)] p-4">
+        <div className="space-y-2 border-t border-[var(--border)] p-4">
+          <AdminLogoutButton />
           <Link href="/" className="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
             ← Nazad na sajt
           </Link>
@@ -87,9 +95,10 @@ export function AdminSidebar() {
           />
           <div className="md:hidden fixed top-12 left-0 bottom-0 z-50 w-56 bg-[var(--card)] border-r border-[var(--border)] flex flex-col overflow-y-auto">
             <nav className="flex-1 py-4">
-              <NavLinks />
+              <NavLinks pathname={pathname} onNavigate={() => setMobileOpen(false)} />
             </nav>
-            <div className="border-t border-[var(--border)] p-4">
+            <div className="space-y-2 border-t border-[var(--border)] p-4">
+              <AdminLogoutButton onLoggedOut={() => setMobileOpen(false)} />
               <Link href="/" onClick={() => setMobileOpen(false)} className="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
                 ← Nazad na sajt
               </Link>
@@ -100,3 +109,4 @@ export function AdminSidebar() {
     </>
   )
 }
+

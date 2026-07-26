@@ -4,7 +4,9 @@
 -- Proširujemo auth.users sa profilima
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  username TEXT UNIQUE NOT NULL,
+  username TEXT UNIQUE NULL,
+  device_id TEXT NULL,
+  is_anonymous BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   is_admin BOOLEAN NOT NULL DEFAULT FALSE,
