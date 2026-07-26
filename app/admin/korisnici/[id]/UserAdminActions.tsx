@@ -17,6 +17,8 @@ export function UserAdminActions({ userId, username, isAdmin, isBanned, banReaso
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [renameMessage, setRenameMessage] = useState<string | null>(null)
+  const [renameSuccess, setRenameSuccess] = useState(false)
   const [reason, setReason] = useState('')
   const [showBanForm, setShowBanForm] = useState(false)
   const [newUsername, setNewUsername] = useState(username)
@@ -70,19 +72,33 @@ export function UserAdminActions({ userId, username, isAdmin, isBanned, banReaso
   }
 
   const handleRename = async () => {
+    const normalizedUsername = newUsername.trim().replace(/\s+/g, ' ')
+    if (normalizedUsername.length < 3) {
+      setRenameSuccess(false)
+      setRenameMessage('Username mora imati najmanje 3 karaktera.')
+      return
+    }
     setLoading('rename')
     setError(null)
+    setRenameMessage(null)
+    setRenameSuccess(false)
     try {
       const res = await fetch(`/api/admin/users/${userId}/nickname`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: newUsername }),
+        body: JSON.stringify({ username: normalizedUsername }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Greška pri promeni username-a')
+      setNewUsername(json.username ?? normalizedUsername)
+      setRenameSuccess(true)
+      setRenameMessage('Username je uspešno sačuvan.')
       router.refresh()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Greška')
+      const message = e instanceof Error ? e.message : 'Greška'
+      setRenameSuccess(false)
+      setRenameMessage(message)
+      setError(message)
     } finally {
       setLoading(null)
     }
@@ -152,11 +168,16 @@ export function UserAdminActions({ userId, username, isAdmin, isBanned, banReaso
         <label className="mb-1.5 block text-xs font-medium text-[var(--muted-foreground)]">Promeni username</label>
         <div className="flex flex-col gap-2 sm:flex-row">
           <input value={newUsername} onChange={(e) => setNewUsername(e.target.value)} className="min-w-0 flex-1 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] outline-none focus:border-[var(--accent)]" />
-          <button onClick={handleRename} disabled={!!loading || newUsername.trim() === username} className="flex items-center justify-center gap-2 rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] hover:opacity-90 disabled:opacity-50 transition-opacity">
+          <button onClick={handleRename} disabled={!!loading || newUsername.trim().replace(/\s+/g, ' ') === username} className="flex items-center justify-center gap-2 rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] hover:opacity-90 disabled:opacity-50 transition-opacity">
             {loading === 'rename' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pencil className="h-3.5 w-3.5" />}
             Sačuvaj
           </button>
         </div>
+        {renameMessage && (
+          <p className={renameSuccess ? 'text-xs text-[var(--correct)]' : 'text-xs text-[var(--incorrect)]'} role="status">
+            {renameMessage}
+          </p>
+        )}
       </div>
 
       <div className="border-t border-[var(--border)] pt-4">
