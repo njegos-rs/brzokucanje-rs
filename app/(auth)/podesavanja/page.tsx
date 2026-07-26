@@ -124,25 +124,6 @@ export default function PodesavanjaPage() {
           />
         </SettingRow>
 
-        <SettingRow label="Boja teksta" description="Boja teksta koji čeka na unos">
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={settings.textColor ?? '#737370'}
-              onChange={(event) => settings.setTextColor(event.target.value)}
-              className="h-9 w-12 cursor-pointer rounded-md border border-[var(--border)] bg-[var(--card)] p-1"
-              aria-label="Izaberi boju teksta"
-            />
-            <button
-              type="button"
-              onClick={() => settings.setTextColor(null)}
-              className="rounded-md border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-[var(--muted-foreground)] transition-colors hover:border-[var(--foreground)]/30 hover:text-[var(--foreground)]"
-            >
-              Reset
-            </button>
-          </div>
-        </SettingRow>
-
         <SettingRow label="Stil kursora" description="Izgled kursora u oblasti za kucanje">
           <SegmentedControl
             options={CARET_OPTIONS}

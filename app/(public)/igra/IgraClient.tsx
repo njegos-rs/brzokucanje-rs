@@ -1032,7 +1032,7 @@ export function IgraClient({ canPlay = true }: Props) {
                         </span>
                         {entry.username ? (
                           <Link
-                            href={`/profil/${encodeURIComponent(entry.username)}`}
+                            href={`/profil/${entry.username}`}
                             className="max-w-[72px] truncate font-medium text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
                           >
                             {entry.username}

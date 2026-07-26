@@ -255,12 +255,12 @@ export function VezbaClient({ pismo }: Props) {
   }, [handleReset])
 
   return (
-    <div className={cn("mx-auto w-full max-w-2xl px-3 py-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-4 sm:py-12 lg:py-12", mobileTypingActive && "fixed inset-0 z-[60] flex max-w-none items-center justify-center overflow-hidden bg-[var(--background)] px-3 py-0")}>
+    <div className={cn("mx-auto w-full max-w-2xl px-3 py-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-4 sm:py-12 lg:py-24", mobileTypingActive && "fixed inset-0 z-[60] flex max-w-none items-center justify-center overflow-hidden bg-[var(--background)] px-3 py-0")}>
       {showNicknameModal && (
         <NicknameModal onNicknameSet={() => setShowNicknameModal(false)} />
       )}
       {/* Kontrolna traka */}
-      <div className={cn("mb-3 flex min-h-[190px] flex-col gap-2 sm:mb-5 sm:gap-2.5", mobileTypingActive && "hidden")}>
+      <div className={cn("mb-3 flex flex-col gap-2 sm:mb-5 sm:gap-2.5", mobileTypingActive && "hidden")}>
 
         {/* Red 1: Pisma levo + Težina desno */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
