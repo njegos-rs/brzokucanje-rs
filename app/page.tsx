@@ -4,9 +4,9 @@ import { TypewriterTitle } from '@/components/TypewriterTitle'
 
 export default function HomePage() {
   return (
-    <div className="flex min-h-[100dvh] flex-col overflow-x-hidden sm:h-[100dvh] sm:overflow-hidden">
+    <div data-home-page className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden sm:static sm:h-[100dvh]">
       <Header />
-      <main className="min-h-0 flex flex-1 flex-col items-center justify-start px-4 py-4 sm:overflow-hidden sm:px-6 sm:py-10">
+      <main className="min-h-0 flex flex-1 flex-col items-center justify-start overflow-hidden px-4 py-4 sm:px-6 sm:py-10">
         <div className="w-full max-w-4xl">
           <div className="mb-4 text-center sm:mb-10">
             <TypewriterTitle />

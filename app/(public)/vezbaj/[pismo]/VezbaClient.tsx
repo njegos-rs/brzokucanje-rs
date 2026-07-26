@@ -257,7 +257,7 @@ export function VezbaClient({ pismo }: Props) {
         <NicknameModal onNicknameSet={() => setShowNicknameModal(false)} />
       )}
       {/* Kontrolna traka */}
-      <div className={cn("mb-3 flex min-h-[150px] flex-col gap-2 sm:mb-5 sm:gap-2.5", mobileTypingActive && "hidden")}>
+      <div className={cn("mb-3 flex flex-col gap-2 sm:mb-5 sm:gap-2.5", mobileTypingActive && "hidden")}>
 
         {/* Red 1: Pisma levo + Težina desno */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

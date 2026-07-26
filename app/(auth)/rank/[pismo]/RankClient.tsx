@@ -221,7 +221,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
     mode: dailyMode === 'reci' ? 'vreme' : 'tekst',
     timerDuration: dailyDuration as import('@/lib/typing/engine').TimerDuration,
   })
-  const { chars, cursor, status, handleKeyDown } = engine
+  const { chars, cursor, status, timeLeft, spaceBlocked, handleKeyDown } = engine
 
   useEffect(() => {
     const onBlur = () => {
@@ -374,7 +374,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-3 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-4 sm:py-8">
+    <div className="mx-auto max-w-2xl px-3 py-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-4 sm:py-12">
       <div className="mb-4 flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:mb-6 sm:flex-wrap sm:overflow-visible sm:pb-0">
         {pismoTabovi.map((p) => (
           <button
@@ -422,6 +422,9 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
             chars={chars}
             cursor={cursor}
             status={status}
+            timeLeft={timeLeft}
+            mode={dailyMode === 'reci' ? 'vreme' : 'tekst'}
+            spaceBlocked={spaceBlocked}
             onKeyDown={(e) => {
               playKeystroke()
               handleKeyDown(e)
