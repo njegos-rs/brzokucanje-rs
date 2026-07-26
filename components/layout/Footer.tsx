@@ -1,8 +1,14 @@
+'use client'
+
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Keyboard } from 'lucide-react'
 
 export function Footer() {
+  const pathname = usePathname()
   const year = new Date().getFullYear()
+
+  if (pathname.startsWith('/rank/')) return null
 
   return (
     <footer className="mt-auto hidden border-t border-[var(--border)] bg-[var(--background)] sm:block">
