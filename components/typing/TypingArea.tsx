@@ -160,7 +160,7 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
     <div ref={containerRef} className={cn("flex w-full scroll-mb-28 flex-col gap-3", mobileImmersive && "h-[100dvh] items-center justify-center gap-5")}>
 
       {/* Timer ? rezervisan prostor spre?ava pomeranje teksta */}
-      <div className="flex h-10 items-baseline justify-center gap-1">
+      <div className="flex h-10 items-baseline gap-1">
         {mode === 'vreme' && timeLeft !== undefined && (
           <div className="flex items-baseline gap-1">
           <span className={cn(
