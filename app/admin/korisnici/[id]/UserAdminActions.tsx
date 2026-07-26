@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ban, CheckCircle, Loader2, Pencil, Trash2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { createAdminBrowserClient } from '@/lib/supabase/admin-client'
 
 interface Props {
   userId: string
@@ -27,7 +27,7 @@ export function UserAdminActions({ userId, username, isAdmin, isBanned, banReaso
     setLoading('ban')
     setError(null)
     try {
-      const supabase = createClient()
+      const supabase = createAdminBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Niste prijavljeni')
 
@@ -51,7 +51,7 @@ export function UserAdminActions({ userId, username, isAdmin, isBanned, banReaso
     setLoading('unban')
     setError(null)
     try {
-      const supabase = createClient()
+      const supabase = createAdminBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Niste prijavljeni')
 

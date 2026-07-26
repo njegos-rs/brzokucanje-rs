@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ShieldCheck, ShieldX, Ban, Loader2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { createAdminBrowserClient } from '@/lib/supabase/admin-client'
 
 type ReviewDb = {
   from: (table: string) => {
@@ -31,7 +31,7 @@ export function ReviewActions({ scoreId, userId, username, isReviewed, decision 
     setLoading(reviewDecision)
     setError(null)
     try {
-      const supabase = createClient()
+      const supabase = createAdminBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Niste prijavljeni')
 
@@ -70,7 +70,7 @@ export function ReviewActions({ scoreId, userId, username, isReviewed, decision 
     setLoading('ban')
     setError(null)
     try {
-      const supabase = createClient()
+      const supabase = createAdminBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Niste prijavljeni')
 

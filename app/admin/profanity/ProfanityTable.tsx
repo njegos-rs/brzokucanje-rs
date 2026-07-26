@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, Plus, Trash2, Loader2, Download } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { createAdminBrowserClient } from '@/lib/supabase/admin-client'
 import { cn } from '@/lib/utils'
 
 type Category = 'psovka' | 'uvreda' | 'spam' | 'drugo'
@@ -60,7 +60,7 @@ export function ProfanityTable({ words: initial }: Props) {
     setSuccess(null)
 
     try {
-      const supabase = createClient()
+      const supabase = createAdminBrowserClient()
       const { data: { user } } = await supabase.auth.getUser()
 
       const inserts = newWords.map((word) => ({
@@ -90,7 +90,7 @@ export function ProfanityTable({ words: initial }: Props) {
   const handleDelete = async (id: string) => {
     setDeleting(id)
     try {
-      const supabase = createClient()
+      const supabase = createAdminBrowserClient()
       const { error: err } = await supabase.from('profanity_words').delete().eq('id', id)
       if (err) throw err
       setWords((prev) => prev.filter((w) => w.id !== id))

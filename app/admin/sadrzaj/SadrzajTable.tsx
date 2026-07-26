@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { Plus, Search, Pencil, Eye, EyeOff, X, Loader2, Check, Sparkles } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { createAdminBrowserClient } from '@/lib/supabase/admin-client'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
@@ -117,7 +117,7 @@ export function SadrzajTable({ texts: initial }: Props) {
     setSaving(true)
     setError(null)
     try {
-      const supabase = createClient()
+      const supabase = createAdminBrowserClient()
       const payload = {
         content_lat: form.content_lat.trim(),
         content_cyr: form.content_cyr.trim(),
@@ -183,7 +183,7 @@ export function SadrzajTable({ texts: initial }: Props) {
   const toggleActive = async (text: TextRow) => {
     setToggling(text.id)
     try {
-      const supabase = createClient()
+      const supabase = createAdminBrowserClient()
       const { error: err } = await supabase
         .from('text_pool')
         .update({ is_active: !text.is_active })

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
 import { PrijavaForma } from '@/components/auth/PrijavaForma'
 import type { Database } from '@/lib/supabase/types'
@@ -12,7 +12,7 @@ export default async function AdminLayout({
   let isAdmin = false
 
   try {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     const { data } = await supabase.auth.getUser()
     user = data.user
 
