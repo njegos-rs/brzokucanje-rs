@@ -159,9 +159,10 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
   return (
     <div ref={containerRef} className={cn("flex w-full scroll-mb-28 flex-col gap-3", mobileImmersive && "h-[100dvh] items-center justify-center gap-5")}>
 
-      {/* Timer */}
-      {mode === 'vreme' && timeLeft !== undefined && (
-        <div className="flex items-baseline gap-1">
+      {/* Timer ? rezervisan prostor spre?ava pomeranje teksta */}
+      <div className="flex h-10 items-baseline justify-center gap-1">
+        {mode === 'vreme' && timeLeft !== undefined && (
+          <div className="flex items-baseline gap-1">
           <span className={cn(
             'font-mono text-4xl font-bold tabular-nums leading-none transition-colors',
             timeLeft <= 5 ? 'text-[var(--incorrect)]' : 'text-[var(--accent)]'
@@ -169,8 +170,9 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
             {timeLeft}
           </span>
           <span className="text-xs text-[var(--muted-foreground)]">s</span>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {/* Typing display — tačno 3 reda, srednji je aktivan */}
       <div
