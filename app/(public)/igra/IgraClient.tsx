@@ -234,6 +234,7 @@ export function IgraClient({ canPlay = true }: Props) {
   const [bestStreak, setBestStreak] = useState(0)
   const [wordsDestroyed, setWordsDestroyed] = useState(0)
   const [shake, setShake] = useState(0)
+  const [mobileGameHeight, setMobileGameHeight] = useState<number | null>(null)
 
   const [leaderboard, setLeaderboard] = useState<LeaderRow[]>([])
   const [currentUserRank, setCurrentUserRank] = useState<CurrentUser | null>(null)
@@ -284,6 +285,9 @@ export function IgraClient({ canPlay = true }: Props) {
   const levelIdxRef = useRef(0)
   const scoreRef = useRef(0)
   const gameAreaRef = useRef<HTMLDivElement | null>(null)
+  const mobileInputRef = useRef<HTMLInputElement | null>(null)
+  const lastMobileKeyRef = useRef({ key: '', at: 0 })
+  const fullViewportHeightRef = useRef(0)
   const audio = useAudio(soundOn && canPlay)
 
   const currentLevel = LEVEL_CONFIG[levelIdx]
@@ -326,11 +330,33 @@ export function IgraClient({ canPlay = true }: Props) {
       initial.push(makeEnemy(ids.current.enemy++, 0, initial))
     }
     setEnemies(initial)
-    gameAreaRef.current?.focus()
+    if (window.matchMedia('(max-width: 639px)').matches) {
+      mobileInputRef.current?.focus()
+    } else {
+      gameAreaRef.current?.focus()
+    }
   }, [canPlay, nicknameReady, resetGame])
 
 
 
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+
+    const updateMobileViewport = () => {
+      fullViewportHeightRef.current = Math.max(fullViewportHeightRef.current, window.innerHeight, viewport.height)
+      const keyboardOpen = fullViewportHeightRef.current - viewport.height > 120
+      setMobileGameHeight(keyboardOpen ? Math.max(220, Math.floor(viewport.height - 92)) : null)
+    }
+
+    updateMobileViewport()
+    viewport.addEventListener('resize', updateMobileViewport)
+    viewport.addEventListener('scroll', updateMobileViewport)
+    return () => {
+      viewport.removeEventListener('resize', updateMobileViewport)
+      viewport.removeEventListener('scroll', updateMobileViewport)
+    }
+  }, [])
   // Preview animation
   useEffect(() => {
     if (canPlay) return
@@ -507,20 +533,19 @@ export function IgraClient({ canPlay = true }: Props) {
     }
   }, [audio, status])
 
-  const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleGameKey = useCallback((rawKey: string) => {
     if (!canPlay) return
-    if (event.key === 'Enter' && status !== 'playing') {
+    if (rawKey === 'Enter' && status !== 'playing') {
       startGame()
       return
     }
-    if (event.key === 'Tab') {
-      event.preventDefault()
+    if (rawKey === 'Tab') {
       startGame()
       return
     }
-    if (status !== 'playing' || event.key.length !== 1) return
+    if (status !== 'playing' || rawKey.length !== 1) return
 
-    const key = event.key.toLocaleLowerCase('sr-RS')
+    const key = rawKey.toLocaleLowerCase('sr-RS')
 
     setEnemies((current) => {
       const currentTarget = current.find((enemy) => enemy.id === targetId)
@@ -616,6 +641,20 @@ export function IgraClient({ canPlay = true }: Props) {
     })
   }, [audio, canPlay, startGame, status, targetId, streak])
 
+  const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLElement>) => {
+    if (event.key === 'Tab') event.preventDefault()
+    lastMobileKeyRef.current = { key: event.key, at: performance.now() }
+    handleGameKey(event.key)
+  }, [handleGameKey])
+
+  const handleMobileInput = useCallback((value: string) => {
+    const key = Array.from(value).at(-1)
+    if (!key) return
+    const lastNative = lastMobileKeyRef.current
+    if (lastNative.key === key && performance.now() - lastNative.at < 100) return
+    handleGameKey(key)
+  }, [handleGameKey])
+
   // Level-based background accent glow (subtly shifts with level)
   const bgIntensity = Math.min(levelIdx / 9, 1)
   const bgR = 204
@@ -633,7 +672,7 @@ export function IgraClient({ canPlay = true }: Props) {
       <div className="mx-auto flex max-w-7xl flex-col gap-3">
 
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className={cn("flex items-center justify-between", mobileGameHeight !== null && "hidden sm:flex")}>
           <div>
             <h1 className="text-xl font-bold text-[var(--foreground)]">Svemirsko kucanje</h1>
           </div>
@@ -671,9 +710,10 @@ export function IgraClient({ canPlay = true }: Props) {
             ref={gameAreaRef}
             tabIndex={0}
             onKeyDown={handleKeyDown}
+            onClick={() => window.matchMedia('(max-width: 639px)').matches && mobileInputRef.current?.focus()}
             className="relative w-full overflow-hidden rounded-lg border border-[var(--border)] outline-none"
             style={{
-              height: 'min(560px, calc(100svh - 10rem))',
+              height: mobileGameHeight ? `${mobileGameHeight}px` : 'min(560px, calc(100svh - 10rem))',
               background: `radial-gradient(circle at 50% 18%, ${bgGlowColor}, transparent 28%), linear-gradient(180deg, var(--card), var(--background))`,
               transition: 'background 1.5s ease',
               transform: `translate(${shakeX}px, ${shakeY}px)`,
@@ -862,10 +902,31 @@ export function IgraClient({ canPlay = true }: Props) {
                 </div>
               )}
           </div>
+            <div className="sticky bottom-2 z-20 mt-2 sm:hidden">
+              <input
+                ref={mobileInputRef}
+                type="text"
+                inputMode="text"
+                enterKeyHint="done"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                placeholder={status === 'playing' ? 'Kucaj slova ovde…' : 'Dodirni ovde, pa pokreni igru'}
+                onKeyDown={handleKeyDown}
+                onChange={(event) => {
+                  handleMobileInput(event.target.value)
+                  event.target.value = ''
+                }}
+                onFocus={() => window.setTimeout(() => gameAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120)}
+                className="h-12 w-full rounded-lg border border-[var(--accent)]/60 bg-[var(--card)] px-3 font-mono text-base text-[var(--foreground)] outline-none shadow-lg focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                aria-label="Unos slova za igru"
+              />
+            </div>
           </div>{/* end game wrapper */}
 
           {/* Right column: stats + leaderboard */}
-          <div className="flex w-full shrink-0 flex-col gap-3 lg:w-56">
+          <div className={cn("w-full shrink-0 flex-col gap-3 lg:flex lg:w-56", mobileGameHeight !== null ? "hidden" : "flex")}>
 
             <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
               <div className="grid grid-cols-2 gap-x-3 gap-y-3 text-sm">

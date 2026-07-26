@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import Script from 'next/script'
 import { Toaster } from 'react-hot-toast'
 import { CookieConsent } from '@/components/CookieConsent'
@@ -8,6 +8,13 @@ import { getSiteUrl } from '@/lib/site'
 import './globals.css'
 
 const appUrl = getSiteUrl()
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  interactiveWidget: 'resizes-content',
+}
 
 export const metadata: Metadata = {
   title: {

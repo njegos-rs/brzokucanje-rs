@@ -328,7 +328,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
   if (playedToday && !finished) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
-        <div className="mb-6 flex flex-wrap gap-2">
+        <div className="mb-4 flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:mb-6 sm:flex-wrap sm:overflow-visible sm:pb-0">
           {pismoTabovi.map((p) => (
             <button
               key={p}
@@ -374,8 +374,8 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6 flex flex-wrap gap-2">
+    <div className="mx-auto max-w-3xl px-3 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-4 sm:py-8">
+      <div className="mb-4 flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:mb-6 sm:flex-wrap sm:overflow-visible sm:pb-0">
         {pismoTabovi.map((p) => (
           <button
             key={p}

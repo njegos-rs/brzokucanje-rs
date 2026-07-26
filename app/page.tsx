@@ -5,39 +5,39 @@ import { TypewriterTitle } from '@/components/TypewriterTitle'
 
 export default function HomePage() {
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden">
+    <div className="flex min-h-[100dvh] flex-col overflow-x-hidden sm:h-[100dvh] sm:overflow-hidden">
       <Header />
-      <main className="min-h-0 flex flex-1 flex-col items-center justify-center overflow-hidden px-6 py-8">
+      <main className="min-h-0 flex flex-1 flex-col items-center justify-center px-4 py-4 sm:overflow-hidden sm:px-6 sm:py-8">
         <div className="w-full max-w-4xl">
 
           {/* Hero */}
-          <div className="mb-14 text-center">
+          <div className="mb-5 text-center sm:mb-14">
             <TypewriterTitle />
-            <p className="mt-4 text-lg text-[var(--muted-foreground)]">
+            <p className="mt-2 text-sm text-[var(--muted-foreground)] sm:mt-4 sm:text-lg">
               Testiraj brzinu kucanja na srpskom jeziku.
             </p>
           </div>
 
           {/* 3 kartice */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-5">
 
             {/* Vežbaj */}
             <Link
               href="/vezbaj/latinica"
-              className="group flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-7 transition-all hover:border-[var(--accent)]/70 hover:shadow-lg hover:-translate-y-0.5"
+              className="group flex flex-col gap-2 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 transition-all hover:border-[var(--accent)]/70 hover:shadow-lg sm:gap-4 sm:rounded-2xl sm:p-7 sm:hover:-translate-y-0.5"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent)]/15 text-2xl">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent)]/15 text-xl sm:h-11 sm:w-11 sm:rounded-xl sm:text-2xl">
                   ⌨️
                 </div>
-                <span className="font-mono text-xl font-bold text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors">
+                <span className="font-mono text-lg font-bold text-[var(--foreground)] transition-colors group-hover:text-[var(--accent)] sm:text-xl">
                   Vežbaj
                 </span>
               </div>
-              <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">
+              <p className="hidden text-sm leading-relaxed text-[var(--muted-foreground)] sm:block">
                 Slobodna vežba bez pritiska. Bira se pismo, mod i težina. Kucaj koliko hoćeš.
               </p>
-              <div className="mt-auto flex flex-col gap-2">
+              <div className="mt-auto hidden flex-col gap-2 sm:flex">
                 <div className="flex flex-wrap gap-1.5">
                   {['Latinica', 'Ћирилица', 'Latinica bez kvačica'].map((s) => (
                     <span key={s} className="rounded-md bg-[var(--muted)] px-2.5 py-1 text-xs font-mono text-[var(--muted-foreground)]">
@@ -58,20 +58,20 @@ export default function HomePage() {
             {/* Rank test */}
             <Link
               href="/rank/latinica"
-              className="group flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-7 transition-all hover:border-[var(--accent)]/70 hover:shadow-lg hover:-translate-y-0.5"
+              className="group flex flex-col gap-2 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 transition-all hover:border-[var(--accent)]/70 hover:shadow-lg sm:gap-4 sm:rounded-2xl sm:p-7 sm:hover:-translate-y-0.5"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent)]/15 text-2xl">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent)]/15 text-xl sm:h-11 sm:w-11 sm:rounded-xl sm:text-2xl">
                   🏆
                 </div>
-                <span className="font-mono text-xl font-bold text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors">
+                <span className="font-mono text-lg font-bold text-[var(--foreground)] transition-colors group-hover:text-[var(--accent)] sm:text-xl">
                   Rank test
                 </span>
               </div>
-              <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">
+              <p className="hidden text-sm leading-relaxed text-[var(--muted-foreground)] sm:block">
                 Dnevni tekst, jedan pokušaj — bori se za mesto na rank listi sa ostalim korisnicima.
               </p>
-              <div className="mt-auto flex flex-col gap-2">
+              <div className="mt-auto hidden flex-col gap-2 sm:flex">
                 <span className="inline-flex w-fit items-center gap-1.5 rounded-md bg-[var(--accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--accent)]">
                   ▶ Igraj odmah
                 </span>
@@ -84,22 +84,22 @@ export default function HomePage() {
             {/* Igra */}
             <Link
               href="/igra"
-              className="group flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-7 transition-all hover:border-[var(--accent)]/70 hover:shadow-lg hover:-translate-y-0.5"
+              className="group flex flex-col gap-2 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 transition-all hover:border-[var(--accent)]/70 hover:shadow-lg sm:gap-4 sm:rounded-2xl sm:p-7 sm:hover:-translate-y-0.5"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent)]/15 text-2xl">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent)]/15 text-xl sm:h-11 sm:w-11 sm:rounded-xl sm:text-2xl">
                   🚀
                 </div>
-                <span className="font-mono text-xl font-bold text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors">
+                <span className="font-mono text-lg font-bold text-[var(--foreground)] transition-colors group-hover:text-[var(--accent)] sm:text-xl">
                   Igra
                 </span>
               </div>
-              <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">
+              <p className="hidden text-sm leading-relaxed text-[var(--muted-foreground)] sm:block">
                 Svemirska igra kucanja — uništi reči koje padaju pre nego što dostignu brod.
               </p>
 
               {/* Mini preview igre */}
-              <div className="relative mt-1 h-24 overflow-hidden rounded-lg border border-[var(--border)] bg-gradient-to-b from-[var(--card)] to-[var(--background)]">
+              <div className="relative mt-1 hidden h-24 overflow-hidden rounded-lg border border-[var(--border)] bg-gradient-to-b from-[var(--card)] to-[var(--background)] sm:block">
                 <div className="absolute inset-0 opacity-40 [background-image:radial-gradient(circle,rgba(128,128,128,0.3)_1px,transparent_1px)] [background-size:24px_24px]" />
                 {/* Reči u preview */}
                 {[
@@ -128,7 +128,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="mt-auto">
+              <div className="mt-auto hidden sm:block">
                 <span className="inline-flex w-fit items-center gap-1.5 rounded-md bg-[var(--accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--accent)]">
                   ▶ Igraj odmah
                 </span>
@@ -138,7 +138,7 @@ export default function HomePage() {
           </div>
 
           {/* Divider + Rang lista */}
-          <div className="mt-10 flex items-center gap-4">
+          <div className="mt-4 flex items-center gap-4 sm:mt-10">
             <div className="flex-1 h-px bg-[var(--border)]" />
             <Link
               href="/rang-lista/latinica"

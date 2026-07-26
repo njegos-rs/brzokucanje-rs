@@ -245,12 +245,12 @@ export function VezbaClient({ pismo }: Props) {
   }, [handleReset])
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-3 py-6 sm:px-4 sm:py-12 lg:py-24">
+    <div className="mx-auto w-full max-w-2xl px-3 py-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-4 sm:py-12 lg:py-24">
       {showNicknameModal && (
         <NicknameModal onNicknameSet={() => setShowNicknameModal(false)} />
       )}
       {/* Kontrolna traka */}
-      <div className="mb-5 flex flex-col gap-2.5">
+      <div className="mb-3 flex flex-col gap-2 sm:mb-5 sm:gap-2.5">
 
         {/* Red 1: Pisma levo + Težina desno */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

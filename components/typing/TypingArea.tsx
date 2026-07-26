@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback, useState, type FormEvent } from 'react'
 import { cn } from '@/lib/utils'
 import type { CharEntry } from '@/lib/typing/engine'
 
@@ -44,6 +44,9 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
   const inputRef = useRef<HTMLInputElement>(null)
   const cursorSpanRef = useRef<HTMLSpanElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const processKeyRef = useRef<(event: KeyboardEvent) => void>(() => {})
+  const lastNativeKeyRef = useRef({ key: '', at: 0 })
   const [focused, setFocused] = useState(false)
   const [shaking, setShaking] = useState(false)
   const [currentWord, setCurrentWord] = useState('')
@@ -62,30 +65,69 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
     if (status === 'idle') setOffsetY(0)
   }, [status])
 
+  const processKey = useCallback((event: KeyboardEvent) => {
+    if (event.key === 'Tab') return
+    if (event.ctrlKey || event.altKey || event.metaKey) return
+    if (event.key === 'Backspace') {
+      setCurrentWord((value) => value.slice(0, -1))
+    } else if (event.key.length === 1) {
+      if (spaceBlockedRef.current) {
+        setShaking(false)
+        requestAnimationFrame(() => setShaking(true))
+      } else if (event.key === ' ') {
+        setCurrentWord('')
+      } else {
+        setCurrentWord((value) => value + event.key)
+      }
+    }
+    onKeyDownRef.current(event)
+  }, [])
+
+  useEffect(() => {
+    processKeyRef.current = processKey
+  }, [processKey])
+
   useEffect(() => {
     const el = inputRef.current
     if (!el) return
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Tab') return
-      if (e.ctrlKey || e.altKey || e.metaKey) return
-      if (e.key === 'Backspace') {
-        setCurrentWord((v) => v.slice(0, -1))
-      } else if (e.key.length === 1) {
-        if (spaceBlockedRef.current) {
-          setShaking(false)
-          requestAnimationFrame(() => setShaking(true))
-        } else if (e.key === ' ') {
-          setCurrentWord('')
-        } else {
-          setCurrentWord((v) => v + e.key)
-        }
-      }
-      onKeyDownRef.current(e)
+    const handler = (event: KeyboardEvent) => {
+      lastNativeKeyRef.current = { key: event.key, at: performance.now() }
+      processKeyRef.current(event)
     }
     el.addEventListener('keydown', handler)
     return () => el.removeEventListener('keydown', handler)
   }, [])
 
+  const handleBeforeInput = useCallback((event: FormEvent<HTMLInputElement>) => {
+    const nativeEvent = event.nativeEvent as InputEvent
+    const keys = nativeEvent.inputType === 'deleteContentBackward'
+      ? ['Backspace']
+      : Array.from(nativeEvent.data ?? '')
+    if (keys.length === 0) return
+
+    event.preventDefault()
+    const lastNative = lastNativeKeyRef.current
+    if (keys.length === 1 && lastNative.key === keys[0] && performance.now() - lastNative.at < 100) return
+
+    keys.forEach((key) => processKeyRef.current(new KeyboardEvent('keydown', { key, bubbles: true })))
+  }, [])
+
+  const handleInputFocus = useCallback(() => {
+    setFocused(true)
+    if (window.matchMedia('(max-width: 639px)').matches) {
+      window.setTimeout(() => containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!focused || !window.visualViewport) return
+    const viewport = window.visualViewport
+    const keepTypingAreaVisible = () => {
+      window.setTimeout(() => containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60)
+    }
+    viewport.addEventListener('resize', keepTypingAreaVisible)
+    return () => viewport.removeEventListener('resize', keepTypingAreaVisible)
+  }, [focused])
   // Aktivni red uvek ostaje u sredini trorednog prikaza.
   // getBoundingClientRect je pouzdaniji od offsetTop za karaktere u flex-wrap redovima.
   useEffect(() => {
@@ -112,7 +154,7 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
   const wordGroups = groupIntoWords(chars)
 
   return (
-    <div className="flex flex-col gap-3 w-full">
+    <div ref={containerRef} className="flex w-full scroll-mb-28 flex-col gap-3">
 
       {/* Timer */}
       {mode === 'vreme' && timeLeft !== undefined && (
@@ -214,18 +256,19 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
         ref={inputRef}
         type="text"
         value={currentWord}
-        onChange={() => {}}
-        onFocus={() => setFocused(true)}
+        onChange={(event) => setCurrentWord(event.target.value)}
+        onBeforeInput={handleBeforeInput}
+        onFocus={handleInputFocus}
         onBlur={() => setFocused(false)}
         onPaste={(e) => e.preventDefault()}
         onCopy={(e) => e.preventDefault()}
         onCut={(e) => e.preventDefault()}
         onAnimationEnd={() => setShaking(false)}
         disabled={status === 'finished'}
-        className="absolute -left-[9999px] h-px w-px opacity-0"
+        className="h-12 w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 font-mono text-base text-[var(--foreground)] outline-none placeholder:font-sans placeholder:text-sm placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 sm:absolute sm:-left-[9999px] sm:h-px sm:w-px sm:opacity-0"
         inputMode="text"
         enterKeyHint="next"
-        placeholder=""
+        placeholder="Dodirni ovde i kucaj…"
         autoComplete="off"
         autoCorrect="off"
         autoCapitalize="off"

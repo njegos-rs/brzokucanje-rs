@@ -24,7 +24,7 @@ export function TypewriterTitle() {
   const rest   = displayed.slice(12)                                    // '.rs'
 
   return (
-    <h1 className="font-mono text-4xl font-bold tracking-tight sm:text-5xl">
+    <h1 className="font-mono text-3xl font-bold tracking-tight sm:text-5xl">
       <span className="text-[var(--accent)]">{accent}</span>
       <span className="text-[var(--foreground)]">{rest}</span>
       {/* Treptuci kursor dok traje animacija, nestaje kad završi */}
