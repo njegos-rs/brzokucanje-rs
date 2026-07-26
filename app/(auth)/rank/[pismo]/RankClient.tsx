@@ -444,11 +444,13 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
               handleKeyDown(e)
             }}
           />
-          <div className="mt-4">
-            <p className="text-xs text-[var(--muted-foreground)]">
-              Paste je onemogućen · Restart nije dozvoljen u RANK modu
-            </p>
-          </div>
+          {!mobileTypingActive && (
+            <div className="mt-4">
+              <p className="text-xs text-[var(--muted-foreground)]">
+                Paste je onemogućen · Restart nije dozvoljen u RANK modu
+              </p>
+            </div>
+          )}
           {submitting && (
             <p className="mt-2 text-center text-sm text-[var(--muted-foreground)]">
               Čuvam rezultat…

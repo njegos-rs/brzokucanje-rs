@@ -54,7 +54,7 @@ export function Header() {
             .from('profiles')
             .select('username, is_admin')
             .eq('id', data.user.id)
-            .single()
+            .maybeSingle()
 
           const p = profile as { username: string | null; is_admin: boolean } | null
           setIsAdmin(p?.is_admin ?? false)
