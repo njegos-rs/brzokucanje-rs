@@ -274,7 +274,7 @@ export function LeaderboardPanel({
                           : <span className="text-[var(--muted-foreground)]">{rank}.</span>}
                       </td>
                       <td className="px-4 py-3">
-                        <Link href={`/profil/${entry.username}`} className="font-medium text-[var(--foreground)] transition-colors hover:text-[var(--accent)]">
+                        <Link href={`/profil/${encodeURIComponent(entry.username)}`} className="font-medium text-[var(--foreground)] transition-colors hover:text-[var(--accent)]">
                           {entry.username}
                         </Link>
                         {entry.device_type && <DeviceIcon deviceType={entry.device_type} />}
@@ -322,7 +322,7 @@ export function LeaderboardPanel({
                           : <span className="text-[var(--muted-foreground)]">{rank}.</span>}
                       </td>
                       <td className="px-4 py-3">
-                        <Link href={`/profil/${entry.username}`} className="font-medium text-[var(--foreground)] transition-colors hover:text-[var(--accent)]">
+                        <Link href={`/profil/${encodeURIComponent(entry.username)}`} className="font-medium text-[var(--foreground)] transition-colors hover:text-[var(--accent)]">
                           {entry.username}
                         </Link>
                         {entry.device_type && <DeviceIcon deviceType={entry.device_type} />}

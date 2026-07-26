@@ -274,7 +274,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
 
   if (finished) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="mx-auto max-w-2xl px-4 py-8">
         {submitError && (
           <div className="mb-4 rounded-md border border-[var(--incorrect)]/30 bg-[var(--incorrect)]/10 px-3 py-2 text-sm text-[var(--incorrect)]">
             {submitError}
@@ -327,7 +327,7 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
 
   if (playedToday && !finished) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="mx-auto max-w-2xl px-4 py-8">
         <div className="mb-4 flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:mb-6 sm:flex-wrap sm:overflow-visible sm:pb-0">
           {pismoTabovi.map((p) => (
             <button
@@ -374,8 +374,8 @@ export function RankClient({ pismo, userId, alreadyPlayed, initialDailyText }: P
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-3 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-4 sm:py-8">
-      <div className="mb-4 flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:mb-6 sm:flex-wrap sm:overflow-visible sm:pb-0">
+    <div className="mx-auto max-w-2xl px-3 py-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-4 sm:py-12">
+      <div className="mb-4 flex min-h-[145px] flex-nowrap gap-2 overflow-x-auto pb-1 sm:mb-6 sm:flex-wrap sm:overflow-visible sm:pb-0">
         {pismoTabovi.map((p) => (
           <button
             key={p}

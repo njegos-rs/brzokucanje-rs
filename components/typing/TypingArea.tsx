@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState, type FormEvent } from 'react'
 import { cn } from '@/lib/utils'
+import { useSettingsStore } from '@/lib/stores/settings-store'
 import type { CharEntry } from '@/lib/typing/engine'
 
 interface Props {
@@ -49,6 +50,7 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
   const containerRef = useRef<HTMLDivElement>(null)
   const processKeyRef = useRef<(event: KeyboardEvent) => void>(() => {})
   const lastNativeKeyRef = useRef({ key: '', at: 0 })
+  const textColor = useSettingsStore((state) => state.textColor)
   const [focused, setFocused] = useState(false)
   const [shaking, setShaking] = useState(false)
   const [currentWord, setCurrentWord] = useState('')
@@ -159,9 +161,10 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
   return (
     <div ref={containerRef} className={cn("flex w-full scroll-mb-28 flex-col gap-3", mobileImmersive && "h-[100dvh] items-center justify-center gap-5")}>
 
-      {/* Timer */}
-      {mode === 'vreme' && timeLeft !== undefined && (
-        <div className="flex items-baseline gap-1">
+      {/* Timer ? rezervisan prostor spre?ava pomeranje teksta */}
+      <div className="flex h-10 items-baseline justify-center gap-1">
+        {mode === 'vreme' && timeLeft !== undefined && (
+          <div className="flex items-baseline gap-1">
           <span className={cn(
             'font-mono text-4xl font-bold tabular-nums leading-none transition-colors',
             timeLeft <= 5 ? 'text-[var(--incorrect)]' : 'text-[var(--accent)]'
@@ -169,8 +172,9 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
             {timeLeft}
           </span>
           <span className="text-xs text-[var(--muted-foreground)]">s</span>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {/* Typing display — tačno 3 reda, srednji je aktivan */}
       <div
@@ -190,10 +194,12 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
         ) : (
           <div
             ref={innerRef}
-            className={cn("flex flex-wrap font-mono text-2xl tracking-wide transition-transform duration-150 md:text-3xl", mobileImmersive && "w-full justify-center text-center")}
+            className={cn("font-mono text-[1.75rem] tracking-wide transition-transform duration-150 md:text-4xl", mobileImmersive && "w-full text-center")}
             style={{
               lineHeight: `${LINE_HEIGHT_PX}px`,
               transform: `translateY(-${offsetY}px)`,
+              textAlign: mobileImmersive ? 'center' : 'justify',
+              textAlignLast: mobileImmersive ? 'auto' : 'justify',
             }}
           >
             {wordGroups.map((group, gi) => {
@@ -204,6 +210,7 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
                   <span
                     key={`sp-${gi}`}
                     ref={isCursor ? cursorSpanRef : undefined}
+                    style={entry.state === 'upcoming' && textColor ? { color: textColor } : undefined}
                     className={cn(
                       'relative whitespace-pre',
                       entry.state === 'correct' && 'text-[var(--correct)]',
@@ -223,6 +230,7 @@ export function TypingArea({ chars, cursor, status, onKeyDown, timeLeft, mode, s
                       <span
                         key={globalIndex}
                         ref={isCursor ? cursorSpanRef : undefined}
+                        style={entry.state === 'upcoming' && textColor ? { color: textColor } : undefined}
                         className={cn(
                           'relative',
                           entry.state === 'correct' && 'text-[var(--correct)]',
