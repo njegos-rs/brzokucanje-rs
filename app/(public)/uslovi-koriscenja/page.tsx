@@ -3,6 +3,9 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Uslovi korišćenja',
   description: 'Uslovi korišćenja servisa Brzokucanje.rs — pravila, zabranjena ponašanja i anti-cheat politika.',
+  alternates: {
+    canonical: 'https://brzokucanje.rs/uslovi-koriscenja',
+  },
 }
 
 export default function UsloviKoriscenjaPage() {

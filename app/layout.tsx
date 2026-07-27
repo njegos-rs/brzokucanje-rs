@@ -50,14 +50,14 @@ export const metadata: Metadata = {
     siteName: 'Brzokucanje.rs',
     url: appUrl,
     images: [
-      { url: '/og-image.svg', width: 1200, height: 630, alt: 'brzokucanje.rs' },
+      { url: '/og-image.png', width: 1200, height: 630, alt: 'brzokucanje.rs', type: 'image/png' },
     ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Brzokucanje.rs — Test brzine kucanja na srpskom',
     description: 'Besplatni online test brzine kucanja na srpskom jeziku.',
-    images: ['/og-image.svg'],
+    images: ['/og-image.png'],
   },
 }
 

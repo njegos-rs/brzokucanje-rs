@@ -12,8 +12,52 @@ export const metadata: Metadata = {
 }
 
 export default function KakoKucatiBrzoPage() {
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'Kako pravilno postaviti prste za slepo kucanje?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Leva ruka stoji na tasterima A, S, D, F (kažiprst na F), a desna na J, K, L, Č (kažiprst na J). Palčevi stoje iznad razmaknice. Tasteri F i J imaju male izbočine koje pomažu da pronađete položaj bez gledanja.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Da li je tačnost važnija od brzine kucanja?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Da, tačnost je uvek prioritet. Brzina dolazi prirodno kroz mišićnu memoriju. Greške usporavaju ritam jer morate brisati slova, što smanjuje ukupan WPM skor.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Koliko minuta dnevno treba vežbati kucanje?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Istraživanja pokazuju da je 10 minuta svakodnevnog fokusiranog kucanja efikasnije od jednog sata vežbanja vikendom. Konzistentnost je ključ napretka.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Kako vežbati kucanje srpskih dijakritika (Č, Ć, Š, Ž, Đ)?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Vežbanjem na brzokucanje.rs gradite mišićnu memoriju za specifične srpske reči i dijakritičke tastere. Platforma podržava ćirilicu, latinicu i latinicu bez kvačica.',
+        },
+      },
+    ],
+  }
+
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <div className="mx-auto max-w-4xl px-4 py-12">
       <div className="mb-10">
         <h1 className="text-3xl font-extrabold tracking-tight md:text-5xl text-[var(--foreground)]">
           Kako kucati brzo na tastaturi? <span className="text-[var(--accent)]">Vodič za slepo kucanje</span>
@@ -85,6 +129,7 @@ export default function KakoKucatiBrzoPage() {
           </Link>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

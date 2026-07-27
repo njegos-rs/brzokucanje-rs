@@ -17,6 +17,8 @@ const STATIC_ROUTES = [
   { url: '/prijava', priority: 0.5, changeFrequency: 'monthly' },
   { url: '/o-nama', priority: 0.7, changeFrequency: 'monthly' },
   { url: '/kako-kucati-brzo', priority: 0.8, changeFrequency: 'weekly' },
+  { url: '/politika-privatnosti', priority: 0.3, changeFrequency: 'yearly' },
+  { url: '/uslovi-koriscenja', priority: 0.3, changeFrequency: 'yearly' },
 ] as const
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

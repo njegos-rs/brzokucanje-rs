@@ -42,7 +42,20 @@ function StatCard({ icon: Icon, iconClassName, value, label, tooltip }: StatCard
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username } = await params
-  return { title: `${username} | brzokucanje.rs` }
+  const title = `${username} | brzokucanje.rs`
+  const description = `Profil korisnika ${username} na brzokucanje.rs — lični rekord, statistike kucanja i rang pozicija.`
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `https://brzokucanje.rs/profil/${username}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `https://brzokucanje.rs/profil/${username}`,
+    },
+  }
 }
 
 export default async function PublicProfilPage({ params }: Props) {
