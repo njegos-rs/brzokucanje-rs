@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { RotateCcw, Volume2, VolumeX, X } from 'lucide-react'
+import { CircleHelp, Laptop, RotateCcw, Smartphone, Tablet, Volume2, VolumeX, X } from 'lucide-react'
 import Link from 'next/link'
 import GAME_POOL from '@/lib/words/game-pool.json'
 import { cn } from '@/lib/utils'
@@ -214,8 +214,29 @@ function useAudio(enabled: boolean) {
   }
 }
 
-interface LeaderRow { username: string | null; user_id: string; max_score: number }
+interface LeaderRow {
+  username: string | null
+  user_id: string
+  max_score: number
+  device_type?: 'mobile' | 'tablet' | 'desktop' | 'unknown'
+}
 interface CurrentUser { rank: number | null; score: number | null; userId: string }
+
+function DeviceIcon({ deviceType }: { deviceType: 'mobile' | 'tablet' | 'desktop' | 'unknown' }) {
+  const config = {
+    mobile: { Icon: Smartphone, label: 'Mobilni uređaj', className: 'text-sky-600' },
+    tablet: { Icon: Tablet, label: 'Tablet', className: 'text-violet-600' },
+    desktop: { Icon: Laptop, label: 'Računar', className: 'text-emerald-600' },
+    unknown: { Icon: CircleHelp, label: 'Nepoznat uređaj', className: 'text-[var(--muted-foreground)]' },
+  }[deviceType] ?? { Icon: CircleHelp, label: 'Nepoznat uređaj', className: 'text-[var(--muted-foreground)]' }
+  const Icon = config.Icon
+
+  return (
+    <span className={cn('ml-1.5 inline-flex items-center align-middle', config.className)} title={config.label} aria-label={config.label}>
+      <Icon className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+    </span>
+  )
+}
 
 export function IgraClient({ canPlay = true }: Props) {
   const [status, setStatus] = useState<GameStatus>(canPlay ? 'ready' : 'preview')
@@ -1040,6 +1061,7 @@ export function IgraClient({ canPlay = true }: Props) {
                         ) : (
                           <span className="font-medium text-[var(--muted-foreground)]">Nepoznat</span>
                         )}
+                        {entry.device_type && <DeviceIcon deviceType={entry.device_type} />}
                       </div>
                       <span className="ml-2 shrink-0 font-mono font-bold text-[var(--accent)]">{entry.max_score?.toLocaleString() ?? 0}</span>
                     </div>

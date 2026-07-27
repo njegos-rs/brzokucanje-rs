@@ -94,15 +94,41 @@ export async function GET(req: NextRequest) {
     error = { message: 'View query failed' }
   }
 
-  if (!error && period === 'daily' && data.length > 0) {
-    const ids = data.flatMap((entry) => {
-      if (!entry || typeof entry !== 'object' || !(entry as { id?: unknown }).id) return []
-      return [(entry as { id: string }).id]
-    })
-    if (ids.length > 0) {
-      const { data: deviceRows } = await supabase.from('scores').select('id, device_type').in('id', ids)
-      const byId = new Map((deviceRows ?? []).map((row) => [row.id, row.device_type]))
-      data = data.map((entry) => ({ ...(entry as object), device_type: byId.get((entry as { id: string }).id) ?? 'unknown' }))
+  if (!error && data.length > 0) {
+    if (period === 'daily') {
+      const ids = data.flatMap((entry) => {
+        if (!entry || typeof entry !== 'object' || !(entry as { id?: unknown }).id) return []
+        return [(entry as { id: string }).id]
+      })
+      if (ids.length > 0) {
+        const { data: deviceRows } = await supabase.from('scores').select('id, device_type').in('id', ids)
+        const byId = new Map((deviceRows ?? []).map((row) => [row.id, row.device_type]))
+        data = data.map((entry) => ({ ...(entry as object), device_type: byId.get((entry as { id: string }).id) ?? 'unknown' }))
+      }
+    } else {
+      const userIds = data.flatMap((entry) => {
+        if (!entry || typeof entry !== 'object' || !(entry as { user_id?: unknown }).user_id) return []
+        return [(entry as { user_id: string }).user_id]
+      })
+      if (userIds.length > 0) {
+        const { data: deviceRows } = await supabase
+          .from('scores')
+          .select('user_id, device_type, created_at')
+          .in('user_id', userIds)
+          .eq('script', script)
+          .order('created_at', { ascending: false })
+
+        const byUser = new Map<string, string>()
+        for (const row of deviceRows ?? []) {
+          if (!byUser.has(row.user_id)) {
+            byUser.set(row.user_id, row.device_type)
+          }
+        }
+        data = data.map((entry) => ({
+          ...(entry as object),
+          device_type: byUser.get((entry as { user_id: string }).user_id) ?? 'unknown',
+        }))
+      }
     }
   }
   // Ako view ne postoji ili vrati grešku — direktan fallback na 'scores' tabelu!
@@ -110,7 +136,7 @@ export async function GET(req: NextRequest) {
     try {
       let q = supabase
         .from('scores')
-        .select('user_id, wpm, raw_wpm, accuracy, score, created_at, profiles(username)')
+        .select('user_id, wpm, raw_wpm, accuracy, score, created_at, device_type, profiles(username)')
         .eq('script', script)
         .eq('mode', 'rank')
 
@@ -118,7 +144,7 @@ export async function GET(req: NextRequest) {
       const { data: scoresData } = await q.order('score', { ascending: false }).limit(limit)
 
       if (scoresData && scoresData.length > 0) {
-        data = (scoresData as unknown as LeaderboardScoreRow[])
+        data = (scoresData as unknown as (LeaderboardScoreRow & { device_type?: string })[])
           .filter((score) => score.profiles?.username?.trim())
           .map((s, idx) => ({
           user_id: s.user_id,
@@ -129,6 +155,7 @@ export async function GET(req: NextRequest) {
           score: s.score,
           created_at: s.created_at,
           daily_rank: idx + 1,
+          device_type: s.device_type ?? 'unknown',
         }))
       } else {
         data = []

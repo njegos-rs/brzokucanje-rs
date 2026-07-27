@@ -84,7 +84,30 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to fetch leaderboard' }, { status: 500 })
   }
 
-  const leaderboard = (data ?? []).filter((entry) => entry.username?.trim())
+  let leaderboard = (data ?? []).filter((entry) => entry.username?.trim())
+
+  if (leaderboard.length > 0) {
+    const userIds = leaderboard.map((l) => l.user_id).filter((id): id is string => Boolean(id))
+    if (userIds.length > 0) {
+      const { data: gameDeviceRows } = await supabase
+        .from('game_scores')
+        .select('user_id, device_type, score')
+        .in('user_id', userIds)
+        .order('score', { ascending: false })
+
+      const byUser = new Map<string, string>()
+      for (const row of gameDeviceRows ?? []) {
+        if (!byUser.has(row.user_id)) {
+          byUser.set(row.user_id, row.device_type)
+        }
+      }
+
+      leaderboard = leaderboard.map((entry) => ({
+        ...entry,
+        device_type: ((entry.user_id ? byUser.get(entry.user_id) : 'unknown') ?? 'unknown') as 'mobile' | 'tablet' | 'desktop' | 'unknown',
+      }))
+    }
+  }
 
   const { data: { user } } = await supabase.auth.getUser()
   let userRank: number | null = null
