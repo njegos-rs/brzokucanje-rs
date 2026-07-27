@@ -103,7 +103,20 @@ export default function RootLayout({
           src="https://plausible.io/js/script.js"
           strategy="afterInteractive"
         />
-        {/* TODO: Add GA4 gtag once a Measurement ID is obtained from the client */}
+        {/* Google Tag (gtag.js) */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-LSNQHXZZR3"
+          strategy="afterInteractive"
+        />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-LSNQHXZZR3');
+          `}
+        </Script>
         <Toaster
           position="bottom-right"
           toastOptions={{
