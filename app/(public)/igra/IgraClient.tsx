@@ -1026,22 +1026,22 @@ export function IgraClient({ canPlay = true }: Props) {
                 ) : (
                   leaderboard.map((entry, idx) => (
                     <div key={idx} className="flex items-center justify-between border-b border-[var(--border)] py-1.5 last:border-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex min-w-0 flex-1 items-center gap-2">
                         <span className={cn('w-5 text-center font-bold', idx === 0 ? 'text-yellow-500' : idx === 1 ? 'text-gray-400' : idx === 2 ? 'text-amber-600' : 'text-[var(--muted-foreground)]')}>
                           {idx === 0 ? '🏆' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`}
                         </span>
                         {entry.username ? (
                           <Link
                             href={`/profil/${entry.username}`}
-                            className="max-w-[72px] truncate font-medium text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
+                            className="break-words font-medium text-[var(--foreground)] transition-colors hover:text-[var(--accent)]"
                           >
                             {entry.username}
                           </Link>
                         ) : (
-                          <span className="max-w-[72px] truncate font-medium text-[var(--muted-foreground)]">Nepoznat</span>
+                          <span className="font-medium text-[var(--muted-foreground)]">Nepoznat</span>
                         )}
                       </div>
-                      <span className="font-mono font-bold text-[var(--accent)]">{entry.max_score?.toLocaleString() ?? 0}</span>
+                      <span className="ml-2 shrink-0 font-mono font-bold text-[var(--accent)]">{entry.max_score?.toLocaleString() ?? 0}</span>
                     </div>
                   ))
                 )}
