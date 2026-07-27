@@ -14,7 +14,6 @@ const STATIC_ROUTES = [
   { url: '/rang-lista/latinica', priority: 0.8, changeFrequency: 'daily' },
   { url: '/rang-lista/cirilica', priority: 0.8, changeFrequency: 'daily' },
   { url: '/rang-lista/easy', priority: 0.7, changeFrequency: 'daily' },
-  { url: '/registracija', priority: 0.6, changeFrequency: 'monthly' },
   { url: '/prijava', priority: 0.5, changeFrequency: 'monthly' },
   { url: '/o-nama', priority: 0.7, changeFrequency: 'monthly' },
   { url: '/kako-kucati-brzo', priority: 0.8, changeFrequency: 'weekly' },
