@@ -14,17 +14,21 @@ export const metadata: Metadata = {
 export default function ONamaPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
-      <div className="mb-10 text-center">
+      <div className="about-hero mb-10 text-center">
         <h1 className="text-3xl font-extrabold tracking-tight md:text-5xl text-[var(--foreground)]">
-          O platformi <span className="text-[var(--accent)]">brzokucanje.rs</span>
+          O platformi <span className="about-title-accent text-[var(--accent)]">brzokucanje.rs</span>
         </h1>
         <p className="mt-4 text-base text-[var(--muted-foreground)] md:text-lg">
           Prva domaća platforma posvećena modernom vežbanju i takmičenju u brzom kucanju na tri srpska pisma.
         </p>
+        <div className="about-typing-signal mx-auto mt-6 flex w-fit items-center gap-1.5 rounded-full border border-[var(--accent)]/25 bg-[var(--accent)]/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--accent)]" aria-hidden="true">
+          <span className="about-signal-dot h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+          kucaj. vezbaj. napreduj.
+        </div>
       </div>
 
       <div className="space-y-12 text-[var(--foreground)]">
-        <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 md:p-8">
+        <section className="about-panel about-mission rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 md:p-8">
           <h2 className="flex items-center gap-3 text-xl font-bold md:text-2xl">
             <Zap className="h-6 w-6 text-[var(--accent)]" /> Naša misija
           </h2>
@@ -34,7 +38,7 @@ export default function ONamaPage() {
         </section>
 
         <section className="grid gap-6 sm:grid-cols-3">
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
+          <div className="about-card rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
             <Keyboard className="h-8 w-8 text-[var(--accent)] mb-3" />
             <h3 className="font-bold text-lg">Tri pisma</h3>
             <p className="mt-2 text-sm text-[var(--muted-foreground)]">
@@ -42,7 +46,7 @@ export default function ONamaPage() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
+          <div className="about-card rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
             <ShieldCheck className="h-8 w-8 text-[var(--accent)] mb-3" />
             <h3 className="font-bold text-lg">Anti-cheat validacija</h3>
             <p className="mt-2 text-sm text-[var(--muted-foreground)]">
@@ -50,7 +54,7 @@ export default function ONamaPage() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
+          <div className="about-card rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
             <Award className="h-8 w-8 text-[var(--accent)] mb-3" />
             <h3 className="font-bold text-lg">Dnevna takmičenja</h3>
             <p className="mt-2 text-sm text-[var(--muted-foreground)]">
@@ -59,7 +63,7 @@ export default function ONamaPage() {
           </div>
         </section>
 
-        <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 md:p-8">
+        <section className="about-panel about-audience rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 md:p-8">
           <h2 className="flex items-center gap-3 text-xl font-bold md:text-2xl">
             <Sparkles className="h-6 w-6 text-[var(--accent)]" /> Kome je namenjeno?
           </h2>
@@ -70,7 +74,7 @@ export default function ONamaPage() {
           </ul>
         </section>
 
-        <div className="text-center pt-6">
+        <div className="about-cta text-center pt-6">
           <Link
             href="/vezbaj/latinica"
             className="inline-flex items-center justify-center rounded-lg bg-[var(--accent)] px-6 py-3 font-semibold text-white transition-opacity hover:opacity-90"
