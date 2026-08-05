@@ -1,15 +1,25 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { Header } from '@/components/layout/Header'
+import { Footer } from '@/components/layout/Footer'
 import { TypewriterTitle } from '@/components/TypewriterTitle'
+
+export const metadata: Metadata = {
+  alternates: { canonical: 'https://www.brzokucanje.rs/' },
+}
 
 export default function HomePage() {
   return (
-    <div data-home-page className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden sm:static sm:h-[100dvh]">
+    <div data-home-page className="flex min-h-[100dvh] flex-col overflow-x-hidden">
       <Header />
-      <main className="min-h-0 flex flex-1 flex-col items-center justify-start overflow-hidden px-4 py-4 sm:px-6 sm:py-10">
+      <main className="flex flex-1 flex-col items-center justify-start px-4 py-6 sm:px-6 sm:py-10">
         <div className="w-full max-w-4xl">
-          <div className="mb-4 text-center sm:mb-10">
+          <div className="mb-6 text-center sm:mb-10">
             <TypewriterTitle />
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-[var(--muted-foreground)] sm:text-base">
+              Besplatno proveri brzinu i ta&#269;nost kucanja na srpskoj latinici i &#263;irilici,
+              ve&#382;baj bez registracije i prati svoj napredak.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-5">
@@ -117,8 +127,25 @@ export default function HomePage() {
               </div>
             </Link>
           </div>
+
+          <section className="mt-8 rounded-2xl border border-[var(--border)] bg-[var(--card)] px-5 py-6 text-center sm:mt-10 sm:px-8">
+            <h2 className="text-xl font-bold text-[var(--foreground)]">&#381;eli&#353; da kuca&#353; br&#382;e i sa manje gre&#353;aka?</h2>
+            <p className="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-[var(--muted-foreground)]">
+              Pogledaj pravilan polo&#382;aj prstiju, animirani prikaz rada obe ruke i prakti&#269;ne savete
+              za razvijanje brzine, ritma i mi&#353;i&#263;ne memorije.
+            </p>
+            <div className="mt-4 flex flex-wrap justify-center gap-3">
+              <Link href="/kako-kucati-brzo" className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--accent-foreground)] transition-opacity hover:opacity-90">
+                Vodi&#269; za brzo kucanje
+              </Link>
+              <Link href="/o-nama" className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--foreground)] transition-colors hover:border-[var(--accent)]">
+                O platformi
+              </Link>
+            </div>
+          </section>
         </div>
       </main>
+      <Footer />
     </div>
   )
 }

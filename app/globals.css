@@ -30,6 +30,239 @@
   --font-mono: var(--font-jetbrains-mono);
 }
 
+/* Animated touch-typing guide. Kept in CSS so the demo is crisp and has no media download. */
+.typing-demo-key {
+  display: grid;
+  width: clamp(1.55rem, 7.1vw, 3.4rem);
+  height: clamp(1.65rem, 6.6vw, 3rem);
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-bottom-color: rgb(255 255 255 / 0.2);
+  border-radius: 0.5rem;
+  background: linear-gradient(145deg, rgb(63 63 70), rgb(31 31 35));
+  box-shadow: 0 3px 0 rgb(9 9 11), inset 0 1px 0 rgb(255 255 255 / 0.08);
+  color: rgb(212 212 216);
+  font-family: var(--font-mono), monospace;
+  font-size: clamp(0.55rem, 1.7vw, 0.75rem);
+  transition: border-color 180ms ease, color 180ms ease;
+}
+
+.typing-title-reveal {
+  display: inline-block;
+  overflow: hidden;
+  width: 0;
+  border-right: 3px solid var(--accent);
+  white-space: nowrap;
+  animation: typing-title-reveal 1.15s steps(14, end) 0.15s forwards,
+    typing-title-caret 0.7s step-end 4 0.15s forwards;
+}
+
+@keyframes typing-title-reveal {
+  from { width: 0; }
+  to { width: 14ch; }
+}
+
+@keyframes typing-title-caret {
+  0%, 100% { border-color: transparent; }
+  50% { border-color: var(--accent); }
+}
+
+.typing-demo-key-active {
+  animation: typing-demo-keypress 4.5s var(--key-delay) infinite;
+}
+
+.typing-demo-space {
+  box-shadow: 0 3px 0 rgb(9 9 11), inset 0 1px 0 rgb(255 255 255 / 0.06);
+  animation: typing-demo-spacepress 4.8s 2.2s infinite;
+}
+
+.typing-demo-hands-frame {
+  filter: drop-shadow(0 16px 18px rgb(0 0 0 / 0.3));
+}
+
+.typing-demo-hands-layer {
+  will-change: transform;
+  transform-origin: 50% 82%;
+}
+
+.typing-demo-hands-left {
+  clip-path: inset(0 49% 0 0);
+  animation: typing-demo-left-hand 4.5s 0.3s ease-in-out infinite;
+}
+
+.typing-demo-hands-right {
+  clip-path: inset(0 0 0 49%);
+  animation: typing-demo-right-hand 4.5s 0.3s ease-in-out infinite;
+}
+
+.typing-demo-hand {
+  position: absolute;
+  bottom: 0.65rem;
+  z-index: 2;
+  width: 38%;
+  max-width: 17rem;
+  height: clamp(4.8rem, 15vw, 7.8rem);
+  filter: drop-shadow(0 10px 12px rgb(0 0 0 / 0.3));
+  transform-origin: 50% 100%;
+  animation: typing-demo-hand-float 2.4s ease-in-out infinite;
+}
+
+.typing-demo-hand-left {
+  left: 13%;
+  transform: rotate(8deg);
+}
+
+.typing-demo-hand-right {
+  right: 13%;
+  transform: rotate(-8deg) scaleX(-1);
+  animation-delay: 0.18s;
+}
+
+.typing-hand-wrist,
+.typing-hand-palm,
+.typing-hand-finger path,
+.typing-hand-thumb path {
+  stroke: rgb(116 72 50 / 0.4);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+
+.typing-hand-finger {
+  transform-box: fill-box;
+  transform-origin: 50% 92%;
+  animation: typing-demo-finger-tap 2.4s var(--finger-delay) ease-in-out infinite;
+}
+
+.typing-hand-thumb {
+  transform-box: fill-box;
+  transform-origin: 12% 70%;
+  animation: typing-demo-thumb-tap 4.8s 2.2s ease-in-out infinite;
+}
+
+.typing-hand-finger ellipse,
+.typing-hand-thumb ellipse {
+  stroke: rgb(149 91 69 / 0.34);
+  stroke-width: 0.9;
+}
+
+.typing-hand-detail {
+  fill: none;
+  stroke: rgb(128 75 52 / 0.24);
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.typing-hand-highlight {
+  fill: none;
+  stroke: rgb(255 244 235 / 0.4);
+  stroke-linecap: round;
+  stroke-width: 2.2;
+}
+
+.typing-demo-live-dot {
+  box-shadow: 0 0 0 0 rgb(52 211 153 / 0.6);
+  animation: typing-demo-live 1.8s ease-out infinite;
+}
+
+.typing-demo-caret {
+  display: inline-block;
+  margin-left: 0.08em;
+  color: var(--accent);
+  animation: typing-demo-caret 0.8s steps(1) infinite;
+}
+
+.typing-demo-wpm {
+  animation: typing-demo-wpm 2.4s ease-in-out infinite;
+}
+
+@keyframes typing-demo-keypress {
+  0%, 7%, 100% { transform: translateY(0); color: rgb(212 212 216); }
+  2.5%, 4.5% {
+    transform: translateY(3px);
+    border-color: color-mix(in srgb, var(--accent) 75%, transparent);
+    background: color-mix(in srgb, var(--accent) 24%, rgb(31 31 35));
+    box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 38%, transparent), inset 0 1px 0 rgb(255 255 255 / 0.15);
+    color: white;
+  }
+}
+
+@keyframes typing-demo-finger-tap {
+  0%, 16%, 100% { translate: 0 0; scale: 1; }
+  7%, 11% { translate: 0 9%; scale: 1 0.94; }
+}
+
+@keyframes typing-demo-thumb-tap {
+  0%, 44%, 56%, 100% { rotate: 0deg; translate: 0 0; }
+  48%, 52% { rotate: -5deg; translate: 0 8%; }
+}
+
+@keyframes typing-demo-hand-float {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -2px; }
+}
+
+@keyframes typing-demo-left-hand {
+  0%, 7% { transform: translate(3px, -4px) rotate(0.35deg) scaleY(0.992); }
+  10%, 13%, 23%, 30%, 40%, 47%, 57%, 63%, 73%, 80%, 90% { transform: translate(0, -1px); }
+  16.5%, 23.5% { transform: translate(-3px, -5px) rotate(-0.4deg) scaleY(0.992); }
+  33%, 40% { transform: translate(-4px, 3px) rotate(-0.55deg) scaleY(0.99); }
+  83%, 90% { transform: translate(-5px, 1px) rotate(-0.65deg) scaleY(0.99); }
+  94%, 100% { transform: translate(0, -1px); }
+}
+
+@keyframes typing-demo-right-hand {
+  0%, 47% { transform: translate(0, -1px); }
+  50%, 57% { transform: translate(-3px, -5px) rotate(-0.4deg) scaleY(0.992); }
+  60%, 63% { transform: translate(0, -1px); }
+  66.5%, 73.5% { transform: translate(-4px, 2px) rotate(-0.5deg) scaleY(0.99); }
+  77%, 100% { transform: translate(0, -1px); }
+}
+
+@keyframes typing-demo-spacepress {
+  0%, 44%, 56%, 100% { transform: translateY(0); }
+  48%, 52% { transform: translateY(3px); background: color-mix(in srgb, var(--accent) 20%, rgb(39 39 42)); }
+}
+
+@keyframes typing-demo-live {
+  70%, 100% { box-shadow: 0 0 0 7px rgb(52 211 153 / 0); }
+}
+
+@keyframes typing-demo-caret {
+  0%, 48% { opacity: 1; }
+  49%, 100% { opacity: 0; }
+}
+
+@keyframes typing-demo-wpm {
+  0%, 100% { transform: translateY(0); opacity: 0.9; }
+  50% { transform: translateY(-1px); opacity: 1; }
+}
+
+@media (max-width: 480px) {
+  .typing-demo-hand-left { left: 8%; }
+  .typing-demo-hand-right { right: 8%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typing-title-reveal {
+    width: auto;
+    border-right: 0;
+    animation: none !important;
+  }
+
+  .typing-demo-key-active,
+  .typing-demo-space,
+  .typing-demo-hands-left,
+  .typing-demo-hands-right,
+  .typing-demo-hand,
+  .typing-hand-finger,
+  .typing-hand-thumb,
+  .typing-demo-live-dot,
+  .typing-demo-caret,
+  .typing-demo-wpm {
+    animation: none !important;
+  }
+}
+
 .dark {
   /* Warm dark gray — lakši za oči od čistog crnog */
   --background: #1c1c1e;

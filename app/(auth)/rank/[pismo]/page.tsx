@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { pismo } = await params
   if (!VALID_SCRIPTS.includes(pismo as Script)) return {}
   return {
-    title: `RANK — ${SCRIPT_LABELS[pismo as Script]} | brzokucanje.rs`,
+    title: `RANK — ${SCRIPT_LABELS[pismo as Script]}`,
     robots: { index: false, follow: false },
   }
 }

@@ -48,12 +48,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description,
     alternates: {
-      canonical: `https://brzokucanje.rs/profil/${username}`,
+      canonical: `https://www.brzokucanje.rs/profil/${encodeURIComponent(username)}`,
     },
     openGraph: {
       title,
       description,
-      url: `https://brzokucanje.rs/profil/${username}`,
+      url: `https://www.brzokucanje.rs/profil/${encodeURIComponent(username)}`,
     },
   }
 }

@@ -8,7 +8,7 @@ export function Footer() {
   const pathname = usePathname()
   const year = new Date().getFullYear()
 
-  if (pathname.startsWith('/rank/')) return null
+  if (pathname.startsWith('/rank/') || pathname.startsWith('/vezbaj/') || pathname === '/igra') return null
 
   return (
     <footer className="mt-auto hidden border-t border-[var(--border)] bg-[var(--background)] sm:block">
@@ -76,6 +76,18 @@ export function Footer() {
 
             <div className="flex flex-col gap-2">
               <p className="text-xs font-medium text-[var(--foreground)]">Ostalo</p>
+              <Link
+                href="/kako-kucati-brzo"
+                className="text-xs text-[var(--muted-foreground)] hover:text-[var(--accent)] transition-colors"
+              >
+                Kako kucati brzo
+              </Link>
+              <Link
+                href="/o-nama"
+                className="text-xs text-[var(--muted-foreground)] hover:text-[var(--accent)] transition-colors"
+              >
+                O nama
+              </Link>
               <Link
                 href="/politika-privatnosti"
                 className="text-xs text-[var(--muted-foreground)] hover:text-[var(--accent)] transition-colors"

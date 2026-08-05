@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   title: 'Politika privatnosti',
   description: 'Politika privatnosti servisa Brzokucanje.rs — informacije o obradi ličnih podataka u skladu sa GDPR regulativom.',
   alternates: {
-    canonical: 'https://brzokucanje.rs/politika-privatnosti',
+    canonical: 'https://www.brzokucanje.rs/politika-privatnosti',
   },
 }
 

@@ -2,6 +2,11 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
 import { PrijavaForma } from '@/components/auth/PrijavaForma'
 import type { Database } from '@/lib/supabase/types'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 export default async function AdminLayout({
   children,

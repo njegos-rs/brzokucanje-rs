@@ -14,7 +14,6 @@ const STATIC_ROUTES = [
   { url: '/rang-lista/latinica', priority: 0.8, changeFrequency: 'daily' },
   { url: '/rang-lista/cirilica', priority: 0.8, changeFrequency: 'daily' },
   { url: '/rang-lista/easy', priority: 0.7, changeFrequency: 'daily' },
-  { url: '/prijava', priority: 0.5, changeFrequency: 'monthly' },
   { url: '/o-nama', priority: 0.7, changeFrequency: 'monthly' },
   { url: '/kako-kucati-brzo', priority: 0.8, changeFrequency: 'weekly' },
   { url: '/politika-privatnosti', priority: 0.3, changeFrequency: 'yearly' },
@@ -27,13 +26,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { data: profiles } = await supabase
     .from('profiles')
     .select('username, updated_at')
+    .eq('is_banned', false)
     .not('username', 'is', null)
     .neq('username', '')
     .order('updated_at', { ascending: false })
     .limit(500)
 
   const profileUrls: MetadataRoute.Sitemap = (profiles ?? []).map((p) => ({
-    url: `${base}/profil/${p.username}`,
+    url: `${base}/profil/${encodeURIComponent(p.username!)}`,
     lastModified: new Date(p.updated_at),
     changeFrequency: 'weekly',
     priority: 0.5,
@@ -41,7 +41,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticUrls: MetadataRoute.Sitemap = STATIC_ROUTES.map((r) => ({
     url: `${base}${r.url}`,
-    lastModified: new Date(),
     changeFrequency: r.changeFrequency as MetadataRoute.Sitemap[number]['changeFrequency'],
     priority: r.priority,
   }))

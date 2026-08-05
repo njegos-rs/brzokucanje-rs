@@ -3,11 +3,11 @@ import Link from 'next/link'
 import { Award, Keyboard, ShieldCheck, Sparkles, Zap } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'O nama | brzokucanje.rs',
+  title: 'O nama',
   description:
     'brzokucanje.rs je prva srpska platforma za merenje i vežbanje brzine kucanja na ćirilici, latinici i latinici bez kvačica sa anti-cheat sistemom.',
   alternates: {
-    canonical: 'https://brzokucanje.rs/o-nama',
+    canonical: 'https://www.brzokucanje.rs/o-nama',
   },
 }
 

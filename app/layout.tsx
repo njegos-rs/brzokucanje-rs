@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import Script from 'next/script'
+import { Suspense } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { CookieConsent } from '@/components/CookieConsent'
 import { ThemeProvider } from '@/components/ThemeProvider'
@@ -33,13 +34,6 @@ export const metadata: Metadata = {
     'rank lista kucanja',
   ],
   metadataBase: new URL(appUrl),
-  alternates: {
-    canonical: appUrl,
-    languages: {
-      'sr-Latn': `${appUrl}/vezbaj/latinica`,
-      'sr-Cyrl': `${appUrl}/vezbaj/cirilica`,
-    },
-  },
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
@@ -89,13 +83,15 @@ export default function RootLayout({
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
         />
       </head>
       <body className="font-sans antialiased">
         <ThemeProvider>
         {children}
-        <VisitTracker />
+        <Suspense fallback={null}>
+          <VisitTracker />
+        </Suspense>
         {/* Plausible Analytics — tracks only on brzokucanje.rs (no-op on localhost) */}
         <Script
           defer

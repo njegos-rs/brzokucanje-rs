@@ -1,13 +1,14 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BookOpen, CheckCircle, Target, Zap } from 'lucide-react'
+import { TypingHandsDemo } from '@/components/TypingHandsDemo'
 
 export const metadata: Metadata = {
-  title: 'Kako kucati brzo na tastaturi | Vodič i saveti | brzokucanje.rs',
+  title: 'Kako kucati brzo na tastaturi — vodič i saveti',
   description:
     'Naučite tehniku slepog kucanja (touch typing) na srpskom jeziku. Povećajte WPM brzinu i tačnost uz praktične savete i svakodnevno vežbanje.',
   alternates: {
-    canonical: 'https://brzokucanje.rs/kako-kucati-brzo',
+    canonical: 'https://www.brzokucanje.rs/kako-kucati-brzo',
   },
 }
 
@@ -37,7 +38,7 @@ export default function KakoKucatiBrzoPage() {
         name: 'Koliko minuta dnevno treba vežbati kucanje?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Istraživanja pokazuju da je 10 minuta svakodnevnog fokusiranog kucanja efikasnije od jednog sata vežbanja vikendom. Konzistentnost je ključ napretka.',
+          text: 'Kratka svakodnevna vežba pomaže da održite fokus i izgradite mišićnu memoriju. Konzistentnost je važnija od povremenih dugih sesija.',
         },
       },
       {
@@ -55,7 +56,7 @@ export default function KakoKucatiBrzoPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd).replace(/</g, '\\u003c') }}
       />
       <div className="mx-auto max-w-4xl px-4 py-12">
       <div className="mb-10">
@@ -65,6 +66,10 @@ export default function KakoKucatiBrzoPage() {
         <p className="mt-4 text-base text-[var(--muted-foreground)] md:text-lg">
           Kompletan vodič za povećanje brzine (WPM) i tačnosti kucanja bez gledanja u tastaturu na srpskom pismu.
         </p>
+      </div>
+
+      <div className="mb-12">
+        <TypingHandsDemo />
       </div>
 
       <div className="space-y-10 text-[var(--foreground)]">
@@ -116,8 +121,31 @@ export default function KakoKucatiBrzoPage() {
             <BookOpen className="h-6 w-6 text-[var(--accent)]" /> 4. Dnevna rutina od 10 minuta
           </h2>
           <p className="mt-3 leading-relaxed text-[var(--muted-foreground)]">
-            Istraživanja pokazuju da je 10 minuta svakodnevnog fokusiranog kucanja efikasnije od jednog sata vežbanja vikendom. Započnite dan jednom brzom sesijom na našem sajtu i pratite svoj dnevni napredak na profilu!
+            Počnite sa 10 do 15 minuta fokusirane vežbe dnevno. Kratka, redovna sesija olakšava održavanje pravilne tehnike i ritma bez zamora. Pratite napredak na profilu i povećajte tempo tek kada zadržite visoku tačnost.
           </p>
+        </section>
+
+        <section aria-labelledby="brzi-saveti">
+          <div className="mb-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Tips &amp; tricks</p>
+            <h2 id="brzi-saveti" className="mt-2 text-2xl font-bold md:text-3xl">Male navike koje prave veliku razliku</h2>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              ['01', 'Gledaj tekst, ne tastaturu', 'Ako pogre\u0161i\u0161, uspori. Ne spu\u0161taj pogled: tako mozak br\u017ee gradi mapu tastera.'],
+              ['02', 'Dr\u017ei ritam', 'Stabilan tempo je vredniji od kratkog naleta brzine. Zamisli metronom dok kuca\u0161.'],
+              ['03', 'Ciljaj 97% ta\u010dnosti', 'Pove\u0107avaj brzinu tek kada isti tempo mo\u017ee\u0161 da odr\u017ei\u0161 bez \u010destih ispravki.'],
+              ['04', 'Odmori \u0161ake', 'Ramena neka budu opu\u0161tena, zglobovi ravni, a pritisak na tastere lagan.'],
+              ['05', 'Ve\u017ebaj problemati\u010dna slova', 'Napravi kratke sesije za \u010d, \u0107, \u0161, \u017e i \u0111 umesto da stalno ponavlja\u0161 lake re\u010di.'],
+              ['06', 'Zavr\u0161i dok si fokusiran', 'Deset do petnaest kvalitetnih minuta je bolji trening od duge sesije pune gre\u0161aka.'],
+            ].map(([number, heading, copy]) => (
+              <article key={number} className="group rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 transition-all hover:-translate-y-0.5 hover:border-[var(--accent)]/60 hover:shadow-lg">
+                <span className="font-mono text-xs font-bold text-[var(--accent)]">{number}</span>
+                <h3 className="mt-3 font-bold text-[var(--foreground)]">{heading}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--muted-foreground)]">{copy}</p>
+              </article>
+            ))}
+          </div>
         </section>
 
         <div className="text-center pt-6">
