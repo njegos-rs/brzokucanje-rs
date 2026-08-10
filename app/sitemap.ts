@@ -23,16 +23,40 @@ const STATIC_ROUTES = [
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = await createClient()
 
-  const { data: profiles } = await supabase
+  // Empty profiles are low-value URLs. Keep only profiles with a public rank or game result.
+  const [rankOwnersResult, gameOwnersResult] = await Promise.all([
+    supabase
+      .from('scores')
+      .select('user_id')
+      .eq('mode', 'rank')
+      .eq('is_flagged', false)
+      .gt('score', 0)
+      .limit(10_000),
+    supabase
+      .from('game_scores')
+      .select('user_id')
+      .gt('score', 0)
+      .limit(10_000),
+  ])
+
+  const activeProfileIds = [...new Set([
+    ...(rankOwnersResult.data ?? []).map((row) => row.user_id),
+    ...(gameOwnersResult.data ?? []).map((row) => row.user_id),
+  ])].slice(0, 500)
+
+  const profilesResult = activeProfileIds.length > 0
+    ? await supabase
     .from('profiles')
     .select('username, updated_at')
+    .in('id', activeProfileIds)
     .eq('is_banned', false)
     .not('username', 'is', null)
     .neq('username', '')
     .order('updated_at', { ascending: false })
     .limit(500)
+    : { data: [] }
 
-  const profileUrls: MetadataRoute.Sitemap = (profiles ?? []).map((p) => ({
+  const profileUrls: MetadataRoute.Sitemap = (profilesResult.data ?? []).map((p) => ({
     url: `${base}/profil/${encodeURIComponent(p.username!)}`,
     lastModified: new Date(p.updated_at),
     changeFrequency: 'weekly',

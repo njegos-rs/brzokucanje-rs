@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ban, CheckCircle, Loader2, Pencil, Trash2 } from 'lucide-react'
 import { createAdminBrowserClient } from '@/lib/supabase/admin-client'
+import { NICKNAME_MAX_LENGTH, normalizeNickname } from '@/lib/validators/nickname'
 
 interface Props {
   userId: string
@@ -72,7 +73,7 @@ export function UserAdminActions({ userId, username, isAdmin, isBanned, banReaso
   }
 
   const handleRename = async () => {
-    const normalizedUsername = newUsername.trim().replace(/\s+/g, ' ')
+    const normalizedUsername = normalizeNickname(newUsername)
     if (normalizedUsername.length < 3) {
       setRenameSuccess(false)
       setRenameMessage('Username mora imati najmanje 3 karaktera.')
@@ -167,8 +168,8 @@ export function UserAdminActions({ userId, username, isAdmin, isBanned, banReaso
       <div className="border-t border-[var(--border)] pt-4">
         <label className="mb-1.5 block text-xs font-medium text-[var(--muted-foreground)]">Promeni username</label>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <input value={newUsername} onChange={(e) => setNewUsername(e.target.value)} className="min-w-0 flex-1 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] outline-none focus:border-[var(--accent)]" />
-          <button onClick={handleRename} disabled={!!loading || newUsername.trim().replace(/\s+/g, ' ') === username} className="flex items-center justify-center gap-2 rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] hover:opacity-90 disabled:opacity-50 transition-opacity">
+          <input value={newUsername} onChange={(e) => setNewUsername(e.target.value)} maxLength={NICKNAME_MAX_LENGTH} className="min-w-0 flex-1 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] outline-none focus:border-[var(--accent)]" />
+          <button onClick={handleRename} disabled={!!loading || normalizeNickname(newUsername) === username} className="flex items-center justify-center gap-2 rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] hover:opacity-90 disabled:opacity-50 transition-opacity">
             {loading === 'rename' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pencil className="h-3.5 w-3.5" />}
             Sačuvaj
           </button>

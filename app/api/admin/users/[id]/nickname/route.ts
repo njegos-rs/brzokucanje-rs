@@ -2,11 +2,16 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/auth/admin'
 import { containsProfanity, getProfanityListFromDb } from '@/lib/validators/profanity'
+import {
+  NICKNAME_FORMAT_MESSAGE,
+  isValidNickname,
+  normalizeNickname as normalizeNicknameValue,
+} from '@/lib/validators/nickname'
 
 type Ctx = { params: Promise<{ id: string }> }
 
 function normalizeNickname(value: unknown) {
-  return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : ''
+  return typeof value === 'string' ? normalizeNicknameValue(value) : ''
 }
 
 export async function PATCH(req: Request, ctx: Ctx) {
@@ -24,12 +29,8 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
   const username = normalizeNickname(body.username)
 
-  if (username.length < 3 || username.length > 15) {
-    return NextResponse.json({ error: 'Ime mora imati 3-15 karaktera' }, { status: 400 })
-  }
-
-  if (!/^[\p{L}\p{N}]+(?: [\p{L}\p{N}]+)?$/u.test(username)) {
-    return NextResponse.json({ error: 'Dozvoljeni su slova i brojevi, uz najviše jedan razmak' }, { status: 400 })
+  if (!isValidNickname(username)) {
+    return NextResponse.json({ error: `Ime mora imati 3–15 karaktera. ${NICKNAME_FORMAT_MESSAGE}.` }, { status: 400 })
   }
 
   const profanityList = await getProfanityListFromDb()

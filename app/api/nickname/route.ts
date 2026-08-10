@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { containsProfanity, getProfanityListFromDb } from '@/lib/validators/profanity'
+import {
+  NICKNAME_FORMAT_MESSAGE,
+  isValidNickname,
+  normalizeNickname,
+} from '@/lib/validators/nickname'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -22,19 +27,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Neispravan zahtev' }, { status: 400 })
   }
 
-  const nickname = body.nickname?.trim().replace(/\s+/g, ' ')
+  const nickname = body.nickname ? normalizeNickname(body.nickname) : ''
 
   if (!nickname) {
     return NextResponse.json({ error: 'Ime je obavezno' }, { status: 400 })
   }
 
   // Validacija formata
-  if (nickname.length < 3 || nickname.length > 15) {
-    return NextResponse.json({ error: 'Ime mora imati 3-15 karaktera' }, { status: 400 })
-  }
-
-  if (!/^[\p{L}\p{N}]+(?: [\p{L}\p{N}]+)?$/u.test(nickname)) {
-    return NextResponse.json({ error: 'Dozvoljeni su slova i brojevi, uz najviše jedan razmak' }, { status: 400 })
+  if (!isValidNickname(nickname)) {
+    return NextResponse.json({ error: `Ime mora imati 3–15 karaktera. ${NICKNAME_FORMAT_MESSAGE}.` }, { status: 400 })
   }
 
   // Proveri da li korisnik već ima nickname

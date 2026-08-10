@@ -1,4 +1,11 @@
 import { z } from 'zod'
+import {
+  NICKNAME_FORMAT_MESSAGE,
+  NICKNAME_MAX_LENGTH,
+  NICKNAME_MIN_LENGTH,
+  NICKNAME_PATTERN,
+  normalizeNickname,
+} from '@/lib/validators/nickname'
 
 // Admin login — zadržan za admin pristup
 export const loginSchema = z.object({
@@ -10,12 +17,9 @@ export const loginSchema = z.object({
 export const nicknameSchema = z.object({
   nickname: z
     .string()
-    .min(3, 'Ime mora imati najmanje 3 karaktera')
-    .max(20, 'Ime može imati najviše 20 karaktera')
-    .regex(
-      /^[a-zA-Z0-9_]+$/,
-      'Ime može sadržati samo slova, brojeve i _',
-    ),
+    .refine((value) => normalizeNickname(value).length >= NICKNAME_MIN_LENGTH, 'Ime mora imati najmanje 3 karaktera')
+    .refine((value) => normalizeNickname(value).length <= NICKNAME_MAX_LENGTH, 'Ime može imati najviše 15 karaktera')
+    .refine((value) => NICKNAME_PATTERN.test(normalizeNickname(value)), NICKNAME_FORMAT_MESSAGE),
 })
 
 export type LoginInput = z.infer<typeof loginSchema>

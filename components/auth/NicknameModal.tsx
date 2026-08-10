@@ -4,17 +4,15 @@ import { useState, useEffect, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, X, Loader2 } from 'lucide-react'
-import { z } from 'zod'
 import { cn } from '@/lib/utils'
-
-const nicknameSchema = z.object({
-  nickname: z
-    .string()
-    .min(3, 'Minimum 3 karaktera')
-    .max(15, 'Maksimum 15 karaktera')
-    .regex(/^[\p{L}\p{N}]+(?: [\p{L}\p{N}]+)?$/u, 'Slova i brojevi, uz najviše jedan razmak'),
-})
-type NicknameInput = z.infer<typeof nicknameSchema>
+import { nicknameSchema, type NicknameInput } from '@/lib/validators/auth'
+import {
+  NICKNAME_FORMAT_MESSAGE,
+  NICKNAME_MAX_LENGTH,
+  NICKNAME_MIN_LENGTH,
+  isValidNickname,
+  normalizeNickname,
+} from '@/lib/validators/nickname'
 
 type AvailabilityStatus = 'idle' | 'checking' | 'available' | 'taken' | 'profanity' | 'invalid' | 'error'
 
@@ -22,9 +20,9 @@ function useNicknameAvailability(nickname: string) {
   const [status, setStatus] = useState<AvailabilityStatus>('idle')
 
   const check = useCallback(async (value: string) => {
-    const normalized = value.trim().replace(/\s+/g, ' ')
-    if (normalized.length < 3) { setStatus('idle'); return }
-    if (!/^[\p{L}\p{N}]+(?: [\p{L}\p{N}]+)?$/u.test(normalized)) {
+    const normalized = normalizeNickname(value)
+    if (normalized.length < NICKNAME_MIN_LENGTH) { setStatus('idle'); return }
+    if (!isValidNickname(normalized)) {
       setStatus('invalid')
       return
     }
@@ -44,7 +42,7 @@ function useNicknameAvailability(nickname: string) {
   }, [])
 
   useEffect(() => {
-    if (!nickname || nickname.length < 3) { setStatus('idle'); return }
+    if (!nickname || normalizeNickname(nickname).length < NICKNAME_MIN_LENGTH) { setStatus('idle'); return }
     const timer = setTimeout(() => check(nickname), 250)
     return () => clearTimeout(timer)
   }, [nickname, check])
@@ -81,10 +79,11 @@ export function NicknameModal({ onNicknameSet }: Props) {
     setServerError(null)
 
     try {
+      const nickname = normalizeNickname(data.nickname)
       const res = await fetch('/api/nickname', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nickname: data.nickname }),
+        body: JSON.stringify({ nickname }),
       })
 
       const result = await res.json()
@@ -94,7 +93,7 @@ export function NicknameModal({ onNicknameSet }: Props) {
         return
       }
 
-      onNicknameSet(data.nickname)
+      onNicknameSet(result.nickname ?? nickname)
     } catch {
       setServerError('Mrežna greška. Pokušaj ponovo.')
     }
@@ -160,7 +159,8 @@ export function NicknameModal({ onNicknameSet }: Props) {
                 type="text"
                 autoComplete="off"
                 autoFocus
-                placeholder="TvojNickname"
+                maxLength={NICKNAME_MAX_LENGTH}
+                placeholder="Tvoje ime"
                 className={cn(
                   'w-full rounded-md border bg-[var(--background)] px-3 py-2.5 pr-9 text-sm text-[var(--foreground)] outline-none transition-colors',
                   'placeholder:text-[var(--muted-foreground)]',
@@ -178,6 +178,11 @@ export function NicknameModal({ onNicknameSet }: Props) {
               <p className="mt-1.5 text-xs text-[var(--incorrect)]">{errors.nickname.message}</p>
             )}
             {!errors.nickname && statusMessage}
+            {!errors.nickname && nicknameStatus === 'idle' && (
+              <p className="mt-1.5 text-xs text-[var(--muted-foreground)]">
+                3–15 karaktera. {NICKNAME_FORMAT_MESSAGE}.
+              </p>
+            )}
           </div>
 
           {serverError && (

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { containsProfanity } from '@/lib/validators/profanity'
-
-const USERNAME_PATTERN = /^[\p{L}\p{N}]+(?: [\p{L}\p{N}]+)?$/u
+import { isValidNickname, normalizeNickname } from '@/lib/validators/nickname'
 
 export async function GET(request: NextRequest) {
-  const username = request.nextUrl.searchParams.get('username')?.trim().replace(/\s+/g, ' ')
+  const rawUsername = request.nextUrl.searchParams.get('username')
+  const username = rawUsername ? normalizeNickname(rawUsername) : ''
 
-  if (!username || username.length < 3 || username.length > 15 || !USERNAME_PATTERN.test(username)) {
+  if (!isValidNickname(username)) {
     return NextResponse.json({ available: false, reason: 'invalid' }, { status: 400 })
   }
 
